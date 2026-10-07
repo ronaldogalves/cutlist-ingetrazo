@@ -5,18 +5,18 @@ Each milestone ends with its acceptance criteria met and ticked here.
 
 ## M0 — Foundations and spike (≈1 week)
 
-- [ ] Repository created: GPL-3.0-or-later `LICENSE`, `README.md`,
+- [x] Repository created: GPL-3.0-or-later `LICENSE`, `README.md`,
       `CLAUDE.md`, `docs/`, `.gitignore`, `pyproject.toml` (pytest config,
       ruff), GitHub Actions running `pytest` on Linux.
 - [ ] Dev setup works as in `CLAUDE.md`: plugin symlinked into the user
       plugins folder, IngeTrazo starts, "CutList" appears in Extensions.
-- [ ] `setup(app)` adds an empty tray panel and a submenu; a deliberately
+- [x] `setup(app)` adds an empty tray panel and a submenu; a deliberately
       raised error shows IngeTrazo's "load error" entry, not a crash.
 - [ ] Spike: a throwaway script prints parts from IngeTrazo's
       `examples/*.igz` and two hand-built furniture models (a cabinet with
       components, a table with splayed legs). Part-detection rule decided
       and recorded as D-006.
-- [ ] `tests/conftest.py` puts `$INGETRAZO_SRC` on `sys.path`; the `host`
+- [x] `tests/conftest.py` puts `$INGETRAZO_SRC` on `sys.path`; the `host`
       marker separates tests that need IngeTrazo.
 - [ ] Issue/discussion opened with IngeTrazo maintainers.
 
