@@ -1,0 +1,5 @@
+# Linux-first project: store and check out text files with LF everywhere.
+* text=auto eol=lf
+*.igz binary
+*.png binary
+*.pdf binary
