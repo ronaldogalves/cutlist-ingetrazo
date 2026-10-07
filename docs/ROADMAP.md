@@ -35,7 +35,9 @@ Each milestone ends with its acceptance criteria met and ticked here.
 - [ ] Per-part settings via right-click (grain, may rotate, exclude, note).
 - [ ] Tray panel: lines grouped by material + thickness; Refresh; stale
       indicator after edits; clicking a line highlights its parts.
-- [ ] CSV export with selectable separator, UTF-8 with BOM option for Excel.
+- [ ] CSV export through configurable **supplier profiles** (columns,
+      numbers and rounding, edge-band flags, encoding) with a Corte Certo
+      preset — designed at M1 planning from `docs/IDEAS.md`.
 - [ ] All strings through `tr()`; pt-BR and es catalogs complete.
 
 **Accept:** on the two reference furniture models the cut list matches a

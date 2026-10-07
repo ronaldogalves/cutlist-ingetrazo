@@ -52,7 +52,7 @@ pop-ups, nag screens or telemetry.
 
 ## D-006 — Part detection rule
 
-*2026-10-07 · proposed (awaiting review) · evidence: `docs/spikes/M0-part-detection.md`*
+*2026-10-07 · accepted · evidence: `docs/spikes/M0-part-detection.md`*
 
 1. **Scope** — the selection; nothing selected → the whole model. Then a
    **tag filter**: tags to include or exclude, remembered (user default +
@@ -95,19 +95,31 @@ for flat and nested models alike.
 
 ## D-007 — Part anatomy, material roles and size compensation
 
-*2026-10-07 · proposed (awaiting review) · from the M0 spike (model D's
-plywood baguettes) and Ronaldo's modelling practice*
+*2026-10-07 · accepted · from the M0 spike (model D's plywood baguettes)
+and Ronaldo's modelling practice*
 
 Woodworkers model the finished **look**, not the bill of materials: one
 solid per part, faces painted to show laminate, veneer, edge banding or a
 raw edge. Nobody models a 0.5 mm edge band as a solid. The plugin reads
 the bill of materials out of that painted model.
 
-1. **Anatomy.** Every part is a **core** (the board that is cut) with two
-   **faces** (perpendicular to its thickness) and four **edges** (two
-   along its length, two along its width), told apart by the part's own
-   axes.
-2. **Material roles.** Every material has one role, set once in the
+1. **Anatomy.** Every sheet part is a **core** (the board that is cut)
+   with two **faces** (perpendicular to its thickness) and four **edges**
+   (two along its length, two along its width), told apart by the part's
+   own axes. **Each edge is banded or raw on its own** — any combination
+   of the four, each with its own band material.
+2. **Face 1 and face 2.** The two faces are numbered, because supplier
+   files, edge-band flags, grain and labels are all read *looking at
+   face 1*. Face 1 is the **decorative** face: the face with a face
+   covering, or with the more specific finish when the two differ (a
+   board decorative on one side, plain white on the other); when both are
+   alike, a fixed default by the part's own axes. The user can **flip** it
+   per part, and the plugin shows which face is face 1 in 3D. Edges are
+   then named relative to face 1 (e.g. length-1, length-2, width-1,
+   width-2 — the exact convention is fixed when the export is designed).
+   Mirrored parts (a left and a right side) keep their own face 1, so
+   their band flags come out mirrored as they should.
+3. **Material roles.** Every material has one role, set once in the
    material library (user default, overridable per model):
    - **Board** — *sheet* or *solid*; the core, cut list + diagrams. May
      be **pre-finished** (melamine MDF): no covering needed. May have
@@ -120,22 +132,27 @@ the bill of materials out of that painted model.
    - **Appearance only** — a texture that shows something real but is not
      a material to order (model D's plywood-edge texture `*`).
    - **Ignore** — glass, hardware, "not cut".
-3. **Reading a part.** Each face's material, through its role, says what
+4. **Reading a part.** Each face's material, through its role, says what
    is there: the core is the Board-role material; face coverings and edge
    bands are placed on their faces/edges. No Board material on any face →
    the covering's "applied over" board, else a flag.
-4. **Size convention, per model** (user default): *finished* (coverings
+5. **Size convention, per model** (user default): *finished* (coverings
    included — the core is derived by subtracting covering and, when
    deducted, band thicknesses) or *core* (the model is the board;
    coverings add on top). Either way the derived core thickness is
    checked against the board's nominal thickness(es); a mismatch is
    flagged, not corrected.
-5. **Settings cascade.** Every setting resolves **user default → model →
+6. **Settings cascade.** Every setting resolves **user default → model →
    material → part**; the most specific wins (as a face's own paint wins
    over its component's in SketchUp and IngeTrazo). Band deduction and
    oversizes (coverings: per side; bands: per edge length) are set per
    material and overridable per part.
-6. **Scope.** The data model holds all of the above from v0.1. Which
+7. **Solid wood is a different anatomy**, designed separately (with 1D
+   cutting, after v0.1): rough vs finished stock, thickness classes,
+   length allowances, grain always along the length — not faces and
+   coverings. The Board role's *solid* kind marks those parts now so
+   nothing has to be re-modelled later.
+8. **Scope.** The data model holds all of the above from v0.1. Which
    computations v0.1 performs (covering diagrams, band totals, deductions,
    oversizes) is decided when M1 and M2 are planned.
 

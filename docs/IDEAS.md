@@ -51,3 +51,32 @@ bottom of each section; note who raised it and when.
 - **Defaults from real use**: Ronaldo's OpenCutList runs used
   2740 × 1830 mm MDF sheets, 3 mm blade, 10 mm trim — the brief's
   2750 × 1840 / 4 mm defaults may need to change (and are only defaults).
+
+## Supplier exports (Ronaldo, 2026-10-07)
+
+Ordering boards pre-cut is the normal workflow; every supplier's software
+is different but alike. The export must be **fully configurable** —
+*profiles*, saved in user defaults and shareable as a file, with presets
+we ship (Corte Certo first):
+
+- **Columns**: which fields, in which order, with which header text —
+  qty, part name, material, L, W, T, grain, note, number, edge bands…
+- **One line per piece or merged** with a quantity.
+- **Numbers**: decimals, decimal separator (`,` in Brazil), **rounding
+  method** (nearest, up, down), unit suffix or bare number.
+- **Which size**: finished or cut (after band deduction / oversize).
+- **Edge bands**: usually **four consecutive columns**, `1` banded / `0`
+  raw — or the band's code or name; order of the four edges relative to
+  face 1 (see D-007).
+- **File**: separator, encoding (UTF-8, with BOM for Excel, or the
+  supplier's legacy encoding), line endings, file extension.
+
+To collect: a sample file (or column list) from each supplier Ronaldo
+uses.
+
+## Interactive tools
+
+- **A live painter for parts** (OpenCutList calls its version Smart
+  Paint): click a part's face or edge to set its covering or band, flip
+  face 1, see face 1 and the bands highlighted. (Ronaldo, 2026-10-07)
+
