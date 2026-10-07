@@ -22,28 +22,47 @@ Each milestone ends with its acceptance criteria met and ticked here.
       marker separates tests that need IngeTrazo.
 - [x] Issue/discussion opened with IngeTrazo maintainers (comment on ingelibre/ingetrazo#309).
 
-## M1 — Cut list (≈1–2 weeks)
+## M1 — Cut list (≈2–3 weeks)
 
-- [ ] `model/` dataclasses (`Part`, `MaterialSpec`, `CutListLine`) with
-      unit tests.
-- [ ] `host/extract.py`: selection or whole model → `[Part]`, component
-      instances counted as quantity, surfaces separated, non-rectangular
-      parts flagged.
-- [ ] `host/store.py`: document data and `group.ext` read/write with
-      `schema: 1`; every write is one undo step.
-- [ ] Material settings dialog (type, thicknesses, stock sheets, grain,
-      kerf, trim) with sensible defaults (e.g. 2750 × 1840 mm sheets,
-      4 mm kerf, 10 mm trim — editable).
-- [ ] Per-part settings via right-click (grain, may rotate, exclude, note).
-- [ ] Tray panel: lines grouped by material + thickness; Refresh; stale
-      indicator after edits; clicking a line highlights its parts.
-- [ ] CSV export through configurable **supplier profiles** (columns,
-      numbers and rounding, edge-band flags, encoding) with a Corte Certo
-      preset — designed at M1 planning from `docs/IDEAS.md`.
+Scope drawn 2026-10-07 after D-006/D-007: the **board** cut list, read
+through material roles, with coverings and bands **listed** per part (not
+yet deducted, totalled or laid out). Built in three visible steps.
+
+**Step A — read the model and show the list**
+- [x] `model/`: `Part` (core, face 1/2, four edges, flags), `MaterialSpec`
+      with roles, `CutListLine`/`Section`/`CutList`, measurement on the
+      part's own axes — with unit tests (cases from the M0 spike).
+- [x] `host/extract.py`: selection or whole model → raw parts (D-006 leaf
+      rule, visibility, tags, paint inheritance), loose-geometry notices.
+- [x] Tray panel: sections by board + thickness, lines merged by
+      measurement within tolerance, "Needs a look" and "Excluded";
+      Refresh; out-of-date notice after edits; tag filter; clicking a
+      line highlights its parts in the viewport.
+
+**Step B — settings that stay**
+- [ ] `host/store.py`: document data and `group.ext` with `schema: 1`;
+      every write one undo step (our own `Command`, D-007).
+- [ ] User defaults outside the document (material library, tolerance,
+      tag choices) and the cascade user → model → material → part.
+- [ ] Material library dialog: role per material, thicknesses, stock
+      sheets, grain, kerf, trim; covering/band thickness, oversize,
+      deduction (stored, used later).
+- [ ] Per-part settings (right-click and from the list): grain, may
+      rotate, exclude, note, flip face 1.
+- [ ] Stable "Group #n" numbers stored with the parts (D-006 §8).
+- [ ] Scope window on first use ("don't show again"), reachable from the
+      panel; components-only option.
+
+**Step C — export**
+- [ ] CSV export through configurable **profiles** (columns, order,
+      header, one line per piece or merged, decimals and separator,
+      rounding method, unit suffix, edge-band flags, encoding); first
+      preset from a real supplier sample. Profile editor in the UI.
 - [ ] All strings through `tr()`; pt-BR and es catalogs complete.
 
-**Accept:** on the two reference furniture models the cut list matches a
-hand-checked list exactly (sizes to 1 mm, quantities, materials).
+**Accept:** on the reference models the cut list matches a hand-checked
+list exactly (sizes to 1 mm, quantities, materials) — model D against its
+OpenCutList diagrams first (all 86 sheet parts).
 
 ## M2 — 2D packer (≈1–2 weeks)
 
