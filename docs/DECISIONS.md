@@ -65,11 +65,10 @@ pop-ups, nag screens or telemetry.
 4. **Merge by measurement**: parts with the same material, and the same
    L × W × T within the size tolerance (default 1 mm), are one line with a
    quantity — whether they are components, groups or a mix.
-5. **A part's material** is the material of its two main faces (the ones
-   perpendicular to its thickness), falling back to the container's
-   paint; not the largest total area (`core.parts.part_material`), which
-   picks the edge material on thin sticks. Other materials on the edges
-   are kept as edge information.
+5. **A part's materials** are read face by face through material
+   **roles** — see D-007. (Not the largest total area, as
+   `core.parts.part_material` does: on a thin stick that picks the edge
+   material.)
 6. **Materials decide the type**: *sheet*, *solid*, or *ignore* (hardware,
    glass, "not cut"). A part on an *ignore* material is left out of the
    cut list but listed in an "Excluded" section with the reason.
@@ -93,3 +92,53 @@ often is none: some designers model flat and organise by tags, and every
 `.skp` import arrives flat whatever the designer did (IngeTrazo flattens
 the hierarchy on import). Designers' practices vary; the leaf rule works
 for flat and nested models alike.
+
+## D-007 — Part anatomy, material roles and size compensation
+
+*2026-10-07 · proposed (awaiting review) · from the M0 spike (model D's
+plywood baguettes) and Ronaldo's modelling practice*
+
+Woodworkers model the finished **look**, not the bill of materials: one
+solid per part, faces painted to show laminate, veneer, edge banding or a
+raw edge. Nobody models a 0.5 mm edge band as a solid. The plugin reads
+the bill of materials out of that painted model.
+
+1. **Anatomy.** Every part is a **core** (the board that is cut) with two
+   **faces** (perpendicular to its thickness) and four **edges** (two
+   along its length, two along its width), told apart by the part's own
+   axes.
+2. **Material roles.** Every material has one role, set once in the
+   material library (user default, overridable per model):
+   - **Board** — *sheet* or *solid*; the core, cut list + diagrams. May
+     be **pre-finished** (melamine MDF): no covering needed. May have
+     grain (woodgrain melamine, plywood, veneered boards).
+   - **Face covering** — laminate, HPL (Formica), veneer: thickness,
+     **its own stock sizes** (veneer is narrower than boards), oversize;
+     optionally the board it is applied over.
+   - **Edge band** — thickness, width, length oversize, whether its
+     thickness is deducted from the cut size.
+   - **Appearance only** — a texture that shows something real but is not
+     a material to order (model D's plywood-edge texture `*`).
+   - **Ignore** — glass, hardware, "not cut".
+3. **Reading a part.** Each face's material, through its role, says what
+   is there: the core is the Board-role material; face coverings and edge
+   bands are placed on their faces/edges. No Board material on any face →
+   the covering's "applied over" board, else a flag.
+4. **Size convention, per model** (user default): *finished* (coverings
+   included — the core is derived by subtracting covering and, when
+   deducted, band thicknesses) or *core* (the model is the board;
+   coverings add on top). Either way the derived core thickness is
+   checked against the board's nominal thickness(es); a mismatch is
+   flagged, not corrected.
+5. **Settings cascade.** Every setting resolves **user default → model →
+   material → part**; the most specific wins (as a face's own paint wins
+   over its component's in SketchUp and IngeTrazo). Band deduction and
+   oversizes (coverings: per side; bands: per edge length) are set per
+   material and overridable per part.
+6. **Scope.** The data model holds all of the above from v0.1. Which
+   computations v0.1 performs (covering diagrams, band totals, deductions,
+   oversizes) is decided when M1 and M2 are planned.
+
+Benchmark note: OpenCutList has edge-banding and veneer material types and
+band-thickness deduction; *Appearance only*, the per-model size
+convention and the cascade are ours.
