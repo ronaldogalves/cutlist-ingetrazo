@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+env:
+  # The IngeTrazo version we test against (keep in step with CLAUDE.md).
+  INGETRAZO_REF: v0.5.7
+  INGETRAZO_SRC: ${{ github.workspace }}/ingetrazo
+  QT_QPA_PLATFORM: offscreen
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # what IngeTrazo bundles: our floor
+          cache: pip
+
+      - name: Fetch IngeTrazo source
+        run: git clone --depth 1 --branch "$INGETRAZO_REF"
+             https://github.com/ingelibre/ingetrazo.git ingetrazo
+
+      - name: System libraries for offscreen Qt
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends
+             libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+
+      - name: Install dependencies
+        run: pip install -r ingetrazo/requirements.txt ruff
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Pure tests
+        run: pytest
+
+      - name: Host tests (inside IngeTrazo)
+        run: pytest -m host

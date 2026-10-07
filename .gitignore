@@ -26,3 +26,6 @@ desktop.ini
 
 # IngeTrazo source, cloned locally for reference and host tests (not ours)
 /ingetrazo/
+
+# Private sample models (clients, personal) never leave this machine
+/samples/private/

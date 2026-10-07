@@ -1,0 +1,29 @@
+# Cut List for IngeTrazo is not pip-installed: the `cutlist/` folder is
+# copied (or linked) into IngeTrazo's plugins folder. This file only holds
+# project metadata and tool settings.
+
+[project]
+name = "cutlist-ingetrazo"
+version = "0.0.1"
+description = "Cut lists and cutting diagrams for furniture modelled in IngeTrazo"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"   # what IngeTrazo's Windows installer bundles
+authors = [{ name = "Ronaldo Alves" }]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# `pytest` runs the fast pure tests; `pytest -m host` the IngeTrazo ones
+# (the last -m on the command line wins).
+addopts = ["-m", "not host"]
+markers = [
+    "host: needs IngeTrazo's source (INGETRAZO_SRC) and an offscreen Qt",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = ["ingetrazo", "samples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
