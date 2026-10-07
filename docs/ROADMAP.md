@@ -12,10 +12,12 @@ Each milestone ends with its acceptance criteria met and ticked here.
       plugins folder, IngeTrazo starts, "CutList" appears in Extensions.
 - [x] `setup(app)` adds an empty tray panel and a submenu; a deliberately
       raised error shows IngeTrazo's "load error" entry, not a crash.
-- [ ] Spike: a throwaway script prints parts from IngeTrazo's
-      `examples/*.igz` and two hand-built furniture models (a cabinet with
-      components, a table with splayed legs). Part-detection rule decided
-      and recorded as D-006.
+- [x] Spike: a throwaway script prints parts from IngeTrazo's
+      `examples/*.igz` and ~~two hand-built furniture models~~ six real
+      furniture jobs from SketchUp (one built nested; one checked against
+      OpenCutList). Part-detection rule decided and recorded as D-006
+      (and D-007). Not covered: a splayed-leg table — solid wood, after
+      v0.1. Notes: `docs/spikes/M0-part-detection.md`.
 - [x] `tests/conftest.py` puts `$INGETRAZO_SRC` on `sys.path`; the `host`
       marker separates tests that need IngeTrazo.
 - [x] Issue/discussion opened with IngeTrazo maintainers (comment on ingelibre/ingetrazo#309).
