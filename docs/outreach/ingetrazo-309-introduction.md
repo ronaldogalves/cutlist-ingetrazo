@@ -1,6 +1,6 @@
 # Draft — comment on ingelibre/ingetrazo#309
 
-*Status: DRAFT for Ronaldo's review. Not posted. Where: as a comment on
+*Status: POSTED 2026-10-07 by Ronaldo (via gh): https://github.com/ingelibre/ingetrazo/issues/309#issuecomment-6046635456 — posted text is the one below, unwrapped. Where: comment on
 https://github.com/ingelibre/ingetrazo/issues/309 ("Cut list report and
 cutting optimizer for furniture").*
 
@@ -38,10 +38,11 @@ Right now it is at the skeleton stage (tab, menu, tests in CI against
    need a small command that sets `ext` on some groups — today each
    extension writes its own (like `WindowizerCommand`). Would you accept a
    PR adding a `SetGroupExtCommand` to `core.history`?
-4. **#199 / Corte Certo.** I saw the `nr;nome;compr;larg;espes` export
-   and the instance-name request. Ordering pre-cut boards is how most
-   Brazilian shops work (CorteCloud, Corte Certo…), so the extension will
-   have configurable supplier export profiles, with presets — happy to
+4. **Exports for cutting services (#199).** I saw the CSV export
+   discussed in #199. Ordering pre-cut boards is how many shops work, and
+   every cutting service or optimizer expects its own layout, so the
+   extension will have fully configurable export profiles: columns and
+   their order, units, rounding, edge-band flags, encoding. Happy to
    coordinate so we don't do the same work twice.
 5. **Catalog.** When v0.1 is ready we'd like to be listed in
    ingetrazo-extensions (a release `.zip` with the `cutlist/` folder).

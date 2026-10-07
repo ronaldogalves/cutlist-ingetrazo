@@ -18,7 +18,7 @@ Each milestone ends with its acceptance criteria met and ticked here.
       and recorded as D-006.
 - [x] `tests/conftest.py` puts `$INGETRAZO_SRC` on `sys.path`; the `host`
       marker separates tests that need IngeTrazo.
-- [ ] Issue/discussion opened with IngeTrazo maintainers.
+- [x] Issue/discussion opened with IngeTrazo maintainers (comment on ingelibre/ingetrazo#309).
 
 ## M1 — Cut list (≈1–2 weeks)
 
