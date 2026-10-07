@@ -15,8 +15,10 @@ a cut list extension that answers this request:
 The plan, with OpenCutList as the benchmark for features and quality
 (not a port — it's ~90k lines of Ruby tied to the SketchUp API):
 
-- **v0.1:** a cut list tab grouped by material and thickness, with
-  sheet/solid/ignore material types, grain, tag filters and quantities;
+- **v0.1:** a cut list tab grouped by material and thickness, reading
+  the painted model the way woodworkers paint it (boards, laminates and
+  veneers, edge bands, per face and per edge), with grain, tag filters
+  and quantities;
   2D guillotine cutting diagrams with kerf and trim; CSV, SVG and PDF
   exports. English, Spanish and Portuguese from the start.
 - Pure Python on IngeTrazo's extension API (v2), nothing beyond what
