@@ -52,4 +52,33 @@ pop-ups, nag screens or telemetry.
 
 ## D-006 — Part detection rule
 
-*pending — decided in M0 spike*
+*2026-10-07 · proposed (awaiting review) · evidence: `docs/spikes/M0-part-detection.md`*
+
+1. **Scope** — the selection; nothing selected → the whole model. Then a
+   **tag filter**: tags to include or exclude, remembered (user default +
+   per model). Hidden objects and hidden tags are left out.
+2. **A part** is a **leaf container**: a group or component instance with
+   faces of its own and no child containers. Containers above it (a
+   cabinet group) give it context, not a line.
+3. **Groups count.** Plain groups are parts like components. A first-run
+   option can restrict to components only; the default includes groups.
+4. **Merge by measurement**: parts with the same material, and the same
+   L × W × T within the size tolerance (default 1 mm), are one line with a
+   quantity — whether they are components, groups or a mix.
+5. **Materials decide the type**: *sheet*, *solid*, or *ignore* (hardware,
+   glass, "not cut"). A part on an *ignore* material is left out of the
+   cut list but listed in an "Excluded" section with the reason.
+6. **Never silent.** Things we cannot classify are listed with a flag:
+   - a container with faces of its own **and** child containers
+     ("loose geometry beside parts");
+   - a part thinner than 0.5 mm (a surface — `core.parts.is_surface`);
+   - a part with no material;
+   - a part that is not a rectangular board (bounding box used).
+7. **Names**: the part's name from the model; when it has none, or only
+   IngeTrazo's automatic `Group N`, it is shown as **"Group #n"**, where *n*
+   is our own number, stored in `group.ext["cutlist"]` and so stable across
+   saves, shared by the cut list, the diagrams and the 3D highlight.
+
+Rejected: "a part is a direct child of a selected container" (IngeTrazo's
+Parts tray rule) — real models are flat, organised by tags (model C has
+391 top-level parts), so there is often no container to select.

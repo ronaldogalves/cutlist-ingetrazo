@@ -34,3 +34,20 @@ bottom of each section; note who raised it and when.
   the model instead of by hand. *(Ronaldo, 2026-10-07)*
 - **Profiles and rails** (aluminium profiles, profiled rails) as 1D stock
   with lengths and totals. *(Ronaldo, 2026-10-07)*
+
+## From the M0 spike (2026-10-07)
+
+- **Corte Certo export preset**: `nr;nome;compr;larg;espes`, one line per
+  piece (not merged), whole mm, L ≥ W ≥ T — the Brazilian panel-cutting
+  software a real IngeTrazo user feeds by hand (IngeTrazo issue #199).
+  Strong candidate for M1's CSV export.
+- **Cut list per phase**: models tag parts by job phase (`FASE 1`,
+  `FASE 2`, `CORTE EXTRA`); a saved tag filter per phase gives one cut
+  list per delivery.
+- **Group lines by piece of furniture** using the name prefix (`GR`,
+  `COZ`, `QTO`…) or the parent container — a "module" column.
+- **Mirrored parts**: OpenCutList marks a mirrored copy of a part (left
+  vs right side) in its lists; worth matching for edge banding and grain.
+- **Defaults from real use**: Ronaldo's OpenCutList runs used
+  2740 × 1830 mm MDF sheets, 3 mm blade, 10 mm trim — the brief's
+  2750 × 1840 / 4 mm defaults may need to change (and are only defaults).
