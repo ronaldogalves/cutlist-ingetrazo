@@ -6,8 +6,9 @@ cutting optimizer for furniture").*
 
 ---
 
-Hi! I'm Ronaldo, a furniture designer from Brazil who has been using
-SketchUp + OpenCutList for years and is moving to IngeTrazo. I've started
+Hi! I'm Ronaldo, an architect, woodworker and furniture designer from
+Brazil who has been using SketchUp + OpenCutList for years. I heard about
+IngeTrazo from a friend and was immediately mind-blown by it. I've started
 a cut list extension that answers this request:
 **https://github.com/ronaldogalves/cutlist-ingetrazo** (GPL-3.0-or-later).
 
@@ -36,8 +37,9 @@ Right now it is at the skeleton stage (tab, menu, tests in CI against
    extension writes its own (like `WindowizerCommand`). Would you accept a
    PR adding a `SetGroupExtCommand` to `core.history`?
 4. **#199 / Corte Certo.** I saw the `nr;nome;compr;larg;espes` export
-   and the instance-name request. Corte Certo is common in Brazil, so I'd
-   like the extension to offer that format as an export preset — happy to
+   and the instance-name request. Ordering pre-cut boards is how most
+   Brazilian shops work (CorteCloud, Corte Certo…), so the extension will
+   have configurable supplier export profiles, with presets — happy to
    coordinate so we don't do the same work twice.
 5. **Catalog.** When v0.1 is ready we'd like to be listed in
    ingetrazo-extensions (a release `.zip` with the `cutlist/` folder).

@@ -71,6 +71,11 @@ we ship (Corte Certo first):
 - **File**: separator, encoding (UTF-8, with BOM for Excel, or the
   supplier's legacy encoding), line endings, file extension.
 
+**First preset: CorteCloud** — the most popular platform in Brazil today
+(Ronaldo). Corte Certo (IngeTrazo #199) after it. Its import format is
+not documented publicly: get a sample file or the column list from
+Ronaldo.
+
 To collect: a sample file (or column list) from each supplier Ronaldo
 uses.
 
