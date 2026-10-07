@@ -48,6 +48,56 @@ files themselves are private). Workaround to try: re-save in SketchUp
 - **Every part measured as a clean board** (L × W × T, thickness 6/15/18).
   No surface parts; nothing non-rectangular among the wood parts.
 
+## Round 2 (same day): four more models, one built nested
+
+| Model | Parts → lines | Note |
+|---|---|---|
+| D — kitchen (has OpenCutList diagrams) | 87 → 55 | compared below |
+| E — built **nested** on purpose | 115 → 58 | arrived flat |
+| F, G — furniture | 49 → 23, 153 → 69 | |
+
+All four are SketchUp 2020 files and all opened (so 2020 is not the cause
+of the failures above).
+
+### IngeTrazo flattens the `.skp` hierarchy
+
+`formats/skp_openskp.py` turns each **top-level** instance into one group
+with its whole subtree merged into it ("reference geometry"); the only
+exception is a nested instance carrying its **own tag**, which becomes a
+separate top-level group. Model E's boards are tagged, so they came out as
+115 separate parts — and the cabinets that held them are gone, names
+included. **Consequences:**
+
+- After a `.skp` import there is no cabinet → board hierarchy to use. A
+  "module" column cannot come from the parent container for imported
+  models (it can for models built in IngeTrazo).
+- An **untagged** board nested in a cabinet is **merged into the cabinet**:
+  the cut list would show one big "part". Defence: flag a leaf whose
+  geometry is several disconnected solids ("looks like several boards in
+  one group").
+- Worth raising upstream: keep the instance tree on `.skp` import.
+
+### Model D against OpenCutList (the M1 acceptance test, early)
+
+OpenCutList's diagrams list 86 sheet parts in four material/thickness
+groups. Ours, per group:
+
+| Group | OpenCutList | Ours |
+|---|---|---|
+| MDF Verde Jade 15 | 14 | **14, every line identical** |
+| MDF Branco 6 | 7 | **7, every line identical** |
+| MDF Branco 15 | 32 | **32, every line identical** |
+| Compensado naval 15 | 33 | 30 + 3 under material `*` |
+| MDF Branco 18 | — (no PDF) | 1 (`GAB ESQ PRAT`) |
+
+Sizes agree to the millimetre, quantities exactly. The 3 differences are
+15 × 15 mm baguettes: their 2 main faces are compensado, their 4 edge
+faces a material named `*`. IngeTrazo's `part_material` takes the largest
+*total* area, and on a 15 × 15 stick the edges win by a hair. OpenCutList
+reads the material of the instance. **Rule for us: a board's material is
+the material of its two main faces (perpendicular to its thickness);
+other materials on its edges are edge information (edge banding — later)**.
+
 ## What the IngeTrazo examples show
 
 - IngeTrazo's own automatic names (`Group 31`) are **not stable**: the same

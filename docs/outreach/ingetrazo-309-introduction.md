@@ -42,8 +42,12 @@ Right now it is at the skeleton stage (tab, menu, tests in CI against
 5. **Catalog.** When v0.1 is ready we'd like to be listed in
    ingetrazo-extensions (a release `.zip` with the `cutlist/` folder).
 
-Also, two SketchUp 2020 furniture models of mine don't open (OpenSKP:
-`no reader for class CCustomLineStyle`, and `back-ref to unwalked slot`).
-I'll open a separate issue with details.
+Two things I noticed on real furniture models, for separate issues:
+two SketchUp 2020 files don't open (OpenSKP: `no reader for class
+CCustomLineStyle`, and `back-ref to unwalked slot`); and the `.skp`
+import flattens the instance tree, so a cabinet's boards arrive as
+separate parts only when each carries its own tag — untagged boards are
+merged into the cabinet, and the cabinet itself (and its name) is lost.
+For a cut list, keeping the hierarchy would help a lot.
 
 Thanks for IngeTrazo — it's a pleasure to build on.

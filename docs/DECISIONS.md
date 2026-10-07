@@ -65,20 +65,31 @@ pop-ups, nag screens or telemetry.
 4. **Merge by measurement**: parts with the same material, and the same
    L × W × T within the size tolerance (default 1 mm), are one line with a
    quantity — whether they are components, groups or a mix.
-5. **Materials decide the type**: *sheet*, *solid*, or *ignore* (hardware,
+5. **A part's material** is the material of its two main faces (the ones
+   perpendicular to its thickness), falling back to the container's
+   paint; not the largest total area (`core.parts.part_material`), which
+   picks the edge material on thin sticks. Other materials on the edges
+   are kept as edge information.
+6. **Materials decide the type**: *sheet*, *solid*, or *ignore* (hardware,
    glass, "not cut"). A part on an *ignore* material is left out of the
    cut list but listed in an "Excluded" section with the reason.
-6. **Never silent.** Things we cannot classify are listed with a flag:
+7. **Never silent.** Things we cannot classify are listed with a flag:
    - a container with faces of its own **and** child containers
      ("loose geometry beside parts");
    - a part thinner than 0.5 mm (a surface — `core.parts.is_surface`);
    - a part with no material;
-   - a part that is not a rectangular board (bounding box used).
-7. **Names**: the part's name from the model; when it has none, or only
+   - a part that is not a rectangular board (bounding box used);
+   - a part made of several disconnected solids (likely boards merged into
+     one group — e.g. untagged boards in a cabinet after a `.skp` import,
+     which flattens the hierarchy).
+8. **Names**: the part's name from the model; when it has none, or only
    IngeTrazo's automatic `Group N`, it is shown as **"Group #n"**, where *n*
    is our own number, stored in `group.ext["cutlist"]` and so stable across
    saves, shared by the cut list, the diagrams and the 3D highlight.
 
 Rejected: "a part is a direct child of a selected container" (IngeTrazo's
-Parts tray rule) — real models are flat, organised by tags (model C has
-391 top-level parts), so there is often no container to select.
+Parts tray rule) — it needs a cabinet container to select, and there
+often is none: some designers model flat and organise by tags, and every
+`.skp` import arrives flat whatever the designer did (IngeTrazo flattens
+the hierarchy on import). Designers' practices vary; the leaf rule works
+for flat and nested models alike.
