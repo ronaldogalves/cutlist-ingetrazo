@@ -133,3 +133,38 @@ def test_auto_named_groups_get_a_group_number(win):
     panel = panel_of(win)
     panel.refresh_button.click()
     assert panel.tree.topLevelItem(0).child(0).text(0) == "Group #1"
+
+
+def test_different_names_show_as_sub_rows_and_can_be_kept_apart(win):
+    scene = win.viewport.scene
+    scene.groups += [board(0.6, 0.4, 0.018, name="Door left"),
+                     board(0.6, 0.4, 0.018, at=(1, 0, 0), name="Door right"),
+                     board(0.6, 0.4, 0.018, at=(2, 0, 0), name="Door left")]
+    panel = panel_of(win)
+    panel.refresh_button.click()
+    line = panel.tree.topLevelItem(0).child(0)
+    assert line.text(1) == "3"
+    assert [(line.child(i).text(0), line.child(i).text(1))
+            for i in range(line.childCount())] == [("Door left", "2"),
+                                                   ("Door right", "1")]
+    panel.tree.setCurrentItem(line.child(1))
+    right = next(g.uid for g in scene.groups if g.name == "Door right")
+    assert panel._controller.highlight == [right]
+
+    panel.merge_button.setChecked(False)
+    section = panel.tree.topLevelItem(0)
+    assert sorted((section.child(i).text(0), section.child(i).text(1))
+                  for i in range(section.childCount())) == \
+        [("Door left", "2"), ("Door right", "1")]
+
+
+def test_column_widths_are_remembered(win):
+    panel = panel_of(win)
+    panel.refresh_button.click()
+    panel.tree.setColumnWidth(0, 333)
+    from PySide6.QtCore import QSettings
+    from views.main_window import MainWindow  # noqa: F401 — same settings
+    state = QSettings().value(panel.HEADER_KEY)
+    assert state is not None
+    other = type(panel)()
+    assert other.tree.columnWidth(0) == 333

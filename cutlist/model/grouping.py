@@ -95,7 +95,10 @@ class CutList:
             yield from s.lines
 
 
-def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE) -> CutList:
+def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
+          *, by_name: bool = False) -> CutList:
+    """``by_name`` keeps parts with different names on different lines,
+    even when they are the same board at the same size."""
     out = CutList()
     sections: dict = {}
     lines: dict = {}
@@ -113,7 +116,7 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE) -> CutList:
             section = sections[(p.core, t)] = Section(p.core, t)
         key = (p.core, t, quantize(p.length, tolerance),
                quantize(p.width, tolerance), p.face1, p.face2, p.edges,
-               p.grain, p.can_rotate)
+               p.grain, p.can_rotate, p.name if by_name else None)
         line = lines.get(key)
         if line is None:
             line = lines[key] = CutListLine(p.core, key[2], key[3], t,

@@ -82,6 +82,11 @@ class CutListPanel(QWidget):
     highlight_requested = Signal(object)
     #: The set of tags to leave out changed.
     tags_changed = Signal(object)
+    #: True: one line per size (cutting); False: names kept apart.
+    merge_changed = Signal(bool)
+
+    #: Where the column widths are remembered (a per-user convenience).
+    HEADER_KEY = "cutlist/panel_header"
 
     COLUMNS = ("name", "qty", "length", "width", "thickness", "edges",
                "faces", "notes")
@@ -112,6 +117,17 @@ class CutListPanel(QWidget):
             QToolButton.ToolButtonPopupMode.InstantPopup)
         self.tags_button.setMenu(QMenu(self.tags_button))
         bar.addWidget(self.tags_button)
+        self.merge_button = QToolButton()
+        self.merge_button.setObjectName("cutlist_merge")
+        self.merge_button.setText(tr("Merge same size"))
+        self.merge_button.setCheckable(True)
+        self.merge_button.setChecked(True)
+        self.merge_button.setToolTip(tr(
+            "On: parts of the same board and size are one line whatever "
+            "their names (how they are cut). Off: different names stay on "
+            "different lines."))
+        self.merge_button.toggled.connect(self.merge_changed)
+        bar.addWidget(self.merge_button)
         bar.addStretch(1)
         layout.addLayout(bar)
 
@@ -137,9 +153,11 @@ class CutListPanel(QWidget):
         self.tree.setSelectionMode(
             QTreeWidget.SelectionMode.ExtendedSelection)
         header = self.tree.header()
-        header.setStretchLastSection(False)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setMinimumSectionSize(28)
+        self._widths_restored = self._restore_header()
+        header.sectionResized.connect(self._save_header)
         self.tree.itemSelectionChanged.connect(self._on_selection)
         layout.addWidget(self.tree, 1)
 
@@ -152,6 +170,43 @@ class CutListPanel(QWidget):
         self.placeholder.setObjectName("cutlist_placeholder")
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.placeholder)
+
+    # ---- column widths: the user's, remembered ---------------------------
+    def _settings(self):
+        from PySide6.QtCore import QSettings
+        return QSettings()
+
+    def _restore_header(self) -> bool:
+        try:
+            state = self._settings().value(self.HEADER_KEY)
+            return bool(state) and self.tree.header().restoreState(state)
+        except Exception:                           # noqa: BLE001 — cosmetic
+            return False
+
+    def _save_header(self, *_args) -> None:
+        if getattr(self, "_filling", False):
+            return
+        try:
+            self._settings().setValue(self.HEADER_KEY,
+                                      self.tree.header().saveState())
+        except Exception:                           # noqa: BLE001 — cosmetic
+            pass
+
+    def _fit_columns_once(self) -> None:
+        """First fill ever: size columns to their content, the name a
+        sensible width. After that the widths are the user's."""
+        if self._widths_restored:
+            return
+        self._filling = True
+        try:
+            for c in range(1, len(self.COLUMNS)):
+                self.tree.resizeColumnToContents(c)
+            self.tree.setColumnWidth(0, max(160, min(
+                self.tree.sizeHintForColumn(0), 280)))
+        finally:
+            self._filling = False
+        self._widths_restored = True
+        self._save_header()
 
     # ---- set up by the host --------------------------------------------
     def set_formatters(self, fmt_len, fmt_area) -> None:
@@ -242,6 +297,7 @@ class CutListPanel(QWidget):
                 why = excluded_text(p.excluded)
                 top.addChild(self._part_item(p, why, why))
 
+        self._fit_columns_once()
         total = sum(s.area for s in cl.sections)
         self.summary_label.setText(tr(
             "{n} parts in {lines} lines · {area}", n=cl.qty,
@@ -285,6 +341,19 @@ class CutListPanel(QWidget):
             item.setTextAlignment(c, Qt.AlignmentFlag.AlignRight
                                   | Qt.AlignmentFlag.AlignVCenter)
         item.setData(0, UIDS, list(line.uids))
+        if len(names) > 1:
+            by_name: dict[str, list[str]] = {}
+            for name, uid in zip(line.names, line.uids, strict=True):
+                by_name.setdefault(name, []).append(uid)
+            for name in names:
+                child = QTreeWidgetItem([name, str(len(by_name[name]))])
+                child.setTextAlignment(1, Qt.AlignmentFlag.AlignRight
+                                       | Qt.AlignmentFlag.AlignVCenter)
+                child.setForeground(0, Qt.GlobalColor.darkGray)
+                child.setData(0, UIDS, by_name[name])
+                item.addChild(child)
+            item.setText(0, tr("{first} + {n} more names", first=names[0],
+                               n=len(names) - 1))
         return item
 
     def _part_item(self, p: Part, label: str, why: str) -> QTreeWidgetItem:

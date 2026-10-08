@@ -82,6 +82,7 @@ class Controller:
         self.app = app
         self.panel = panel
         self.excluded_tags: frozenset[str] = frozenset()
+        self.merge_by_size = True
         self.highlight: list[str] = []
         self.outlines: dict = {}
         self.stale = True
@@ -90,6 +91,7 @@ class Controller:
         panel.refresh_requested.connect(self.refresh)
         panel.highlight_requested.connect(self.set_highlight)
         panel.tags_changed.connect(self.set_excluded_tags)
+        panel.merge_changed.connect(self.set_merge)
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
@@ -100,7 +102,7 @@ class Controller:
             library = Library()
             parts = [read_part(r, library)
                      for r in number_auto_named(ex.parts)]
-            cut_list = build(parts)
+            cut_list = build(parts, by_name=not self.merge_by_size)
         except Exception as exc:                # noqa: BLE001 — UI boundary
             log.exception("reading the model failed")
             self._status(tr("Cut List could not read the model: {error}",
@@ -117,6 +119,10 @@ class Controller:
 
     def set_excluded_tags(self, tags) -> None:
         self.excluded_tags = frozenset(tags)
+        self.refresh()
+
+    def set_merge(self, by_size: bool) -> None:
+        self.merge_by_size = bool(by_size)
         self.refresh()
 
     def document_changed(self) -> None:

@@ -68,3 +68,15 @@ def test_excluded_and_unassigned_are_reported():
     assert cl.unassigned == {"*": 1}
     assert [p.uid for p in cl.flagged] == ["b"]
     assert cl.qty == 1
+
+
+def test_same_size_different_names_merge_unless_kept_apart():
+    parts = [part("a", 0.6, 0.3, 0.015, name="Door left"),
+             part("b", 0.6, 0.3, 0.015, name="Door right"),
+             part("c", 0.6, 0.3, 0.015, name="Door left")]
+    (merged,) = build(parts).lines()
+    assert merged.qty == 3
+    assert merged.display_names() == ["Door left", "Door right"]
+    apart = sorted((ln.display_names()[0], ln.qty)
+                   for ln in build(parts, by_name=True).lines())
+    assert apart == [("Door left", 2), ("Door right", 1)]

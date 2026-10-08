@@ -106,7 +106,12 @@ def _canonical(axis: np.ndarray) -> np.ndarray:
 
 
 def _count_solids(loops: list[np.ndarray]) -> int:
-    """Faces sharing a vertex belong to one solid; count the solids."""
+    """Faces sharing a vertex belong to one solid; count the solids.
+
+    Each entry holds ALL of a face's vertices, holes included: the walls
+    of a cut-out touch the face only along the hole's outline, so leaving
+    holes out split one board with a cut-out into two "solids" (model D's
+    oven mask, 2026-10-08)."""
     parent = list(range(len(loops)))
 
     def find(i):
@@ -162,4 +167,8 @@ def measure(faces: list[FaceIn]) -> Measured:
         bucket = sides.setdefault(side, {})
         bucket[f.material] = bucket.get(f.material, 0.0) + area
     return Measured(length, width, thickness, axes, sides, oblique,
-                    _count_solids(loops))
+                    _count_solids([
+                        np.concatenate([np.asarray(f.loop, dtype=np.float64)]
+                                       + [np.asarray(h, dtype=np.float64)
+                                          for h in f.holes if len(h)])
+                        for f in faces if len(f.loop) >= 3]))

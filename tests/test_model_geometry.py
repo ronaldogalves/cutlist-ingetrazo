@@ -51,5 +51,24 @@ def test_two_boards_in_one_group_are_two_solids():
     assert measure(faces).solids == 2
 
 
+def test_a_board_with_a_through_cut_out_is_one_solid():
+    # Regression (model D, oven mask): a 600 × 400 × 15 board with a
+    # 200 × 100 through opening. The opening's four walls touch the board
+    # only along the holes in its two faces.
+    from tests.boxes import box as _box
+    faces = list(_box(0.6, 0.4, 0.015))
+    ring = [(0.2, 0.15), (0.4, 0.15), (0.4, 0.25), (0.2, 0.25)]
+    for i in (4, 5):                                # T+ and T-
+        z = 0.015 if i == 4 else 0.0
+        faces[i] = FaceIn(faces[i].loop, faces[i].material,
+                          holes=(tuple((x, y, z) for x, y in ring),))
+    for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1], strict=True):
+        faces.append(FaceIn(((x0, y0, 0.0), (x1, y1, 0.0),
+                             (x1, y1, 0.015), (x0, y0, 0.015)), "MDF"))
+    m = measure(faces)
+    assert m.solids == 1
+    assert not m.is_rectangular
+
+
 def test_no_faces():
     assert measure([]).size == (0.0, 0.0, 0.0)

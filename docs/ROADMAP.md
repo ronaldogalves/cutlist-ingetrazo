@@ -50,6 +50,10 @@ yet deducted, totalled or laid out). Built in three visible steps.
 - [ ] Per-part settings (right-click and from the list): grain, may
       rotate, exclude, note, flip face 1.
 - [ ] Stable "Group #n" numbers stored with the parts (D-006 §8).
+- [ ] Settings window: **units** ("use the model's units" by default, or
+      the cut list's own unit and precision — an architectural model in
+      metres still lists in mm), size tolerance, merge same size by
+      default (Ronaldo, 2026-10-08).
 - [ ] Scope window on first use ("don't show again"), reachable from the
       panel; components-only option.
 
