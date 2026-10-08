@@ -43,9 +43,9 @@ def window_with(qt_app, tmp_path, monkeypatch):
         windows.append(w)
         return w
     yield build
+    from tests.host.conftest import close_window
     for w in windows:
-        w._saved_version = w.viewport.scene.version     # no "save?" modal
-        w.close()
+        close_window(w)
 
 
 def _extensions_menu(win):

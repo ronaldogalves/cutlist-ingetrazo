@@ -54,3 +54,24 @@ def qt_app():
     for scope in (QSettings.Scope.UserScope, QSettings.Scope.SystemScope):
         QSettings.setPath(QSettings.Format.IniFormat, scope, settings_dir)
     return QApplication.instance() or QApplication(sys.argv[:1])
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Tear Qt down in order before the interpreter does: delete every
+    remaining top-level widget and empty the clipboard (a Python-owned
+    clipboard entry crashed IngeTrazo's own CI on exit)."""
+    if "PySide6.QtWidgets" not in sys.modules:
+        return                          # a pure run never started Qt
+    try:
+        from PySide6.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app is None:
+            return
+        for w in app.topLevelWidgets():
+            w.close()
+            w.deleteLater()
+        app.processEvents()
+        app.clipboard().clear()
+        app.processEvents()
+    except Exception:                   # noqa: BLE001 — teardown must not fail
+        pass

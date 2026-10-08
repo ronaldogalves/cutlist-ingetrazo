@@ -161,8 +161,8 @@ def test_first_use_asks_once(qt_app, tmp_path, monkeypatch, user_dir):
         refresh(w)
         assert len(shown) == 1                      # not asked again
     finally:
-        w._saved_version = w.viewport.scene.version
-        w.close()
+        from tests.host.conftest import close_window
+        close_window(w)
 
 
 def test_materials_dialog_edits(qt_app, win):

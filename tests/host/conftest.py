@@ -31,6 +31,36 @@ def first_run_done(user_dir):
     return user_dir
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _no_stray_autosave():
+    """Every MainWindow arms IngeTrazo's 5-minute autosave timer; in a long
+    run it fires inside later tests over half-torn-down windows (IngeTrazo's
+    own suite hit this, see its tests/conftest.py). Armed, then stopped."""
+    from views.main_window import MainWindow
+    original = MainWindow._setup_autosave
+
+    def armed_but_stopped(self):
+        original(self)
+        timer = getattr(self, "_autosave_timer", None)
+        if timer is not None:
+            timer.stop()
+
+    MainWindow._setup_autosave = armed_but_stopped
+    yield
+    MainWindow._setup_autosave = original
+
+
+def close_window(w) -> None:
+    """Close AND delete a test window now, while Qt is fully alive: left
+    to the interpreter's exit, windows torn down after QApplication made
+    the CI run pass every test and then crash (exit 139, 2026-10-08)."""
+    from PySide6.QtWidgets import QApplication
+    w._saved_version = w.viewport.scene.version      # no "save?" modal
+    w.close()
+    w.deleteLater()
+    QApplication.processEvents()
+
+
 @pytest.fixture
 def win(qt_app, tmp_path, monkeypatch, first_run_done):
     import core.extensions as extensions
@@ -44,8 +74,7 @@ def win(qt_app, tmp_path, monkeypatch, first_run_done):
     from views.main_window import MainWindow
     w = MainWindow()
     yield w
-    w._saved_version = w.viewport.scene.version
-    w.close()
+    close_window(w)
 
 
 def panel_of(win):

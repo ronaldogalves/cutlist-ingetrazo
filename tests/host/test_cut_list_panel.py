@@ -117,8 +117,11 @@ def test_column_widths_are_remembered(win):
     from views.main_window import MainWindow  # noqa: F401 — same settings
     state = QSettings().value(panel.HEADER_KEY)
     assert state is not None
-    other = type(panel)()
-    assert other.tree.columnWidth(0) == 333
+    other = type(panel)(win)                # parented: torn down with it
+    try:
+        assert other.tree.columnWidth(0) == 333
+    finally:
+        other.deleteLater()
 
 
 def test_a_new_document_has_no_parts(win):
