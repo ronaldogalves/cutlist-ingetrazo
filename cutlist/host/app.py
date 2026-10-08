@@ -71,20 +71,38 @@ def fmt_sheet_area(square_metres: float) -> str:
     return f"{square_metres:.2f} m²"
 
 
-def length_formatter(settings: Settings):
-    """Lengths in the cut list's units: the model's (IngeTrazo's own
-    formatting, at least to the millimetre) or the one set in Settings."""
-    from core.units import fmt_len_fine, format_length
-    unit = settings.unit
-    if unit is None:
-        return fmt_len_fine
+#: Units whose numbers read fine bare, and metres per unit. Feet-and-inch
+#: and fractional forms keep their marks: they are part of the number.
+_BARE = {"mm": 0.001, "cm": 0.01, "m": 1.0, "in": 0.0254, "ft": 0.3048}
+
+
+def length_formats(settings: Settings):
+    """``(cell, full, unit)``: how a size is written in a table cell, how
+    it is written in running text, and the unit for the column titles
+    (``None`` when the cells carry it themselves).
+
+    The unit is the model's (at least to the millimetre, as IngeTrazo's
+    ``fmt_len_fine``) or the one set in Settings."""
+    from core.units import fine_precision, format_length, model_unit
+    unit = settings.unit or model_unit()
     precision = settings.precision
+    if precision is None and settings.unit is None:
+        precision = fine_precision()
     if precision is None:
         fine = settings.tolerance < 0.001
         precision = {"mm": 1 if fine else 0, "cm": 2 if fine else 1,
-                     "m": 3, "in": 2, "in-frac": 3, "ft-in": 2,
+                     "m": 3, "in": 2, "ft": 3, "in-frac": 3, "ft-in": 2,
                      "ft-in-frac": 3}.get(unit, 2)
-    return lambda metres: format_length(float(metres), unit, precision)
+
+    def full(metres):
+        return format_length(float(metres), unit, precision)
+    if settings.units_in_cells or unit not in _BARE:
+        return full, full, None
+    per = _BARE[unit]
+
+    def cell(metres):
+        return f"{float(metres) / per:.{precision}f}"
+    return cell, full, unit
 
 
 def renamed(parts: list[RawPart], numbers: dict[str, int]) -> list[RawPart]:
@@ -131,7 +149,7 @@ class Controller:
         self._starting = True
         from PySide6.QtCore import QTimer
         QTimer.singleShot(0, self._started)
-        panel.set_formatters(length_formatter(Settings()), fmt_sheet_area)
+        panel.set_formatters(*length_formats(Settings()), fmt_sheet_area)
         panel.refresh_requested.connect(lambda: self.refresh(ask=True))
         panel.highlight_requested.connect(self.set_highlight)
         panel.tags_changed.connect(self.set_excluded_tags)
@@ -164,7 +182,7 @@ class Controller:
                      for r in renamed(ex.parts, numbers)]
             cut_list = build(parts, settings.tolerance,
                              by_name=not settings.merge_by_size)
-            self.panel.set_formatters(length_formatter(settings),
+            self.panel.set_formatters(*length_formats(settings),
                                       fmt_sheet_area)
         except Exception as exc:                # noqa: BLE001 — UI boundary
             self._failed(exc, tr("Cut List could not read the model: "

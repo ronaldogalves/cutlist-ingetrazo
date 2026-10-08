@@ -103,7 +103,9 @@ class CutListPanel(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("cutlist_panel")
-        self._fmt_len: Callable[[float], str] = lambda m: f"{m * 1000:.0f} mm"
+        self._fmt_len: Callable[[float], str] = lambda m: f"{m * 1000:.0f}"
+        self._fmt_full: Callable[[float], str] = \
+            lambda m: f"{m * 1000:.0f} mm"
         self._fmt_area: Callable[[float], str] = lambda a: f"{a:.2f} m²"
         self._tags: list[str] = []
         self._excluded_tags: set[str] = set()
@@ -165,9 +167,7 @@ class CutListPanel(QWidget):
 
         self.tree = QTreeWidget()
         self.tree.setObjectName("cutlist_tree")
-        self.tree.setHeaderLabels([
-            tr("Name"), tr("Qty"), tr("Length"), tr("Width"),
-            tr("Thickness"), tr("Edges"), tr("Faces"), tr("Notes")])
+        self._set_headers("mm")
         self.tree.setAlternatingRowColors(True)
         self.tree.setUniformRowHeights(True)
         self.tree.setSelectionMode(
@@ -232,8 +232,21 @@ class CutListPanel(QWidget):
         self._save_header()
 
     # ---- set up by the host --------------------------------------------
-    def set_formatters(self, fmt_len, fmt_area) -> None:
-        self._fmt_len, self._fmt_area = fmt_len, fmt_area
+    def set_formatters(self, fmt_cell, fmt_full, unit, fmt_area) -> None:
+        """``fmt_cell`` writes sizes in the table, ``fmt_full`` in titles
+        and text; ``unit`` goes in the column titles (``None``: the cells
+        carry their own)."""
+        self._fmt_len, self._fmt_full, self._fmt_area = \
+            fmt_cell, fmt_full, fmt_area
+        self._set_headers(unit)
+
+    def _set_headers(self, unit: str | None) -> None:
+        def sized(title):
+            return tr("{title} ({unit})", title=title, unit=unit) \
+                if unit else title
+        self.tree.setHeaderLabels([
+            tr("Name"), tr("Qty"), sized(tr("Length")), sized(tr("Width")),
+            sized(tr("Thickness")), tr("Edges"), tr("Faces"), tr("Notes")])
 
     def set_merge(self, on: bool) -> None:
         """Show the setting without emitting ``merge_changed``."""
@@ -274,7 +287,7 @@ class CutListPanel(QWidget):
                       not_components: int = 0, notices=()) -> None:
         self.placeholder.hide()
         self.set_stale(False)
-        fl, fa = self._fmt_len, self._fmt_area
+        fa = self._fmt_area
         if scope == "selection":
             text = tr("Selection: {n} parts", n=cl.qty)
         else:
@@ -290,7 +303,8 @@ class CutListPanel(QWidget):
         for section in cl.sections:
             title = tr("{material} · {thickness} — {n} parts · {area}",
                        material=section.material or tr("(no material)"),
-                       thickness=fl(section.thickness), n=section.qty,
+                       thickness=self._fmt_full(section.thickness),
+                       n=section.qty,
                        area=fa(section.area))
             top = self._header(title)
             top.setData(0, UIDS, [u for ln in section.lines for u in ln.uids])

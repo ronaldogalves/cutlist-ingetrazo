@@ -24,6 +24,8 @@ class Settings:
     #: Sizes are rounded to this step before merging and display
     #: (metres) — see ``grouping.quantize``.
     tolerance: float = 0.001
+    #: Repeat the unit after every size (False: once, in the column title).
+    units_in_cells: bool = False
     #: One line per size, whatever the names (False: names kept apart).
     merge_by_size: bool = True
     #: Read the selection when there is one (else always the whole model).

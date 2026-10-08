@@ -157,7 +157,8 @@ class Store:
         return resolve(self.user_data().get("settings"))
 
     #: How the user works, not what a model is: always in their defaults.
-    USER_ONLY = ("scope_asked", "merge_by_size", "use_selection")
+    USER_ONLY = ("scope_asked", "merge_by_size", "use_selection",
+                 "units_in_cells")
 
     def save_settings(self, settings: Settings, *, remember: bool) -> None:
         """The model keeps what differs from the user's defaults (one undo

@@ -110,7 +110,26 @@ def test_units_of_the_cut_list(win):
     store(win).save_model_setting(unit="mm")
     panel = refresh(win)
     side = lines(panel)[0][1]
-    assert side[2:5] == ["600 mm", "400 mm", "18 mm"]
+    assert side[2:5] == ["600", "400", "18"]
+    header = panel.tree.headerItem()
+    assert header.text(2) == "Length (mm)"
+    assert "18 mm" in panel.tree.topLevelItem(0).text(0)
+
+    store(win).save_user_setting(units_in_cells=True)
+    panel = refresh(win)
+    assert lines(panel)[0][1][2] == "600 mm"
+    assert panel.tree.headerItem().text(2) == "Length"
+
+
+def test_feet_and_inches_keep_their_marks(win):
+    win.viewport.scene.groups += [board(0.4572, 0.3048, 0.01905,
+                                        name="Shelf")]
+    store(win).save_model_setting(unit="ft-in-frac")
+    panel = refresh(win)
+    row = lines(panel)[0][1]
+    # IngeTrazo's own feet-and-inches writing: 3/4" reads 0'3/4".
+    assert row[2] == "1'6\"" and row[4] == "0'3/4\""
+    assert panel.tree.headerItem().text(2) == "Length"
 
 
 def test_first_use_asks_once(qt_app, tmp_path, monkeypatch, user_dir):

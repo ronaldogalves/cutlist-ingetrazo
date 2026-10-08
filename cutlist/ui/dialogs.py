@@ -392,6 +392,12 @@ class SettingsDialog(QDialog):
             "and shown: at 1 mm, a 17.98 mm board reads 18 mm and merges "
             "with the other 18 mm ones."))
         rform.addRow(tr("Round sizes to"), self.tolerance)
+        self.units_in_cells = QCheckBox(tr("Show the unit after every "
+                                           "size"))
+        self.units_in_cells.setToolTip(tr("Off: the unit is written once, "
+                                          "in the column titles."))
+        self.units_in_cells.setChecked(settings.units_in_cells)
+        rform.addRow("", self.units_in_cells)
         self.merge = QCheckBox(tr("Merge parts of the same size whatever "
                                   "their names"))
         self.merge.setChecked(settings.merge_by_size)
@@ -438,6 +444,7 @@ class SettingsDialog(QDialog):
             precision=None if precision < 0 else precision,
             tolerance=self.tolerance.value() * MM,
             merge_by_size=self.merge.isChecked(),
+            units_in_cells=self.units_in_cells.isChecked(),
             use_selection=self.use_selection.isChecked(),
             include_groups=self.include_groups.isChecked(),
             excluded_tags=excluded,
