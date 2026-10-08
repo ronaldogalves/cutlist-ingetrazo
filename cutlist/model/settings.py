@@ -21,7 +21,8 @@ class Settings:
     unit: str | None = None
     #: Decimals (fractional units: the denominator code); ``None``: default.
     precision: int | None = None
-    #: Sizes this close are one size (metres).
+    #: Sizes are rounded to this step before merging and display
+    #: (metres) — see ``grouping.quantize``.
     tolerance: float = 0.001
     #: One line per size, whatever the names (False: names kept apart).
     merge_by_size: bool = True

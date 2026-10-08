@@ -387,7 +387,11 @@ class SettingsDialog(QDialog):
         self.tolerance.setSingleStep(0.5)
         self.tolerance.setSuffix(" mm")
         self.tolerance.setValue(settings.tolerance / MM)
-        rform.addRow(tr("Same size within"), self.tolerance)
+        self.tolerance.setToolTip(tr(
+            "Every size is rounded to this step before parts are compared "
+            "and shown: at 1 mm, a 17.98 mm board reads 18 mm and merges "
+            "with the other 18 mm ones."))
+        rform.addRow(tr("Round sizes to"), self.tolerance)
         self.merge = QCheckBox(tr("Merge parts of the same size whatever "
                                   "their names"))
         self.merge.setChecked(settings.merge_by_size)
