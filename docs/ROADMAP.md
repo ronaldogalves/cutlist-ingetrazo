@@ -40,21 +40,21 @@ yet deducted, totalled or laid out). Built in three visible steps.
       line highlights its parts in the viewport.
 
 **Step B — settings that stay**
-- [ ] `host/store.py`: document data and `group.ext` with `schema: 1`;
+- [x] `host/store.py`: document data and `group.ext` with `schema: 1`;
       every write one undo step (our own `Command`, D-007).
-- [ ] User defaults outside the document (material library, tolerance,
+- [x] User defaults outside the document (material library, tolerance,
       tag choices) and the cascade user → model → material → part.
-- [ ] Material library dialog: role per material, thicknesses, stock
+- [x] Material library dialog: role per material, thicknesses, stock
       sheets, grain, kerf, trim; covering/band thickness, oversize,
       deduction (stored, used later).
-- [ ] Per-part settings (right-click and from the list): grain, may
+- [x] Per-part settings (right-click and from the list): grain, may
       rotate, exclude, note, flip face 1.
-- [ ] Stable "Group #n" numbers stored with the parts (D-006 §8).
-- [ ] Settings window: **units** ("use the model's units" by default, or
+- [x] Stable "Group #n" numbers stored in the document by uid (D-008).
+- [x] Settings window: **units** ("use the model's units" by default, or
       the cut list's own unit and precision — an architectural model in
       metres still lists in mm), size tolerance, merge same size by
       default (Ronaldo, 2026-10-08).
-- [ ] Scope window on first use ("don't show again"), reachable from the
+- [x] Scope window on first use ("don't show again"), reachable from the
       panel; components-only option.
 
 **Step C — export**

@@ -3,22 +3,25 @@
 """Install the extension into a running IngeTrazo window.
 
 Builds the side-tray panel and our submenu in Extensions, and wires the
-panel to the scene through :class:`Controller`: Refresh reads the model,
-a click on a line highlights its parts in the viewport, an edit marks the
-list out of date. Recompute is on demand, never on every edit.
+panel to the scene through :class:`Controller`: Refresh reads the model
+with the settings in force, the dialogs change those settings, a click on
+a line highlights its parts in the viewport, an edit marks the list out of
+date. Recompute is on demand, never on every edit.
 """
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 
 import numpy as np
 
 from .. import i18n
 from ..i18n import tr
 from ..model.grouping import build
-from ..model.materials import Library
 from ..model.parts import RawPart, read_part
+from ..model.settings import Settings
 from .extract import extract
+from .store import Store
 
 log = logging.getLogger("cutlist")
 
@@ -28,6 +31,8 @@ PANEL_TITLE = "Cut List"
 
 #: Highlight colour for the parts of the selected lines.
 _HIGHLIGHT = (0, 150, 255)
+
+_IMPERIAL = ("in", "ft", "ft-in", "in-frac", "ft-in-frac")
 
 
 def install(app) -> None:
@@ -41,6 +46,7 @@ def install(app) -> None:
     dock = app.add_panel(tr(PANEL_TITLE), panel)
     controller = Controller(app, panel)
     dock.visibilityChanged.connect(controller.panel_shown)
+    app.add_context_menu(controller.viewport_menu)
     # Keep the controller alive as long as the panel.
     panel._controller = controller
 
@@ -49,29 +55,61 @@ def install(app) -> None:
         action = menu.addAction(tr("Show the cut list panel"))
         action.setStatusTip(tr("Bring the Cut List tab to the front."))
         action.triggered.connect(lambda _checked=False: app.show_panel(dock))
+        menu.addAction(tr("Materials…")).triggered.connect(
+            lambda _c=False: controller.open_materials(None))
+        menu.addAction(tr("Settings…")).triggered.connect(
+            lambda _c=False: controller.open_settings())
     log.info("Cut List installed (key %r)", app.key)
-
-
-def number_auto_named(parts: list[RawPart]) -> list[RawPart]:
-    """Give parts that only have IngeTrazo's automatic name a "Group #n".
-
-    For now the numbers follow the parts' uids, so they hold while the
-    same parts exist; storing them in the document (D-006 §8) comes with
-    the per-part settings."""
-    from dataclasses import replace
-    auto = sorted(p.uid for p in parts if p.auto_named)
-    number = {uid: i for i, uid in enumerate(auto, start=1)}
-    return [replace(p, name=tr("Group #{n}", n=number[p.uid]))
-            if p.uid in number else p for p in parts]
 
 
 def fmt_sheet_area(square_metres: float) -> str:
     """Board area the way it is bought: m² (ft² in imperial models) —
     never mm², whatever the model's length unit."""
     from core.units import model_unit
-    if model_unit() in ("in", "ft", "ft-in", "in-frac", "ft-in-frac"):
+    if model_unit() in _IMPERIAL:
         return f"{square_metres / 0.09290304:.2f} ft²"
     return f"{square_metres:.2f} m²"
+
+
+def length_formatter(settings: Settings):
+    """Lengths in the cut list's units: the model's (IngeTrazo's own
+    formatting, at least to the millimetre) or the one set in Settings."""
+    from core.units import fmt_len_fine, format_length
+    unit = settings.unit
+    if unit is None:
+        return fmt_len_fine
+    precision = settings.precision
+    if precision is None:
+        fine = settings.tolerance < 0.001
+        precision = {"mm": 1 if fine else 0, "cm": 2 if fine else 1,
+                     "m": 3, "in": 2, "in-frac": 3, "ft-in": 2,
+                     "ft-in-frac": 3}.get(unit, 2)
+    return lambda metres: format_length(float(metres), unit, precision)
+
+
+def renamed(parts: list[RawPart], numbers: dict[str, int]) -> list[RawPart]:
+    """Parts that only have IngeTrazo's automatic name become "Group #n",
+    with the number stored for them (D-008)."""
+    return [replace(p, name=tr("Group #{n}", n=numbers[p.uid]))
+            if p.uid in numbers else p for p in parts]
+
+
+def leaf_parts(groups) -> list:
+    """The parts (leaf containers with faces) in or under ``groups``."""
+    out, seen = [], set()
+
+    def walk(g):
+        kids = list(getattr(g, "children", None) or ())
+        if kids:
+            for c in kids:
+                walk(c)
+        elif getattr(g, "mesh", None) is not None and g.mesh.faces \
+                and id(g) not in seen:
+            seen.add(id(g))
+            out.append(g)
+    for g in groups:
+        walk(g)
+    return out
 
 
 class Controller:
@@ -81,48 +119,80 @@ class Controller:
     def __init__(self, app, panel) -> None:
         self.app = app
         self.panel = panel
-        self.excluded_tags: frozenset[str] = frozenset()
-        self.merge_by_size = True
+        self.store = Store(app)
         self.highlight: list[str] = []
         self.outlines: dict = {}
+        self.groups: dict = {}
+        self.materials_seen: set[str] = set()
+        self.tags_seen: set[str] = set()
         self.stale = True
-        from core.units import fmt_len_fine
-        panel.set_formatters(fmt_len_fine, fmt_sheet_area)
-        panel.refresh_requested.connect(self.refresh)
+        # While IngeTrazo builds its window the panel may "show": no
+        # reading (and no questions) until the app is actually running.
+        self._starting = True
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._started)
+        panel.set_formatters(length_formatter(Settings()), fmt_sheet_area)
+        panel.refresh_requested.connect(lambda: self.refresh(ask=True))
         panel.highlight_requested.connect(self.set_highlight)
         panel.tags_changed.connect(self.set_excluded_tags)
         panel.merge_changed.connect(self.set_merge)
+        panel.materials_requested.connect(self.open_materials)
+        panel.settings_requested.connect(self.open_settings)
+        panel.part_settings_requested.connect(self.open_part_settings)
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
+    def _started(self) -> None:
+        self._starting = False
+
     # ---- reading the model ---------------------------------------------
-    def refresh(self) -> None:
+    def refresh(self, ask: bool = False) -> None:
         try:
-            ex = extract(self.app.scene, excluded_tags=self.excluded_tags)
-            library = Library()
-            parts = [read_part(r, library)
-                     for r in number_auto_named(ex.parts)]
-            cut_list = build(parts, by_name=not self.merge_by_size)
+            settings = self.store.settings()
+            if ask and not settings.scope_asked:
+                self.open_settings(first_run=True, then_refresh=False)
+                settings = self.store.settings()
+            ex = extract(self.app.scene,
+                         use_selection=settings.use_selection,
+                         excluded_tags=frozenset(settings.excluded_tags),
+                         include_groups=settings.include_groups)
+            library = self.store.library()
+            overrides = self.store.overrides(ex.groups.values())
+            numbers = self.store.numbers(
+                [r.uid for r in ex.parts if r.auto_named])
+            parts = [read_part(r, library, overrides.get(r.uid))
+                     for r in renamed(ex.parts, numbers)]
+            cut_list = build(parts, settings.tolerance,
+                             by_name=not settings.merge_by_size)
+            self.panel.set_formatters(length_formatter(settings),
+                                      fmt_sheet_area)
         except Exception as exc:                # noqa: BLE001 — UI boundary
-            log.exception("reading the model failed")
-            self._status(tr("Cut List could not read the model: {error}",
-                            error=f"{type(exc).__name__}: {exc}"))
+            self._failed(exc, tr("Cut List could not read the model: "
+                                 "{error}", error=f"{type(exc).__name__}: "
+                                                  f"{exc}"))
             return
         self.outlines = ex.outlines
+        self.groups = ex.groups
+        self.materials_seen = ex.materials
+        self.tags_seen = ex.tags
         self.highlight = []
-        self.panel.set_tags(ex.tags, self.excluded_tags)
+        self.panel.set_tags(ex.tags, settings.excluded_tags)
+        self.panel.set_merge(settings.merge_by_size)
         self.panel.show_cut_list(cut_list, scope=ex.scope,
                                  filtered_out=ex.filtered_out,
+                                 not_components=ex.not_components,
                                  notices=ex.notices)
         self.stale = False
         self.app.viewport.update()
 
     def set_excluded_tags(self, tags) -> None:
-        self.excluded_tags = frozenset(tags)
+        self._guard(lambda: self.store.save_model_setting(
+            excluded_tags=tuple(sorted(tags))))
         self.refresh()
 
     def set_merge(self, by_size: bool) -> None:
-        self.merge_by_size = bool(by_size)
+        self._guard(lambda: self.store.save_user_setting(
+            merge_by_size=bool(by_size)))
         self.refresh()
 
     def document_changed(self) -> None:
@@ -133,8 +203,73 @@ class Controller:
             self.app.viewport.update()
 
     def panel_shown(self, visible: bool) -> None:
-        if visible and self.stale:
+        if visible and self.stale and not self._starting:
+            self.refresh(ask=True)
+
+    # ---- dialogs ---------------------------------------------------------
+    def open_materials(self, focus=None) -> None:
+        from ..ui.dialogs import MaterialsDialog
+
+        def run():
+            library = self.store.library()
+            dlg = MaterialsDialog(set(self.materials_seen), library, focus,
+                                  parent=self.app.window)
+            if dlg.exec() and dlg.result_specs():
+                self.store.save_materials(
+                    dlg.result_specs(), remember=dlg.remember.isChecked())
+                return True
+            return False
+        if self._guard(run):
             self.refresh()
+
+    def open_settings(self, first_run: bool = False,
+                      then_refresh: bool = True) -> None:
+        from ..ui.dialogs import SettingsDialog
+
+        def run():
+            dlg = SettingsDialog(self.store.settings(), self.tags_seen,
+                                 first_run=first_run, parent=self.app.window)
+            if dlg.exec():
+                self.store.save_settings(dlg.result(),
+                                         remember=dlg.remember.isChecked())
+                return True
+            return False
+        if self._guard(run) and then_refresh:
+            self.refresh()
+
+    def open_part_settings(self, uids) -> None:
+        self.open_part_settings_for([self.groups[u] for u in uids
+                                     if u in self.groups])
+
+    def open_part_settings_for(self, groups) -> None:
+        if not groups:
+            return
+        from ..ui.dialogs import PartDialog
+
+        def run():
+            overrides = self.store.overrides(groups)
+            first = overrides[groups[0].uid]
+            dlg = PartDialog(first, len(groups), title=groups[0].name,
+                             parent=self.app.window)
+            if dlg.exec():
+                result = dlg.result()
+                return self.store.set_overrides({g: result for g in groups})
+            return False
+        if self._guard(run):
+            self.refresh()
+
+    def viewport_menu(self, menu, selection) -> None:
+        """Right-click in the viewport: part settings for the selected
+        parts (the boards inside a selected cabinet too)."""
+        from core.group import Group
+        parts = leaf_parts([e for e in selection if isinstance(e, Group)])
+        if not parts:
+            return
+        from PySide6.QtCore import QTimer
+        menu.addSeparator()
+        act = menu.addAction(tr("Cut List: part settings…"))
+        act.triggered.connect(lambda _c=False: QTimer.singleShot(
+            0, lambda: self.open_part_settings_for(parts)))
 
     # ---- the viewport highlight ----------------------------------------
     def set_highlight(self, uids) -> None:
@@ -161,7 +296,17 @@ class Controller:
         painter.drawLines([QLineF(a, b, c, d)
                            for a, b, c, d in zip(x0, y0, x1, y1, strict=True)])
 
-    def _status(self, message: str) -> None:
+    # ---- failures ----------------------------------------------------------
+    def _guard(self, fn):
+        try:
+            return fn()
+        except Exception as exc:                # noqa: BLE001 — UI boundary
+            self._failed(exc, tr("Cut List: something went wrong: {error}",
+                                 error=f"{type(exc).__name__}: {exc}"))
+            return None
+
+    def _failed(self, exc, message: str) -> None:
+        log.error("%s", message, exc_info=exc)
         flash = getattr(self.app.viewport, "flash_status", None)
         if callable(flash):
             flash(message, 6000)

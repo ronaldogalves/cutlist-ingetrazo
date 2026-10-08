@@ -43,6 +43,12 @@ class Extraction:
     tags: set[str] = field(default_factory=set)
     #: Parts left out by the tag filter.
     filtered_out: int = 0
+    #: Plain groups left out because only components were asked for.
+    not_components: int = 0
+    #: uid → the IngeTrazo group of every part found (for its settings).
+    groups: dict = field(default_factory=dict)
+    #: Every material seen on the parts' faces (for the material library).
+    materials: set[str] = field(default_factory=set)
     #: uid → list of world edge segments ``(N, 2, 3)`` for the highlight.
     outlines: dict[str, np.ndarray] = field(default_factory=dict)
 
@@ -90,7 +96,7 @@ def _positions(vectors) -> np.ndarray:
 
 
 def extract(scene, *, use_selection: bool = True,
-            excluded_tags: frozenset[str] = frozenset(),
+            excluded_tags=frozenset(), include_groups: bool = True,
             outline_uids=None) -> Extraction:
     """The parts in scope. ``excluded_tags`` leaves out parts by tag;
     ``outline_uids`` (a set, or ``None`` for all) chooses which parts keep
@@ -110,7 +116,10 @@ def extract(scene, *, use_selection: bool = True,
         roots = list(scene.groups)
 
     def visible(g) -> bool:
-        return scene.entity_visible(g) and not getattr(g, "hidden", False)
+        """Drawn, and not a face-me billboard (the scale figure every new
+        document starts with is one: a picture, not a part)."""
+        return (scene.entity_visible(g) and not getattr(g, "hidden", False)
+                and not getattr(g, "billboard", False))
 
     def walk(g, world, inherited_paint, inherited_tag):
         if not visible(g):
@@ -134,6 +143,9 @@ def extract(scene, *, use_selection: bool = True,
         if tag in excluded_tags:
             out.filtered_out += 1
             return
+        if not include_groups and not g.is_component():
+            out.not_components += 1
+            return
         inherited_label = _label(paint)
         faces = []
         for f in own:
@@ -144,10 +156,13 @@ def extract(scene, *, use_selection: bool = True,
             holes = tuple(tuple(map(tuple, _apply(world, _positions(h))))
                           for h in f.holes)
             faces.append(FaceIn(tuple(map(tuple, loop)), material, holes))
+            if material is not None:
+                out.materials.add(material)
         out.parts.append(RawPart(
             uid=g.uid, name=g.name, faces=tuple(faces), tag=tag,
             is_component=g.is_component(),
             auto_named=bool(_AUTO_NAME.match(g.name or ""))))
+        out.groups[g.uid] = g
         if outline_uids is None or g.uid in outline_uids:
             out.outlines[g.uid] = _edges(g, world)
 

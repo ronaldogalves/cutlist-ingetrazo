@@ -30,6 +30,10 @@ from ..model.grouping import CutList, CutListLine
 from ..model.parts import EDGES, Excluded, Flag, Part
 
 UIDS = Qt.ItemDataRole.UserRole
+#: On rows that stand for a material (sections, "no role yet").
+MATERIAL = Qt.ItemDataRole.UserRole + 1
+#: On rows of real parts (lines, flagged and excluded parts).
+PARTS = Qt.ItemDataRole.UserRole + 2
 
 
 def flag_text(flag: Flag) -> str:
@@ -84,6 +88,11 @@ class CutListPanel(QWidget):
     tags_changed = Signal(object)
     #: True: one line per size (cutting); False: names kept apart.
     merge_changed = Signal(bool)
+    #: Open the material library, on this material name (or None).
+    materials_requested = Signal(object)
+    settings_requested = Signal()
+    #: Open the part settings for these part uids.
+    part_settings_requested = Signal(object)
 
     #: Where the column widths are remembered (a per-user convenience).
     HEADER_KEY = "cutlist/panel_header"
@@ -129,6 +138,17 @@ class CutListPanel(QWidget):
         self.merge_button.toggled.connect(self.merge_changed)
         bar.addWidget(self.merge_button)
         bar.addStretch(1)
+        self.materials_button = QPushButton(tr("Materials…"))
+        self.materials_button.setObjectName("cutlist_materials")
+        self.materials_button.setToolTip(tr("Say what each material is: "
+                                            "board, covering, edge band…"))
+        self.materials_button.clicked.connect(
+            lambda: self.materials_requested.emit(None))
+        bar.addWidget(self.materials_button)
+        self.settings_button = QPushButton(tr("Settings…"))
+        self.settings_button.setObjectName("cutlist_settings")
+        self.settings_button.clicked.connect(self.settings_requested)
+        bar.addWidget(self.settings_button)
         layout.addLayout(bar)
 
         self.scope_label = QLabel()
@@ -159,6 +179,9 @@ class CutListPanel(QWidget):
         self._widths_restored = self._restore_header()
         header.sectionResized.connect(self._save_header)
         self.tree.itemSelectionChanged.connect(self._on_selection)
+        self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tree.customContextMenuRequested.connect(self._context_menu)
+        self.tree.itemDoubleClicked.connect(self._double_clicked)
         layout.addWidget(self.tree, 1)
 
         self.summary_label = QLabel()
@@ -212,6 +235,12 @@ class CutListPanel(QWidget):
     def set_formatters(self, fmt_len, fmt_area) -> None:
         self._fmt_len, self._fmt_area = fmt_len, fmt_area
 
+    def set_merge(self, on: bool) -> None:
+        """Show the setting without emitting ``merge_changed``."""
+        self.merge_button.blockSignals(True)
+        self.merge_button.setChecked(on)
+        self.merge_button.blockSignals(False)
+
     def set_stale(self, stale: bool) -> None:
         self.stale_label.setVisible(stale)
 
@@ -242,7 +271,7 @@ class CutListPanel(QWidget):
 
     # ---- the list ------------------------------------------------------
     def show_cut_list(self, cl: CutList, *, scope: str, filtered_out: int = 0,
-                      notices=()) -> None:
+                      not_components: int = 0, notices=()) -> None:
         self.placeholder.hide()
         self.set_stale(False)
         fl, fa = self._fmt_len, self._fmt_area
@@ -252,6 +281,9 @@ class CutListPanel(QWidget):
             text = tr("Whole model: {n} parts", n=cl.qty)
         if filtered_out:
             text += " · " + tr("{n} left out by tag", n=filtered_out)
+        if not_components:
+            text += " · " + tr("{n} groups left out (components only)",
+                               n=not_components)
         self.scope_label.setText(text)
 
         self.tree.clear()
@@ -262,6 +294,7 @@ class CutListPanel(QWidget):
                        area=fa(section.area))
             top = self._header(title)
             top.setData(0, UIDS, [u for ln in section.lines for u in ln.uids])
+            top.setData(0, MATERIAL, section.material)
             for line in section.lines:
                 top.addChild(self._line_item(line))
             top.setExpanded(True)
@@ -276,6 +309,7 @@ class CutListPanel(QWidget):
                     str(count), "", "", "", "", "", "?"])
                 item.setToolTip(0, tr("Set it up: board, covering, edge "
                                       "band, appearance only or ignore."))
+                item.setData(0, MATERIAL, name)
                 top.addChild(item)
             for n in notices:
                 item = QTreeWidgetItem([n.name, "", "", "", "", "", "",
@@ -341,6 +375,7 @@ class CutListPanel(QWidget):
             item.setTextAlignment(c, Qt.AlignmentFlag.AlignRight
                                   | Qt.AlignmentFlag.AlignVCenter)
         item.setData(0, UIDS, list(line.uids))
+        item.setData(0, PARTS, True)
         if len(names) > 1:
             by_name: dict[str, list[str]] = {}
             for name, uid in zip(line.names, line.uids, strict=True):
@@ -351,6 +386,7 @@ class CutListPanel(QWidget):
                                        | Qt.AlignmentFlag.AlignVCenter)
                 child.setForeground(0, Qt.GlobalColor.darkGray)
                 child.setData(0, UIDS, by_name[name])
+                child.setData(0, PARTS, True)
                 item.addChild(child)
             item.setText(0, tr("{first} + {n} more names", first=names[0],
                                n=len(names) - 1))
@@ -362,7 +398,45 @@ class CutListPanel(QWidget):
                                 fl(p.thickness), "", "", label])
         item.setToolTip(7, why)
         item.setData(0, UIDS, [p.uid])
+        item.setData(0, PARTS, True)
+        if p.core:
+            item.setData(0, MATERIAL, p.core)
         return item
+
+    def _selected_part_uids(self) -> list[str]:
+        uids: list[str] = []
+        for item in self.tree.selectedItems():
+            if item.data(0, PARTS):
+                uids.extend(item.data(0, UIDS) or [])
+        return list(dict.fromkeys(uids))
+
+    def _context_menu(self, pos) -> None:
+        item = self.tree.itemAt(pos)
+        if item is None:
+            return
+        if not item.isSelected():
+            self.tree.setCurrentItem(item)
+        menu = QMenu(self.tree)
+        uids = self._selected_part_uids()
+        if uids:
+            act = menu.addAction(tr("Part settings…"))
+            act.triggered.connect(
+                lambda: self.part_settings_requested.emit(uids))
+        material = item.data(0, MATERIAL)
+        if material:
+            act = menu.addAction(tr("Set up material “{name}”…",
+                                    name=material))
+            act.triggered.connect(
+                lambda: self.materials_requested.emit(material))
+        if not menu.isEmpty():
+            menu.exec(self.tree.viewport().mapToGlobal(pos))
+
+    def _double_clicked(self, item, _column) -> None:
+        """A line opens its part settings; a material row its material."""
+        if item.data(0, PARTS):
+            self.part_settings_requested.emit(item.data(0, UIDS) or [])
+        elif item.data(0, MATERIAL) and item.parent() is not None:
+            self.materials_requested.emit(item.data(0, MATERIAL))
 
     def _on_selection(self) -> None:
         uids: list[str] = []

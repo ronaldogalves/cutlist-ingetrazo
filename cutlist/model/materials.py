@@ -57,6 +57,12 @@ class MaterialSpec:
     applied_over: str | None = None
     note: str = ""
 
+    def __post_init__(self) -> None:
+        # Qt widgets hand enum values back as plain strings: coerce, so
+        # ``spec.role is Role.IGNORE`` holds however the spec was made.
+        object.__setattr__(self, "role", Role(self.role))
+        object.__setattr__(self, "kind", BoardKind(self.kind))
+
     def to_dict(self) -> dict:
         d = asdict(self)
         d["role"] = str(self.role)

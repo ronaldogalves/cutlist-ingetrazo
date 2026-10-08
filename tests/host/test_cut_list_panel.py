@@ -4,56 +4,7 @@
 Refresh, and what the panel shows."""
 from __future__ import annotations
 
-import shutil
-import sys
-from pathlib import Path
-
-import pytest
-
-PACKAGE = Path(__file__).resolve().parents[2] / "cutlist"
-
-
-@pytest.fixture
-def win(qt_app, tmp_path, monkeypatch):
-    import core.extensions as extensions
-    shutil.copytree(PACKAGE, tmp_path / "cutlist",
-                    ignore=shutil.ignore_patterns("__pycache__"))
-    monkeypatch.setattr(extensions, "plugin_dirs", lambda: [tmp_path])
-    for name in [n for n in sys.modules
-                 if n.startswith("ingetrazo_plugin_cutlist")]:
-        monkeypatch.delitem(sys.modules, name)
-    from views.main_window import MainWindow
-    w = MainWindow()
-    yield w
-    w._saved_version = w.viewport.scene.version
-    w.close()
-
-
-def board(lx, ly, lz, at=(0, 0, 0), paint=None, default="MDF Branco",
-          name=None, layer=None):
-    """A painted box as an IngeTrazo group (classic group: world coords)."""
-    from core.group import Group
-    from core.mesh import Mesh
-    from PySide6.QtGui import QVector3D as V
-    x0, y0, z0 = at
-    x1, y1, z1 = x0 + lx, y0 + ly, z0 + lz
-    p = [V(x0, y0, z0), V(x1, y0, z0), V(x1, y1, z0), V(x0, y1, z0),
-         V(x0, y0, z1), V(x1, y0, z1), V(x1, y1, z1), V(x0, y1, z1)]
-    sides = {"T-": (0, 3, 2, 1), "T+": (4, 5, 6, 7), "W-": (0, 1, 5, 4),
-             "L+": (1, 2, 6, 5), "W+": (2, 3, 7, 6), "L-": (3, 0, 4, 7)}
-    mesh = Mesh()
-    paint = paint or {}
-    for loop in sides.values():
-        mesh.add_face([p[i] for i in loop])
-    for f in mesh.faces:
-        n = f.normal()
-        side = ("L" if abs(n.x()) > 0.5 else "W" if abs(n.y()) > 0.5
-                else "T") + ("+" if n.x() + n.y() + n.z() > 0 else "-")
-        mat = paint.get(side, default)
-        f.attrs = {"mat": mat, "color": (0.5, 0.5, 0.5)}
-    g = Group(mesh, name)
-    g.layer = layer
-    return g
+from tests.host.scenes import board
 
 
 def panel_of(win):
@@ -168,3 +119,10 @@ def test_column_widths_are_remembered(win):
     assert state is not None
     other = type(panel)()
     assert other.tree.columnWidth(0) == 333
+
+
+def test_a_new_document_has_no_parts(win):
+    """The scale figure of a new document is a billboard, not a part."""
+    panel = panel_of(win)
+    panel.refresh_button.click()
+    assert "0 parts" in panel.scope_label.text()

@@ -159,3 +159,16 @@ the bill of materials out of that painted model.
 Benchmark note: OpenCutList has edge-banding and veneer material types and
 band-thickness deduction; *Appearance only*, the per-model size
 convention and the cascade are ours.
+
+## D-008 — "Group #n" numbers live in the document, keyed by part uid
+
+*2026-10-08 · accepted · supersedes the storage part of D-006 §8*
+
+D-006 put a part's "Group #n" number in `group.ext["cutlist"]`. But
+`group.ext` travels with copies, so a copied part would carry the same
+number as its original. Numbers are kept instead in the document's
+extension data under `cutlist.numbers`, as `{uid: n}`: a copy has a new
+uid and gets its own number. Handing out a number is bookkeeping, not an
+edit: it is written without an undo step and without marking the
+document unsaved, and is saved with the next save. Numbers are given in
+model order and never reused.

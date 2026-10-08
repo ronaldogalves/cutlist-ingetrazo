@@ -70,6 +70,41 @@ class PartOverride:
     grain: str | None = None
     can_rotate: bool | None = None
 
+    def to_dict(self) -> dict:
+        """Only what differs from no override (what ``group.ext`` keeps)."""
+        d: dict = {"schema": 1}
+        if self.flip_face1:
+            d["flip_face1"] = True
+        if self.exclude:
+            d["exclude"] = True
+        if self.note:
+            d["note"] = self.note
+        if self.grain is not None:
+            d["grain"] = self.grain
+        if self.can_rotate is not None:
+            d["can_rotate"] = self.can_rotate
+        return d
+
+    @property
+    def is_empty(self) -> bool:
+        return self == PartOverride()
+
+    @classmethod
+    def from_dict(cls, d) -> PartOverride:
+        if not isinstance(d, dict):
+            return cls()
+        grain = d.get("grain")
+        rot = d.get("can_rotate")
+        return cls(flip_face1=bool(d.get("flip_face1", False)),
+                   exclude=bool(d.get("exclude", False)),
+                   note=str(d.get("note") or ""),
+                   grain=grain if grain in GRAINS else None,
+                   can_rotate=rot if isinstance(rot, bool) else None)
+
+
+#: Grain directions a part can be set to (``None`` = from its material).
+GRAINS = ("length", "width", "none")
+
 
 @dataclass(frozen=True)
 class Part:
