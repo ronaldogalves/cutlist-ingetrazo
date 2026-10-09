@@ -23,6 +23,10 @@ FIELDS = (
     "grain", "rotate", "note", "tag", "model", "face1", "face2",
 )
 LENGTH_FIELDS = ("length", "width", "thickness")
+#: Text options a column can apply, in this order: accents removed,
+#: UPPERCASE, spaces → underscores (for systems that want them).
+TEXT_OPTIONS = ("ascii", "upper", "underscores")
+
 FLAG_FIELDS = ("grain", "rotate", "band_c1_flag", "band_c2_flag",
                "band_l1_flag", "band_l2_flag")
 
@@ -54,6 +58,8 @@ class Column:
     numbers: Numbers | None = None      # None: the profile's
     yes: str = "1"
     no: str = "0"
+    #: Any of :data:`TEXT_OPTIONS`.
+    text: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -83,6 +89,8 @@ class Profile:
     def to_dict(self) -> dict:
         d = asdict(self)
         d["materials"] = list(self.materials)
+        for c in d["columns"]:
+            c["text"] = list(c["text"])
         d["schema"] = 1
         return d
 
@@ -146,7 +154,9 @@ def _column(d) -> Column | None:
                   value=str(d.get("value", "")),
                   hidden=bool(d.get("hidden", False)),
                   numbers=_numbers(d.get("numbers")),
-                  yes=str(d.get("yes", "1")), no=str(d.get("no", "0")))
+                  yes=str(d.get("yes", "1")), no=str(d.get("no", "0")),
+                  text=tuple(t for t in TEXT_OPTIONS
+                             if t in (d.get("text") or ())))
 
 
 def _codes(d) -> dict:

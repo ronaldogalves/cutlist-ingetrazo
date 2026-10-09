@@ -208,8 +208,8 @@ def test_one_row_per_piece_and_one_file_per_board():
                 filename="{model} - {material} {thickness}",
                 columns=(col("Qty", "qty"), col("Name", "name")))
     ex = make_rows(cl, parts, Library(), p, context={"model": "Kitchen"})
-    assert [f.name for f in ex.files] == ["Kitchen - Branco 6.csv",
-                                         "Kitchen - Branco 15.csv"]
+    assert [f.name for f in ex.files] == ["Kitchen_-_Branco_6.csv",
+                                         "Kitchen_-_Branco_15.csv"]
     assert [[c.text for c in r] for r in ex.files[1].rows] == \
         [["1", "Side"], ["1", "Side"]]
 
@@ -263,3 +263,24 @@ def test_profile_round_trip_and_leniency():
         {"kind": "eval", "value": "os.system('x')"}, {"value": "qty"}]})
     assert junk.encoding == Profile().encoding
     assert [c.value for c in junk.columns] == ["qty"]
+
+
+def test_file_names_are_always_safe():
+    from cutlist.export.rows import safe_stem
+    assert safe_stem("Família Souza - MDF Branco 15") == \
+        "Familia_Souza_-_MDF_Branco_15"
+    assert safe_stem('a/b:c*?"<>|  d') == "abc_d"
+    assert safe_stem("   ") == "cut_list"
+
+
+def test_values_are_tidied_and_text_options_apply():
+    cl, parts = cut(("a", "  Prateleira   do  meio ", 0.6, 0.3, 0.015,
+                     {"default": "Família ç"}, None))
+    p = Profile(columns=(
+        col("A", "name"),
+        col("B", "material", text=("ascii", "upper", "underscores")),
+        col("C", "material", text=("underscores",))))
+    ex = make_rows(cl, parts, Library(), p)
+    assert [c.text for c in ex.files[0].rows[0]] == \
+        ["Prateleira do meio", "FAMILIA_C", "Família_ç"]
+    assert Profile.from_dict(p.to_dict()) == p

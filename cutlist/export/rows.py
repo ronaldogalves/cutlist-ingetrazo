@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 import string
+import unicodedata
 from dataclasses import dataclass, field
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
@@ -81,6 +82,44 @@ def format_length(metres: float, numbers: Numbers) -> Cell:
     if numbers.suffix:
         text += f" {numbers.unit}"
     return Cell(text, float(value))
+
+
+# ---------------------------------------------------------------------------
+# Text
+# ---------------------------------------------------------------------------
+
+def tidy(text: str) -> str:
+    """Spaces trimmed at both ends and runs of spaces made one — always:
+    an invisible trailing space is the classic reason a name "does not
+    match" in a supplier's matching step, and nobody types one on
+    purpose."""
+    return re.sub(r"[ \t]{2,}", " ", (text or "").strip())
+
+
+def no_accents(text: str) -> str:
+    """"Família Souza" → "Familia Souza"; "ç" → "c"."""
+    return "".join(ch for ch in unicodedata.normalize("NFKD", text)
+                   if not unicodedata.combining(ch))
+
+
+def apply_text(text: str, options) -> str:
+    """A column's text options: accents off, UPPERCASE, spaces → "_"."""
+    if "ascii" in options:
+        text = no_accents(text)
+    if "upper" in options:
+        text = text.upper()
+    if "underscores" in options:
+        text = re.sub(r"\s+", "_", text)
+    return text
+
+
+def safe_stem(text: str) -> str:
+    """A file name every system and upload form takes (always, D-009):
+    no accents, spaces → "_", only letters, digits and ``_ - . ( )``."""
+    text = re.sub(r"\s+", "_", no_accents(tidy(text)))
+    text = re.sub(r"[^A-Za-z0-9_\-.()]", "", text)
+    text = re.sub(r"_{2,}", "_", text).strip("._-")
+    return text or "cut_list"
 
 
 # ---------------------------------------------------------------------------
@@ -236,12 +275,12 @@ def _file_name(profile: Profile, key, group, context, used: set) -> str:
         values.update(first.fields)
     if profile.split.startswith("field:"):
         values["value"] = str(key)
-    stem = fill(profile.filename or "{model}", values).strip() or "cut list"
-    stem = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", stem)
-    name = f"{stem}.{profile.extension.lstrip('.')}"
+    stem = safe_stem(fill(profile.filename or "{model}", values))
+    ext = safe_stem(profile.extension.lstrip(".")) or "csv"
+    name = f"{stem}.{ext}"
     n = 2
     while name.lower() in used:
-        name = f"{stem} ({n}).{profile.extension.lstrip('.')}"
+        name = f"{stem}_({n}).{ext}"
         n += 1
     used.add(name.lower())
     return name
@@ -249,6 +288,14 @@ def _file_name(profile: Profile, key, group, context, used: set) -> str:
 
 def _cell(col: Column, unit: list[_Piece], profile: Profile,
           library: Library, context: dict, problem) -> Cell:
+    """A column's value, tidied and with its text options applied."""
+    cell = _raw_cell(col, unit, profile, library, context, problem)
+    text = apply_text(tidy(cell.text), col.text)
+    return cell if text == cell.text else Cell(text, cell.number)
+
+
+def _raw_cell(col: Column, unit: list[_Piece], profile: Profile,
+              library: Library, context: dict, problem) -> Cell:
     if col.kind == "text":
         return Cell(col.value)
     first = unit[0]

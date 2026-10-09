@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -32,11 +33,12 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from ..export.profile import FIELDS, Column, Numbers, Profile
+from ..export.profile import FIELDS, TEXT_OPTIONS, Column, Numbers, Profile
 from ..export.rows import Export
 from ..export.writers import clipboard_text, text_lines, unencodable
 from ..i18n import tr
@@ -67,6 +69,11 @@ def field_label(name: str) -> str:
         "tag": tr("Tag"), "model": tr("Model name"),
         "face1": tr("Covering on face 1"), "face2": tr("Covering on face 2"),
     }.get(name, name)
+
+
+def text_option_label(option: str) -> str:
+    return {"ascii": tr("No accents"), "upper": tr("UPPERCASE"),
+            "underscores": tr("Spaces → _")}[option]
 
 
 def problem_text(kind: str, value: str, count: int) -> str:
@@ -188,11 +195,11 @@ class ExportDialog(QDialog):
     def _columns_tab(self) -> QWidget:
         w = QWidget()
         box = QVBoxLayout(w)
-        self.columns = QTableWidget(0, 6)
+        self.columns = QTableWidget(0, 7)
         self.columns.setObjectName("cutlist_export_columns")
         self.columns.setHorizontalHeaderLabels([
             tr("Header"), tr("Shows"), tr("Field, text or template"),
-            tr("Yes"), tr("No"), tr("Hidden")])
+            tr("Yes"), tr("No"), tr("Text"), tr("Hidden")])
         self.columns.horizontalHeader().setStretchLastSection(False)
         self.columns.setColumnWidth(0, 160)
         self.columns.setColumnWidth(1, 110)
@@ -403,11 +410,44 @@ class ExportDialog(QDialog):
         self._value_widget(r, c.kind, c.value)
         self.columns.setItem(r, 3, QTableWidgetItem(c.yes))
         self.columns.setItem(r, 4, QTableWidgetItem(c.no))
+        self.columns.setCellWidget(r, 5, self._text_button(c.text))
         hidden = QTableWidgetItem()
         hidden.setFlags(hidden.flags() | Qt.ItemFlag.ItemIsUserCheckable)
         hidden.setCheckState(Qt.CheckState.Checked if c.hidden
                              else Qt.CheckState.Unchecked)
-        self.columns.setItem(r, 5, hidden)
+        self.columns.setItem(r, 6, hidden)
+
+    def _text_button(self, options) -> QToolButton:
+        """Text options of one column, ticked in a small menu; the button
+        names what is on ("UPPERCASE, Spaces → _") or "As is"."""
+        button = QToolButton()
+        button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        menu = QMenu(button)
+        for option in TEXT_OPTIONS:
+            act = menu.addAction(text_option_label(option))
+            act.setCheckable(True)
+            act.setChecked(option in options)
+            act.setData(option)
+            act.toggled.connect(lambda _on, b=button: self._text_changed(b))
+        button.setMenu(menu)
+        self._label_text_button(button)
+        return button
+
+    @staticmethod
+    def _text_options(button) -> tuple[str, ...]:
+        if button is None:
+            return ()
+        return tuple(a.data() for a in button.menu().actions()
+                     if a.isChecked())
+
+    def _label_text_button(self, button) -> None:
+        on = self._text_options(button)
+        button.setText(", ".join(text_option_label(o) for o in on)
+                       if on else tr("As is"))
+
+    def _text_changed(self, button) -> None:
+        self._label_text_button(button)
+        self._edited()
 
     def _value_widget(self, r: int, kind: str, value: str) -> None:
         if kind == "field":
@@ -461,10 +501,11 @@ class ExportDialog(QDialog):
             value_widget = self.columns.cellWidget(r, 2)
             value = value_widget.currentData() if kind == "field" and \
                 value_widget is not None else text(2)
-            hidden = self.columns.item(r, 5)
+            hidden = self.columns.item(r, 6)
             cols.append(Column(
                 header=text(0), kind=kind, value=value or "",
                 yes=text(3), no=text(4),
+                text=self._text_options(self.columns.cellWidget(r, 5)),
                 hidden=bool(hidden and hidden.checkState()
                             == Qt.CheckState.Checked)))
         material_codes, band_codes = {}, {}

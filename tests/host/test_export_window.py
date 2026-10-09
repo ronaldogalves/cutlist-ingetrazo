@@ -116,3 +116,19 @@ def test_part_settings_set_a_field_on_many_parts(win):
         {"Ambiente": "Sala"})})
     panel_of(win).refresh_button.click()
     assert c.part_fields()[shelf.uid] == {"Ambiente": "Sala"}
+
+
+def test_text_options_from_the_columns_table(win):
+    c = setup_model(win)
+    d = dialog(c)
+    profile = plugin("export.profile")
+    d._load(replace(d.profile, columns=(
+        profile.Column("Material", value="material"),)))
+    button = d.columns.cellWidget(0, 5)
+    assert button.text() == "As is"
+    upper = next(a for a in button.menu().actions() if a.data() == "upper")
+    upper.setChecked(True)
+    assert button.text() == "UPPERCASE"
+    assert d.profile.columns[0].text == ("upper",)
+    assert "MDF BRANCO" in d.preview.toPlainText()
+    d.deleteLater()
