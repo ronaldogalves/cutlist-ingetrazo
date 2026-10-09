@@ -25,10 +25,13 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -149,7 +152,7 @@ class ExportSession:
     """What the window needs from the host."""
 
     #: Profile → rows (the model's current cut list).
-    rows: Callable[[Profile], Export]
+    rows: Callable[..., Export]                 # (profile, skip_boards)
     #: name → Profile, and the one used last.
     profiles: dict
     last: str | None
@@ -164,6 +167,8 @@ class ExportSession:
     write: Callable[[str, dict], None]
     copy: Callable[[str], None]
     suggested_folder: str = ""
+    #: ``(key, label)`` of every board in the cut list (the boards panel).
+    boards: list | None = None
 
 
 class ExportDialog(QDialog):
@@ -215,8 +220,28 @@ class ExportDialog(QDialog):
         self.problems.setWordWrap(True)
         self.problems.setStyleSheet("color: #b00020;")
         outer.addWidget(self.problems)
-        outer.addWidget(QLabel(tr("Preview (exactly as it will be "
-                                  "written):")))
+        lower = QHBoxLayout()
+        boards_box = QVBoxLayout()
+        boards_box.addWidget(QLabel(tr("Boards in this export:")))
+        self.boards = QListWidget()
+        self.boards.setObjectName("cutlist_export_boards")
+        self.boards.setToolTip(tr("Untick a board to leave it out of this "
+                                  "export (its file, or its rows). Not "
+                                  "saved in the profile."))
+        self.boards.setMaximumWidth(280)
+        for key, label in (session.boards or ()):
+            item = QListWidgetItem(label)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked)
+            item.setData(Qt.ItemDataRole.UserRole, key)
+            self.boards.addItem(item)
+        self.boards.itemChanged.connect(self._edited)
+        boards_box.addWidget(self.boards)
+        lower.addLayout(boards_box)
+        preview_box = QVBoxLayout()
+        lower.addLayout(preview_box, 1)
+        preview_box.addWidget(QLabel(tr("Preview (exactly as it will be "
+                                        "written):")))
         self.preview = QPlainTextEdit()
         self.preview.setObjectName("cutlist_export_preview")
         self.preview.setReadOnly(True)
@@ -224,10 +249,15 @@ class ExportDialog(QDialog):
         mono = QFont("Monospace")
         mono.setStyleHint(QFont.StyleHint.TypeWriter)
         self.preview.setFont(mono)
-        outer.addWidget(self.preview, 2)
+        preview_box.addWidget(self.preview)
+        outer.addLayout(lower, 2)
 
         bottom = QHBoxLayout()
         self.summary = QLabel()
+        self.summary.setObjectName("cutlist_export_summary")
+        self.summary.setWordWrap(True)
+        self.summary.setSizePolicy(QSizePolicy.Policy.Ignored,
+                                   QSizePolicy.Policy.Preferred)
         bottom.addWidget(self.summary, 1)
         self.copy_button = QPushButton(tr("Copy to clipboard"))
         self.copy_button.setObjectName("cutlist_export_copy")
@@ -335,7 +365,33 @@ class ExportDialog(QDialog):
         self.filename.setToolTip(tr("Fill-in fields: {model}, {material}, "
                                     "{thickness}, {value} (when split by a "
                                     "field), your custom fields."))
-        form.addRow(tr("File name"), self.filename)
+        name_row = QWidget()
+        name_box = QHBoxLayout(name_row)
+        name_box.setContentsMargins(0, 0, 0, 0)
+        name_box.addWidget(self.filename, 1)
+        self.insert_button = QToolButton()
+        self.insert_button.setObjectName("cutlist_filename_insert")
+        self.insert_button.setText(tr("Insert"))
+        self.insert_button.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
+        menu = QMenu(self.insert_button)
+        for token, label in (
+                ("{model}", tr("Model name")), ("{material}", tr("Material")),
+                ("{thickness}", tr("Thickness")), ("{date}", tr("Date")),
+                ("{value}", tr("The value a file is split by"))) + tuple(
+                (f"{{{n}}}", tr("Custom field: {name}", name=n))
+                for n in self.session.fields):
+            act = menu.addAction(f"{label}   {token}")
+            act.triggered.connect(lambda _c=False, t=token:
+                                  self._insert_token(t))
+        self.insert_button.setMenu(menu)
+        name_box.addWidget(self.insert_button)
+        form.addRow(tr("File name"), name_row)
+        self.name_example = QLabel()
+        self.name_example.setObjectName("cutlist_filename_example")
+        self.name_example.setStyleSheet("color: gray;")
+        self.name_example.setWordWrap(True)
+        form.addRow("", self.name_example)
         self.grain_first = QCheckBox(tr("Grain first: when the grain runs "
                                         "across the long side, swap length "
                                         "and width (and their bands)"))
@@ -751,8 +807,20 @@ class ExportDialog(QDialog):
             self.combo.setItemText(i, self.saved.name + (" *" if dirty
                                                          else ""))
 
+    def _insert_token(self, token: str) -> None:
+        self.filename.insert(token)
+        self.filename.setFocus()
+        self._edited()
+
+    def skipped_boards(self) -> frozenset:
+        return frozenset(
+            self.boards.item(i).data(Qt.ItemDataRole.UserRole)
+            for i in range(self.boards.count())
+            if self.boards.item(i).checkState() != Qt.CheckState.Checked)
+
     def result_export(self) -> Export:
-        return self.session.rows(self.profile)
+        return self.session.rows(self.profile,
+                                 skip_boards=self.skipped_boards())
 
     def _update(self) -> None:
         self._mark()
@@ -771,9 +839,15 @@ class ExportDialog(QDialog):
             self.problems.setText("")
         self.preview.setPlainText(self._preview_text(ex))
         rows = sum(len(f.rows) for f in ex.files)
+        names = [f.name for f in ex.files]
+        shown = ", ".join(names[:3]) + (
+            " " + tr("and {n} more", n=len(names) - 3) if len(names) > 3
+            else "")
         self.summary.setText(tr("{rows} rows in {files} file(s): {names}",
-                                rows=rows, files=len(ex.files),
-                                names=", ".join(f.name for f in ex.files)))
+                                rows=rows, files=len(ex.files), names=shown))
+        self.summary.setToolTip("\n".join(names))
+        self.name_example.setText(
+            tr("Example: {name}", name=names[0]) if names else "")
         blocked = bool(problems) or not ex.files
         self.export_button.setEnabled(not blocked and
                                       self.profile.format != "clipboard")

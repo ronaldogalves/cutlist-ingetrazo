@@ -189,11 +189,25 @@ def _unique(values) -> list[str]:
     return out
 
 
+def board_key(material: str | None, thickness: float) -> tuple:
+    """A board: its material and thickness (to 0.1 mm)."""
+    return (material or "", round(thickness * 10000))
+
+
+def boards(cut_list: CutList) -> list[tuple]:
+    """``(key, material, thickness, parts)`` for every board in the list."""
+    return [(board_key(s.material, s.thickness), s.material, s.thickness,
+             s.qty) for s in cut_list.sections]
+
+
 def make_rows(cut_list: CutList, parts: dict[str, Part], library: Library,
               profile: Profile, *, part_fields: dict | None = None,
-              context: dict | None = None) -> Export:
+              context: dict | None = None,
+              skip_boards=frozenset()) -> Export:
     """``parts`` by uid; ``part_fields`` uid → custom field values;
-    ``context`` holds model-wide values (``model``, ``date``…)."""
+    ``context`` holds model-wide values (``model``, ``date``…);
+    ``skip_boards`` (keys from :func:`board_key`) are left out of this
+    export — a choice for one job, not part of the profile."""
     part_fields = part_fields or {}
     context = dict(context or {})
     out = Export()
@@ -211,6 +225,8 @@ def make_rows(cut_list: CutList, parts: dict[str, Part], library: Library,
     line_no = 0
     for section in cut_list.sections:
         if profile.materials and section.material not in profile.materials:
+            continue
+        if board_key(section.material, section.thickness) in skip_boards:
             continue
         for line in section.lines:
             line_no += 1

@@ -243,12 +243,21 @@ class Controller:
         def run():
             library = self.store.library()
             dlg = MaterialsDialog(set(self.materials_seen), library, focus,
+                                  sources=self.store.material_sources(),
                                   parent=self.app.window)
-            if dlg.exec() and dlg.result_specs():
-                self.store.save_materials(
-                    dlg.result_specs(), remember=dlg.remember.isChecked())
-                return True
-            return False
+            if not dlg.exec():
+                return False
+            remember = dlg.remember.isChecked()
+            changed = False
+            if dlg.result_specs():
+                self.store.save_materials(dlg.result_specs(),
+                                          remember=remember)
+                changed = True
+            if dlg.result_cleared():
+                self.store.clear_materials(dlg.result_cleared(),
+                                           remember=remember)
+                changed = True
+            return changed
         if self._guard(run):
             self.refresh()
 
@@ -319,6 +328,7 @@ class Controller:
     def export_session(self):
         from datetime import date
 
+        from ..export.rows import boards as board_list
         from ..export.rows import make_rows
         from ..ui.export_dialog import ExportSession
         path = self.model_path()
@@ -330,15 +340,25 @@ class Controller:
         materials = sorted({s.material for s in self.cut_list.sections
                             if s.material}, key=str.lower)
         return ExportSession(
-            rows=lambda profile: make_rows(self.cut_list, self.parts,
-                                           self.library, profile,
-                                           part_fields=fields,
-                                           context=context),
+            rows=lambda profile, skip_boards=frozenset(): make_rows(
+                self.cut_list, self.parts, self.library, profile,
+                part_fields=fields, context=context,
+                skip_boards=skip_boards),
+            boards=[(key, f"{material or tr('(no material)')} · "
+                          f"{self._fmt_mm(thickness)} — "
+                          + tr("{n} parts", n=qty))
+                    for key, material, thickness, qty
+                    in board_list(self.cut_list)],
             profiles=self.store.profiles(), last=self.store.last_profile(),
             save=self.store.save_profiles, materials=materials, bands=bands,
             fields=list(self.store.fields().names),
             write=self.write_files, copy=self.copy_text,
             suggested_folder=str(path.parent) if path else "")
+
+    @staticmethod
+    def _fmt_mm(metres: float) -> str:
+        mm = round(metres * 1000, 1)
+        return f"{mm:g} mm"
 
     def open_export(self) -> None:
         if self.cut_list is None or self.stale:

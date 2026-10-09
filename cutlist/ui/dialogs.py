@@ -83,16 +83,25 @@ def _buttons(dialog: QDialog) -> QDialogButtonBox:
 class MaterialsDialog(QDialog):
     """One material at a time: pick it on the left, say what it is on the
     right. ``names`` are the materials found on the model's parts; the
-    library supplies what is already known about them."""
+    library supplies what is already known about them.
+
+    ``sources`` says where each known setup comes from — ``"library"``
+    (the user's, shared by every model) or ``"model"`` (this model only,
+    or this model differing from the library) — so the list can show it:
+    a setup that silently follows you from model to model surprises
+    people (Ronaldo, 2026-10-09)."""
 
     def __init__(self, names, library: Library, focus: str | None = None,
-                 parent=None) -> None:
+                 sources: dict | None = None, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("cutlist_materials_dialog")
         self.setWindowTitle(tr("Cut List — Materials"))
-        self.resize(720, 480)
-        self._library = library
+        self.resize(760, 500)
+        self._sources = dict(sources or {})
         self._specs: dict[str, MaterialSpec] = {}
+        #: What the user chose: a role, or None for "not set up".
+        self._roles: dict[str, Role | None] = {}
+        self._known: set[str] = set()
         self._edited: set[str] = set()
         self._current: str | None = None
         self._loading = False
@@ -100,7 +109,11 @@ class MaterialsDialog(QDialog):
         names = sorted(set(names) | ({focus} if focus else set()),
                        key=str.lower)
         for name in names:
-            self._specs[name] = library.get(name) or MaterialSpec(name)
+            spec = library.get(name)
+            self._specs[name] = spec or MaterialSpec(name)
+            self._roles[name] = spec.role if spec else None
+            if spec is not None:
+                self._known.add(name)
 
         outer = QVBoxLayout(self)
         body = QHBoxLayout()
@@ -109,12 +122,10 @@ class MaterialsDialog(QDialog):
         self.list = QListWidget()
         self.list.setObjectName("cutlist_material_list")
         for name in names:
-            item = QListWidgetItem(name)
-            if library.get(name) is None:
-                item.setText(tr("{name} — not set up", name=name))
-                item.setForeground(Qt.GlobalColor.darkYellow)
+            item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, name)
             self.list.addItem(item)
+            self._label(item)
         self.list.currentItemChanged.connect(self._on_pick)
         body.addWidget(self.list, 2)
 
@@ -123,6 +134,7 @@ class MaterialsDialog(QDialog):
         self.form = form
         self.role = QComboBox()
         self.role.setObjectName("cutlist_role")
+        self.role.addItem(tr("— not set up —"), None)
         for role in Role:
             self.role.addItem(role_label(role), role)
         self.kind = QComboBox()
@@ -170,29 +182,60 @@ class MaterialsDialog(QDialog):
             w.textEdited.connect(self._changed)
         for w in (self.grain, self.deduct):
             w.toggled.connect(self._changed)
-        for w in (self.role, self.kind):
-            w.currentIndexChanged.connect(self._changed)
+        # The role counts as soon as it is chosen, even when it is the one
+        # already shown and nothing else changes (2026-10-09).
+        self.role.activated.connect(self._changed)
+        self.role.currentIndexChanged.connect(self._changed)
+        self.kind.currentIndexChanged.connect(self._changed)
         self.applied_over.currentTextChanged.connect(self._changed)
 
         self.remember = QCheckBox(tr("Also use these materials in my other "
                                      "models"))
         self.remember.setObjectName("cutlist_remember")
         self.remember.setChecked(True)
+        self.remember.setToolTip(tr(
+            "Ticked: what you set here goes to your library too, and every "
+            "model with a material of the same name starts from it. "
+            "Unticked: this model only (it overrides your library here)."))
         outer.addWidget(self.remember)
+        legend = QLabel(tr("“my library”: set up once, used in all your "
+                           "models · “this model only”: set up here, or "
+                           "different from your library"))
+        legend.setWordWrap(True)
+        legend.setStyleSheet("color: gray;")
+        outer.addWidget(legend)
         outer.addWidget(_buttons(self))
 
         if names:
             start = names.index(focus) if focus in names else 0
             self.list.setCurrentRow(start)
 
+    def _label(self, item) -> None:
+        name = item.data(Qt.ItemDataRole.UserRole)
+        if name in self._edited:
+            text = tr("{name} — changed", name=name)
+            color = self.palette().color(self.palette().ColorRole.Text)
+        elif self._roles.get(name) is None:
+            text = tr("{name} — not set up", name=name)
+            color = Qt.GlobalColor.darkYellow
+        elif self._sources.get(name) == "model":
+            text = tr("{name} — this model only", name=name)
+            color = self.palette().color(self.palette().ColorRole.Text)
+        else:
+            text = tr("{name} — my library", name=name)
+            color = self.palette().color(self.palette().ColorRole.Text)
+        item.setText(text)
+        item.setForeground(color)
+
     def _on_pick(self, item, _previous=None) -> None:
         if item is None:
             return
         self._current = item.data(Qt.ItemDataRole.UserRole)
         spec = self._specs[self._current]
+        role = self._roles[self._current]
         self._loading = True
         try:
-            self.role.setCurrentIndex(self.role.findData(spec.role))
+            self.role.setCurrentIndex(self.role.findData(role))
             self.kind.setCurrentIndex(self.kind.findData(spec.kind))
             self.grain.setChecked(spec.grain)
             self.thicknesses.setText(fmt_lengths(spec.thicknesses))
@@ -203,8 +246,8 @@ class MaterialsDialog(QDialog):
             self.trim.setPlaceholderText(tr("default"))
             self.thickness.setText(fmt_length(spec.thickness or None))
             self.oversize.setText(fmt_length(spec.oversize or None))
-            boards = sorted(n for n, s in self._specs.items()
-                            if s.role is Role.BOARD and n != self._current)
+            boards = sorted(n for n, r in self._roles.items()
+                            if r is Role.BOARD and n != self._current)
             self.applied_over.clear()
             self.applied_over.addItem("")
             self.applied_over.addItems(boards)
@@ -213,10 +256,11 @@ class MaterialsDialog(QDialog):
             self.note.setText(spec.note)
         finally:
             self._loading = False
-        self._show_rows(spec.role)
+        self._show_rows(role)
 
-    def _show_rows(self, role: Role) -> None:
+    def _show_rows(self, role: Role | None) -> None:
         visible = {
+            None: set(),
             Role.BOARD: {"kind", "grain", "thicknesses", "stocks", "kerf",
                          "trim"},
             Role.COVERING: {"grain", "thickness", "oversize", "stocks",
@@ -224,10 +268,13 @@ class MaterialsDialog(QDialog):
             Role.EDGE_BAND: {"thickness", "oversize", "deduct"},
             Role.APPEARANCE: set(),
             Role.IGNORE: set(),
-        }[role] | {"role", "note"}
+        }[role] | {"role"} | ({"note"} if role is not None else set())
         for key, (_label, widget) in self._rows.items():
             self.form.setRowVisible(widget, key in visible)
         self.hint.setText({
+            None: tr("Choose what this material is. Until then the cut "
+                     "list reads it as a board, and marks it with “?” where "
+                     "it is only a finish on a face or an edge."),
             Role.BOARD: tr("Parts whose faces show this material are cut "
                            "from it. Kerf and trim left empty use the "
                            "defaults in Settings."),
@@ -245,32 +292,38 @@ class MaterialsDialog(QDialog):
     def _changed(self, *_args) -> None:
         if self._loading or self._current is None:
             return
-        spec = MaterialSpec(
-            name=self._current,
-            role=self.role.currentData(),
-            kind=self.kind.currentData(),
-            grain=self.grain.isChecked(),
-            thicknesses=parse_lengths(self.thicknesses.text()),
-            stocks=parse_sheets(self.stocks.text()),
-            kerf=parse_length(self.kerf.text()),
-            trim=parse_length(self.trim.text()),
-            thickness=parse_length(self.thickness.text()) or 0.0,
-            oversize=parse_length(self.oversize.text()) or 0.0,
-            deduct=self.deduct.isChecked(),
-            applied_over=self.applied_over.currentText().strip() or None,
-            note=self.note.text().strip())
-        if spec.role != self._specs[self._current].role:
-            self._show_rows(spec.role)
-        self._specs[self._current] = spec
+        role = self.role.currentData()
+        self._roles[self._current] = role
+        if role is not None:
+            self._specs[self._current] = MaterialSpec(
+                name=self._current,
+                role=role,
+                kind=self.kind.currentData(),
+                grain=self.grain.isChecked(),
+                thicknesses=parse_lengths(self.thicknesses.text()),
+                stocks=parse_sheets(self.stocks.text()),
+                kerf=parse_length(self.kerf.text()),
+                trim=parse_length(self.trim.text()),
+                thickness=parse_length(self.thickness.text()) or 0.0,
+                oversize=parse_length(self.oversize.text()) or 0.0,
+                deduct=self.deduct.isChecked(),
+                applied_over=self.applied_over.currentText().strip() or None,
+                note=self.note.text().strip())
+        self._show_rows(role)
         self._edited.add(self._current)
         item = self.list.currentItem()
         if item is not None:
-            item.setText(self._current)
-            item.setForeground(self.list.palette().text())
+            self._label(item)
 
     def result_specs(self) -> list[MaterialSpec]:
-        """The materials the user touched (only those are stored)."""
-        return [self._specs[n] for n in sorted(self._edited)]
+        """The materials the user set up here (only those are stored)."""
+        return [self._specs[n] for n in sorted(self._edited)
+                if self._roles[n] is not None]
+
+    def result_cleared(self) -> list[str]:
+        """Materials set back to "not set up" that had a setup before."""
+        return [n for n in sorted(self._edited)
+                if self._roles[n] is None and n in self._known]
 
 
 # ---------------------------------------------------------------------------
@@ -462,13 +515,16 @@ class SettingsDialog(QDialog):
             [tr("Field"), tr("Value in this model"),
              tr("Tag rules (tag start = value; …)")])
         self.fields_table.horizontalHeader().setStretchLastSection(True)
-        self.fields_table.verticalHeader().hide()
+        self.fields_table.setShowGrid(True)
+        self.fields_table.setAlternatingRowColors(True)
+        self.fields_table.setMinimumHeight(110)
         for f in (fields or Fields()).defs:
             self._add_field_row(f.name, f.model_value, format_rules(f.rules))
         cbox.addWidget(self.fields_table)
         row = QHBoxLayout()
         add = QPushButton(tr("Add field"))
-        add.clicked.connect(lambda: self._add_field_row("", "", ""))
+        add.setObjectName("cutlist_add_field")
+        add.clicked.connect(self._new_field)
         remove = QPushButton(tr("Remove field"))
         remove.clicked.connect(lambda: self.fields_table.removeRow(
             self.fields_table.currentRow()))
@@ -497,6 +553,16 @@ class SettingsDialog(QDialog):
         self.fields_table.insertRow(r)
         for c, text in enumerate((name, value, rules)):
             self.fields_table.setItem(r, c, QTableWidgetItem(text))
+
+    def _new_field(self) -> None:
+        """A new row, already selected and in typing mode on its name — an
+        empty row looked like nothing happened (2026-10-09)."""
+        self._add_field_row(tr("New field"), "", "")
+        r = self.fields_table.rowCount() - 1
+        self.fields_table.setCurrentCell(r, 0)
+        self.fields_table.scrollToItem(self.fields_table.item(r, 0))
+        self.fields_table.setFocus()
+        self.fields_table.editItem(self.fields_table.item(r, 0))
 
     def result_fields(self) -> Fields:
         defs = []

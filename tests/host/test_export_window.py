@@ -194,3 +194,48 @@ def test_rows_only_take_drops_between_them(win):
     flags = table.model().flags(table.model().index(0, 3))
     assert not flags & Qt.ItemFlag.ItemIsDropEnabled
     d.deleteLater()
+
+
+def test_untick_a_board_to_leave_it_out(win, tmp_path):
+    c = setup_model(win)
+    win.viewport.scene.groups.append(board(0.4, 0.3, 0.006, at=(3, 0, 0),
+                                           name="Back"))
+    panel_of(win).refresh_button.click()
+    d = dialog(c)
+    profile = plugin("export.profile")
+    d._load(replace(d.profile, split="board",
+                    filename="{material} {thickness}",
+                    columns=(profile.Column("Name", value="name"),)))
+    labels = [d.boards.item(i).text() for i in range(d.boards.count())]
+    assert labels == ["MDF Branco · 6 mm — 1 parts",
+                      "MDF Branco · 15 mm — 3 parts"]
+    assert "MDF_Branco_6.csv" in d.summary.toolTip()
+    Qt = plugin("ui.export_dialog").Qt
+    d.boards.item(0).setCheckState(Qt.CheckState.Unchecked)
+    assert d.summary.toolTip() == "MDF_Branco_15.csv"
+    assert d.name_example.text().endswith("MDF_Branco_15.csv")
+    d.deleteLater()
+
+
+def test_insert_menu_puts_a_fill_in_field_in_the_name(win):
+    c = setup_model(win)
+    d = dialog(c)
+    d.filename.setText("")
+    act = next(a for a in d.insert_button.menu().actions()
+               if a.text().endswith("{material}"))
+    act.trigger()
+    assert d.filename.text() == "{material}"
+    assert d.profile.filename == "{material}"
+    assert d.name_example.text().endswith("MDF_Branco.csv")
+    d.deleteLater()
+
+
+def test_a_long_file_name_does_not_widen_the_window(win):
+    c = setup_model(win)
+    d = dialog(c)
+    d.resize(900, 600)
+    width = d.sizeHint().width()
+    d.filename.setText("{model} " + "very long name " * 30)
+    d._edited()
+    assert d.sizeHint().width() <= width + 5
+    d.deleteLater()

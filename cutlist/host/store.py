@@ -132,6 +132,33 @@ class Store:
         doc = Library.from_dict(self.doc_data().get("materials"))
         return Library({**user.specs, **doc.specs})
 
+    def material_sources(self) -> dict[str, str]:
+        """name → ``"library"`` (from the user's library, the same in this
+        model) or ``"model"`` (set in this model only, or differing from
+        the library)."""
+        user = Library.from_dict(self.user_data().get("materials")).specs
+        doc = Library.from_dict(self.doc_data().get("materials")).specs
+        out = {n: "library" for n in user}
+        for n, spec in doc.items():
+            out[n] = "library" if user.get(n) == spec else "model"
+        return out
+
+    def clear_materials(self, names, *, remember: bool) -> None:
+        """Back to "not set up": out of the model (one undo step) and, with
+        ``remember``, out of the user's library too."""
+        names = set(names)
+        if not names:
+            return
+        doc = self.doc_data()
+        mats = {n: v for n, v in (doc.get("materials") or {}).items()
+                if n not in names}
+        self.write_doc_data({**doc, "materials": mats})
+        if remember:
+            user = self.user_data()
+            umats = {n: v for n, v in (user.get("materials") or {}).items()
+                     if n not in names}
+            self.write_user_data({**user, "materials": umats})
+
     def save_materials(self, specs: list[MaterialSpec], *,
                        remember: bool) -> None:
         """Store ``specs`` in the model (one undo step) and, with

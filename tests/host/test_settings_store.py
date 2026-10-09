@@ -176,3 +176,45 @@ def test_materials_dialog_edits(qt_app, win):
     (result,) = dlg.result_specs()
     assert result.name == "Fita" and result.role is materials.Role.EDGE_BAND
     assert abs(result.thickness - 0.001) < 1e-12
+
+
+def test_materials_dialog_not_set_up_is_a_choice(qt_app, win):
+    dialogs = plugin("ui.dialogs")
+    materials = plugin("model.materials")
+    lib = materials.Library({"MDF": materials.MaterialSpec("MDF")})
+    dlg = dialogs.MaterialsDialog({"MDF", "Fita"}, lib, focus="Fita",
+                                  sources={"MDF": "library"})
+    texts = [dlg.list.item(i).text() for i in range(dlg.list.count())]
+    assert texts == ["Fita — not set up", "MDF — my library"]
+    assert dlg.role.currentData() is None
+    # Choosing Board with every other field at its default counts.
+    dlg.role.setCurrentIndex(dlg.role.findData(materials.Role.BOARD))
+    dlg.role.activated.emit(dlg.role.currentIndex())
+    (spec,) = dlg.result_specs()
+    assert spec.name == "Fita" and spec.role is materials.Role.BOARD
+    # MDF back to "not set up" is reported as cleared.
+    dlg.list.setCurrentRow(1)
+    dlg.role.setCurrentIndex(0)
+    assert dlg.result_cleared() == ["MDF"]
+
+
+def test_material_sources_and_clearing(win, user_dir):
+    s = store(win)
+    s.save_materials([spec("Fita", "edge_band")], remember=True)
+    s.save_materials([spec("Vidro", "ignore")], remember=False)
+    assert s.material_sources() == {"Fita": "library", "Vidro": "model"}
+    s.clear_materials(["Fita"], remember=True)
+    assert "Fita" not in s.library().specs
+
+
+def test_add_field_starts_typing(qt_app, win):
+    dialogs = plugin("ui.dialogs")
+    settings = plugin("model.settings")
+    dlg = dialogs.SettingsDialog(settings.Settings())
+    dlg.show()
+    dlg.findChild(dialogs.QPushButton, "cutlist_add_field").click()
+    table = dlg.fields_table
+    assert table.rowCount() == 1
+    assert table.currentRow() == 0 and table.item(0, 0).text() == "New field"
+    assert table.state() == table.State.EditingState
+    dlg.deleteLater()

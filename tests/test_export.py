@@ -284,3 +284,18 @@ def test_values_are_tidied_and_text_options_apply():
     assert [c.text for c in ex.files[0].rows[0]] == \
         ["Prateleira do meio", "FAMILIA_C", "Família_ç"]
     assert Profile.from_dict(p.to_dict()) == p
+
+
+def test_boards_can_be_left_out_of_one_export():
+    from cutlist.export.rows import board_key, boards
+    cl, parts = cut(
+        ("a", "Side", 0.6, 0.3, 0.015, {"default": "Branco"}, None),
+        ("b", "Back", 0.6, 0.3, 0.006, {"default": "Branco"}, None),
+        ("c", "Door", 0.6, 0.3, 0.018, {"default": "Freijo"}, None))
+    assert [(m, round(t * 1000), n) for _k, m, t, n in boards(cl)] == \
+        [("Branco", 6, 1), ("Branco", 15, 1), ("Freijo", 18, 1)]
+    p = Profile(split="board", filename="{material} {thickness}",
+                columns=(col("Name", "name"),))
+    ex = make_rows(cl, parts, LIB, p,
+                   skip_boards={board_key("Branco", 0.006)})
+    assert [f.name for f in ex.files] == ["Branco_15.csv", "Freijo_18.csv"]
