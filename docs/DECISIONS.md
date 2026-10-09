@@ -172,3 +172,62 @@ uid and gets its own number. Handing out a number is bookkeeping, not an
 edit: it is written without an undo step and without marking the
 document unsaved, and is saved with the next save. Numbers are given in
 model order and never reused.
+
+## D-009 — Export: named profiles, plain options instead of formulas
+
+*2026-10-09 · accepted · from Ronaldo's supplier templates (a paste-from-
+Excel layout with named bands; a strict layout with supplier codes, no
+header, Windows-1252, a separator after the last field) and a reading of
+OpenCutList's export*
+
+**What OpenCutList does:** an editable list of columns (field, custom
+header, hidden, order), three sources (summary, cut list, one row per
+instance), presets — and Ruby **formulas** per column, run with `eval`
+behind a blocklist. We keep the first three and **replace formulas with
+plain options**: no programming needed, and a shared profile file can
+never carry code.
+
+1. **Profiles.** A profile is every rule for one output, under a name the
+   user chooses (a supplier, or an internal workflow). The export window
+   has a combo box of profiles; Save, Save as new, Rename, Delete, Export
+   to file, Import from file; a `*` shows unsaved changes. Profiles live
+   in the user's defaults. **No supplier-named profiles ship with the
+   extension** (public wording stays neutral): one generic profile ships,
+   and the real templates are reproduced exactly in our tests.
+2. **The file.** Formats: delimited text (`.csv`/`.txt`), Excel `.xlsx`
+   (written with the stdlib: `zipfile` + XML — no dependency), and
+   **copy to clipboard** for pasting into a spreadsheet or a web form;
+   `.ods` later. Text options: separator (`;` `,` tab `|` or any),
+   encoding (UTF-8, UTF-8 with BOM, Windows-1252), line endings (CRLF/LF),
+   quoting (as needed / always / never), separator after the last field,
+   header row or data only.
+3. **Splitting.** One file, or one file per board (material + thickness —
+   another thickness is another board), or per value of a custom field;
+   file names from a pattern of fill-in fields (`{model} - {material}
+   {thickness}`).
+4. **Rows.** One per cut-list line with a quantity, or **one per piece**;
+   which materials go in; sort order.
+5. **Columns.** An ordered list; each has a header text and a value: a
+   **field** (qty, length, width, thickness, name, number, material,
+   material code, band on C1/C2/L1/L2, grain, may rotate, note, tag,
+   model, custom fields…), **fixed text**, or a **fill-in template**
+   (`{name} - {tag}`: placeholders only, never code). Columns can be
+   hidden and reordered.
+6. **Numbers.** Whole millimetres by default (no supplier takes fractions
+   of a millimetre); decimals, decimal separator, rounding (nearest, up,
+   down), unit suffix or bare, no trailing zeros. Per profile, overridable
+   per column.
+7. **Grain first.** "Comprimento" is the side along the grain. When a
+   grained part's grain runs across its longest side, length and width —
+   and the bands with them — are swapped on export. Parts set to "No
+   grain" are never swapped, and are flagged as free to rotate.
+8. **Supplier language.** Yes/no values as `1/0`, `S/N`, `X/empty` or any
+   pair. A **code table per profile** maps the user's material and band
+   names to the supplier's codes or names — the matching step suppliers'
+   sites make you repeat, done once. A value with no code **stops the
+   export and names it**; nothing is written blank silently.
+9. **Live preview** of the first rows exactly as they will be written.
+10. **Custom fields** (client, room/"Ambiente"…) are defined in Settings,
+    not in the export: a model value, optional tag rules (parts with a tag
+    get a value), per-part overrides in Part settings (in bulk, one undo
+    step). Profiles only use them — as columns, to split files, in names.

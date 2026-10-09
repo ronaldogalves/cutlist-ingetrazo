@@ -57,11 +57,20 @@ yet deducted, totalled or laid out). Built in three visible steps.
 - [x] Scope window on first use ("don't show again"), reachable from the
       panel; components-only option.
 
-**Step C — export**
-- [ ] CSV export through configurable **profiles** (columns, order,
-      header, one line per piece or merged, decimals and separator,
-      rounding method, unit suffix, edge-band flags, encoding); first
-      preset from a real supplier sample. Profile editor in the UI.
+**Step C — export** (design: D-009)
+- [ ] `export/`: profiles (to/from dict), rows from the cut list (grain
+      first, bands relative to face 1, numbers, yes/no values, code
+      table, fixed text and templates, one per piece or merged), split
+      and file names; problems reported, never blanks.
+- [ ] Writers: delimited text (separator, encoding, line endings,
+      quoting, trailing separator, header), `.xlsx` with the stdlib,
+      clipboard.
+- [ ] Both real supplier templates reproduced byte for byte in tests.
+- [ ] Custom fields: defined in Settings, model values, tag rules,
+      per-part overrides.
+- [ ] Export window: profile combo (save, save as, rename, delete,
+      import/export file, `*` when changed), columns editor, file and
+      number options, code table, live preview.
 - [ ] All strings through `tr()`; pt-BR and es catalogs complete.
 
 **Accept:** on the reference models the cut list matches a hand-checked
