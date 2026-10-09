@@ -85,3 +85,11 @@ uses.
   Paint): click a part's face or edge to set its covering or band, flip
   face 1, see face 1 and the bands highlighted. (Ronaldo, 2026-10-07)
 
+## Interface polish
+
+- **Dragging rows in the export window**: while dragging, the other rows
+  should slide apart to show exactly where the row will land (today Qt
+  draws a line between rows, or highlights a whole row, which reads as
+  ambiguous). Needs a custom list instead of Qt's table. *(Ronaldo,
+  2026-10-09)*
+

@@ -11,10 +11,34 @@ Español from the start.
 
 ## Status
 
-**Early development, not usable yet.** We are at milestone M0
-(foundations): the extension loads and shows an empty *Cut List* tab. See
-[docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and
-[docs/BRIEF.md](docs/BRIEF.md) for the goals and the scope of v0.1.
+**Early development — the cut list works, cutting diagrams do not exist
+yet.** No release has been published; to try it, follow *Trying it*
+below. Milestone M1 (the cut list) is built:
+
+- a **Cut List** tab that reads the selection or the whole model and
+  groups parts by board and thickness, merging identical parts by
+  measurement; flags what needs a look (non-rectangular parts, boards
+  merged into one group, materials not set up) instead of guessing;
+- **materials with roles** (board, laminate/veneer, edge band,
+  appearance only, ignore), read face by face and edge by edge from the
+  way the model is painted;
+- **part settings** (grain, may rotate, exclude, note, face 1, custom
+  fields such as client or room), each change one undo step;
+- **exports** through named profiles you build once per supplier or
+  workflow: CSV/TXT with every option suppliers differ on, Excel `.xlsx`,
+  or the clipboard; grain-first sizes, supplier codes, live preview;
+- English, Português (Brasil) and Español.
+
+Next: cutting diagrams (M2–M3). See [docs/ROADMAP.md](docs/ROADMAP.md)
+and [docs/BRIEF.md](docs/BRIEF.md).
+
+**Known limitations**
+
+- Dragging columns in the export window works but the drop position can
+  be unclear; Move up / Move down are exact.
+- `.skp` files arrive in IngeTrazo without their group hierarchy (an
+  IngeTrazo import limitation): tag the boards, or check the "several
+  solids" warnings.
 
 Tested with **IngeTrazo 0.5.7**.
 

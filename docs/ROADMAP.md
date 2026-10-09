@@ -77,6 +77,15 @@ yet deducted, totalled or laid out). Built in three visible steps.
 list exactly (sizes to 1 mm, quantities, materials) — model D against its
 OpenCutList diagrams first (all 86 sheet parts).
 
+## Pre-release v0.0.x — the cut list and its exports
+
+*Planned 2026-10-09 (Ronaldo).* Once M1's acceptance check passes, publish
+a **pre-release** before the diagrams exist: for woodworkers who order
+pre-cut boards, the supplier makes the cutting plan, so the cut list and
+the export are what they need. A GitHub pre-release with the `cutlist/`
+zip, a short CHANGELOG and the README's known limitations; feedback from
+a few trusted woodworkers before M2–M3.
+
 ## M2 — 2D packer (≈1–2 weeks)
 
 - [ ] `packing/base.py`: `Packer` protocol, `Stock`, `Placement`, `Layout`.
