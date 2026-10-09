@@ -259,3 +259,25 @@ never carry code.
   a name that "does not match" at a supplier.
 - **Per column**, by choice: no accents, UPPERCASE, spaces → `_`
   (combinable), for systems that want them.
+
+## D-011 — Ship supplier profiles; invite more from users
+
+*2026-10-09 · accepted · Ronaldo · supersedes D-009 §1's "no
+supplier-named profiles ship"*
+
+The extension ships with ready profiles for two suppliers Ronaldo works
+with — **CorteCloud** (paste from Excel) and **Leo Madeiras** (LeoPlan
+text file) — beside the generic one. They are examples of what a profile
+can do as much as presets: a woodworker who orders from either starts
+exporting at once.
+
+The set is **open**: when the extension is listed on IngeTrazo's
+website (catalog entry, README, release notes), we say that profile
+feedback is welcome and that profiles for other suppliers can join the
+shipped set. A contributed profile is accepted once its layout is
+reproduced exactly in a test, like the first two (D-009 §1), so a
+shipped profile is a checked one.
+
+Neutral wording still applies to *describing* the export (README,
+outreach): it works for any supplier; the shipped profiles are named for
+what they are.

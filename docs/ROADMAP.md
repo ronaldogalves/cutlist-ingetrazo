@@ -92,6 +92,11 @@ pre-cut boards, the supplier makes the cutting plan, so the cut list and
 the export are what they need. A GitHub pre-release with the `cutlist/`
 zip, a short CHANGELOG and the README's known limitations; feedback from
 a few trusted woodworkers before M2–M3.
+- Ship the **CorteCloud** and **Leo Madeiras** profiles (D-011), each
+  reproduced exactly in a test.
+- When listed on IngeTrazo's website (catalog entry, README, release
+  notes): say that profile feedback is welcome and that profiles for
+  other suppliers can join the shipped set (D-011).
 
 ## M2 — 2D packer (≈1–2 weeks)
 
