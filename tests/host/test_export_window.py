@@ -132,3 +132,23 @@ def test_text_options_from_the_columns_table(win):
     assert d.profile.columns[0].text == ("upper",)
     assert "MDF BRANCO" in d.preview.toPlainText()
     d.deleteLater()
+
+
+def test_yes_no_words_only_where_they_mean_something(win):
+    c = setup_model(win)
+    d = dialog(c)
+    profile = plugin("export.profile")
+    d._load(replace(d.profile, columns=(
+        profile.Column("Name", value="name"),
+        profile.Column("Rotate", value="rotate", yes="S", no=""))))
+    name_yes, rotate_yes = d.columns.item(0, 3), d.columns.item(1, 3)
+    assert name_yes.text() == "" and not name_yes.flags() & \
+        plugin("ui.export_dialog").Qt.ItemFlag.ItemIsEnabled
+    assert rotate_yes.text() == "S"
+    # Switching the first column to a yes/no field brings its words back.
+    combo = d.columns.cellWidget(0, 2)
+    combo.setCurrentIndex(combo.findData("grain"))
+    assert d.columns.item(0, 3).text() == "1"
+    assert [(col.yes, col.no) for col in d.profile.columns] == \
+        [("1", "0"), ("S", "")]
+    d.deleteLater()

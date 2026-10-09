@@ -38,12 +38,22 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..export.profile import FIELDS, TEXT_OPTIONS, Column, Numbers, Profile
+from ..export.profile import (
+    FIELDS,
+    FLAG_FIELDS,
+    TEXT_OPTIONS,
+    Column,
+    Numbers,
+    Profile,
+)
 from ..export.rows import Export
 from ..export.writers import clipboard_text, text_lines, unencodable
 from ..i18n import tr
 
 PREVIEW_ROWS = 40
+
+#: Where a Yes/No cell keeps its word while the column does not use it.
+_KEPT = Qt.ItemDataRole.UserRole + 10
 
 
 def field_label(name: str) -> str:
@@ -408,14 +418,53 @@ class ExportDialog(QDialog):
             lambda _i, k=kind: self._kind_changed(k))
         self.columns.setCellWidget(r, 1, kind)
         self._value_widget(r, c.kind, c.value)
-        self.columns.setItem(r, 3, QTableWidgetItem(c.yes))
-        self.columns.setItem(r, 4, QTableWidgetItem(c.no))
+        for col_index, word in ((3, c.yes), (4, c.no)):
+            item = QTableWidgetItem(word)
+            item.setData(_KEPT, word)
+            self.columns.setItem(r, col_index, item)
         self.columns.setCellWidget(r, 5, self._text_button(c.text))
         hidden = QTableWidgetItem()
         hidden.setFlags(hidden.flags() | Qt.ItemFlag.ItemIsUserCheckable)
         hidden.setCheckState(Qt.CheckState.Checked if c.hidden
                              else Qt.CheckState.Unchecked)
         self.columns.setItem(r, 6, hidden)
+        self._sync_yes_no(r)
+
+    def _uses_yes_no(self, r: int) -> bool:
+        """Yes/No words matter for yes-or-no fields (grain, may rotate,
+        band yes/no) and for templates (which may use them)."""
+        kind = self.columns.cellWidget(r, 1)
+        kind = kind.currentData() if kind is not None else "field"
+        if kind == "template":
+            return True
+        if kind != "field":
+            return False
+        value = self.columns.cellWidget(r, 2)
+        return value is not None and value.currentData() in FLAG_FIELDS
+
+    def _sync_yes_no(self, r: int) -> None:
+        """Show and allow editing the Yes/No words only where they are
+        used; elsewhere the cells are empty and greyed, and the words are
+        kept for when the column changes back."""
+        uses = self._uses_yes_no(r)
+        self.columns.blockSignals(True)
+        try:
+            for col_index in (3, 4):
+                item = self.columns.item(r, col_index)
+                if item is None:
+                    continue
+                if uses:
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable
+                                  | Qt.ItemFlag.ItemIsEnabled)
+                    item.setText(item.data(_KEPT) or "")
+                else:
+                    if item.text():
+                        item.setData(_KEPT, item.text())
+                    item.setText("")
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable
+                                  & ~Qt.ItemFlag.ItemIsEnabled)
+        finally:
+            self.columns.blockSignals(False)
 
     def _text_button(self, options) -> QToolButton:
         """Text options of one column, ticked in a small menu; the button
@@ -455,7 +504,8 @@ class ExportDialog(QDialog):
             for label, data in self._field_choices():
                 combo.addItem(label, data)
             self._set(combo, value)
-            combo.currentIndexChanged.connect(self._edited)
+            combo.currentIndexChanged.connect(
+                lambda _i, w=combo: self._value_changed(w))
             self.columns.setCellWidget(r, 2, combo)
         else:
             self.columns.removeCellWidget(r, 2)
@@ -465,6 +515,13 @@ class ExportDialog(QDialog):
         for r in range(self.columns.rowCount()):
             if self.columns.cellWidget(r, 1) is kind_combo:
                 self._value_widget(r, kind_combo.currentData(), "")
+                self._sync_yes_no(r)
+        self._edited()
+
+    def _value_changed(self, combo: QComboBox) -> None:
+        for r in range(self.columns.rowCount()):
+            if self.columns.cellWidget(r, 2) is combo:
+                self._sync_yes_no(r)
         self._edited()
 
     def _load_codes(self, p: Profile) -> None:
@@ -502,9 +559,18 @@ class ExportDialog(QDialog):
             value = value_widget.currentData() if kind == "field" and \
                 value_widget is not None else text(2)
             hidden = self.columns.item(r, 6)
+
+            def word(c, default, r=r):
+                item = self.columns.item(r, c)
+                if item is None:
+                    return default
+                if self._uses_yes_no(r):
+                    return item.text()
+                kept = item.data(_KEPT)
+                return default if kept is None else kept
             cols.append(Column(
                 header=text(0), kind=kind, value=value or "",
-                yes=text(3), no=text(4),
+                yes=word(3, "1"), no=word(4, "0"),
                 text=self._text_options(self.columns.cellWidget(r, 5)),
                 hidden=bool(hidden and hidden.checkState()
                             == Qt.CheckState.Checked)))

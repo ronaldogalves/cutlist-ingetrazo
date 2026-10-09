@@ -245,3 +245,17 @@ never carry code.
   a name that "does not match" at a supplier.
 - **Per column**, by choice: no accents, UPPERCASE, spaces → `_`
   (combinable), for systems that want them.
+
+## D-010 — Export text hygiene is a rule, not an option
+
+*2026-10-09 · accepted · Ronaldo: "we just enforce it as a rule"*
+
+- **File names are always safe**: accents removed, spaces → `_`, only
+  letters, digits and `_ - . ( )` (`Família Souza - MDF Branco 15` →
+  `Familia_Souza_-_MDF_Branco_15`). An option that only exists to avoid
+  a problem should not be an option.
+- **Values are always tidied**: spaces trimmed at both ends, runs of
+  spaces made one — the invisible trailing space is the classic cause of
+  a name that "does not match" at a supplier.
+- **Per column**, by choice: no accents, UPPERCASE, spaces → `_`
+  (combinable), for systems that want them.
