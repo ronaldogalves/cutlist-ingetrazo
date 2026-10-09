@@ -59,6 +59,8 @@ def install(app) -> None:
             lambda _c=False: controller.open_materials(None))
         menu.addAction(tr("Settings…")).triggered.connect(
             lambda _c=False: controller.open_settings())
+        menu.addAction(tr("Export…")).triggered.connect(
+            lambda _c=False: controller.open_export())
     log.info("Cut List installed (key %r)", app.key)
 
 
@@ -143,6 +145,11 @@ class Controller:
         self.groups: dict = {}
         self.materials_seen: set[str] = set()
         self.tags_seen: set[str] = set()
+        # The last list read, for the export window and the dialogs.
+        self.cut_list = None
+        self.parts: dict = {}
+        self.overrides: dict = {}
+        self.library = None
         self.stale = True
         # While IngeTrazo builds its window the panel may "show": no
         # reading (and no questions) until the app is actually running.
@@ -157,6 +164,7 @@ class Controller:
         panel.materials_requested.connect(self.open_materials)
         panel.settings_requested.connect(self.open_settings)
         panel.part_settings_requested.connect(self.open_part_settings)
+        panel.export_requested.connect(self.open_export)
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
@@ -191,6 +199,10 @@ class Controller:
             return
         self.outlines = ex.outlines
         self.groups = ex.groups
+        self.cut_list = cut_list
+        self.parts = {p.uid: p for p in parts}
+        self.overrides = overrides
+        self.library = library
         self.materials_seen = ex.materials
         self.tags_seen = ex.tags
         self.highlight = []
@@ -246,10 +258,15 @@ class Controller:
 
         def run():
             dlg = SettingsDialog(self.store.settings(), self.tags_seen,
-                                 first_run=first_run, parent=self.app.window)
+                                 first_run=first_run,
+                                 fields=self.store.fields(),
+                                 parent=self.app.window)
             if dlg.exec():
-                self.store.save_settings(dlg.result(),
-                                         remember=dlg.remember.isChecked())
+                remember = dlg.remember.isChecked()
+                self.store.save_settings(dlg.result(), remember=remember)
+                if not first_run:
+                    self.store.save_fields(dlg.result_fields(),
+                                           remember=remember)
                 return True
             return False
         if self._guard(run) and then_refresh:
@@ -267,14 +284,93 @@ class Controller:
         def run():
             overrides = self.store.overrides(groups)
             first = overrides[groups[0].uid]
+            fields = self.store.fields()
+            part = self.parts.get(groups[0].uid)
+            inherited = fields.values(part.tag if part else groups[0].layer)
             dlg = PartDialog(first, len(groups), title=groups[0].name,
-                             parent=self.app.window)
+                             fields=inherited, parent=self.app.window)
             if dlg.exec():
                 result = dlg.result()
-                return self.store.set_overrides({g: result for g in groups})
+                typed = dlg.field_values()
+                changes = {}
+                for g in groups:
+                    own = {} if dlg.clear_fields.isChecked() else \
+                        overrides[g.uid].field_values
+                    changes[g] = result.with_fields({**own, **typed})
+                return self.store.set_overrides(changes)
             return False
         if self._guard(run):
             self.refresh()
+
+    # ---- export (D-009) -------------------------------------------------------
+    def model_path(self):
+        """The open document's file, if it was saved (IngeTrazo keeps it on
+        the window; read defensively, the attribute is not public API)."""
+        from pathlib import Path
+        path = getattr(self.app.window, "_current_path", None)
+        return Path(path) if path else None
+
+    def part_fields(self) -> dict:
+        fields = self.store.fields()
+        return {uid: fields.values(p.tag, self.overrides.get(uid).field_values
+                                   if uid in self.overrides else None)
+                for uid, p in self.parts.items()}
+
+    def export_session(self):
+        from datetime import date
+
+        from ..export.rows import make_rows
+        from ..ui.export_dialog import ExportSession
+        path = self.model_path()
+        context = {"model": path.stem if path else tr("cut list"),
+                   "date": date.today().isoformat()}
+        fields = self.part_fields()
+        bands = sorted({b for p in self.parts.values() for b in p.edges if b},
+                       key=str.lower)
+        materials = sorted({s.material for s in self.cut_list.sections
+                            if s.material}, key=str.lower)
+        return ExportSession(
+            rows=lambda profile: make_rows(self.cut_list, self.parts,
+                                           self.library, profile,
+                                           part_fields=fields,
+                                           context=context),
+            profiles=self.store.profiles(), last=self.store.last_profile(),
+            save=self.store.save_profiles, materials=materials, bands=bands,
+            fields=list(self.store.fields().names),
+            write=self.write_files, copy=self.copy_text,
+            suggested_folder=str(path.parent) if path else "")
+
+    def open_export(self) -> None:
+        if self.cut_list is None or self.stale:
+            self.refresh(ask=True)
+        if self.cut_list is None:
+            return
+        from ..ui.export_dialog import ExportDialog
+
+        def run():
+            ExportDialog(self.export_session(), parent=self.app.window).exec()
+            return True
+        self._guard(run)
+
+    def write_files(self, folder: str, files: dict) -> None:
+        """Write ``{name: bytes}`` into ``folder``; ask before replacing."""
+        from pathlib import Path
+
+        from PySide6.QtWidgets import QMessageBox
+        target = Path(folder)
+        existing = [n for n in files if (target / n).exists()]
+        if existing and QMessageBox.question(
+                self.app.window, tr("Cut List — Export"),
+                tr("Replace these files?\n{names}",
+                   names="\n".join(existing))
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        for name, data in files.items():
+            (target / name).write_bytes(data)
+
+    def copy_text(self, text: str) -> None:
+        from PySide6.QtWidgets import QApplication
+        QApplication.clipboard().setText(text)
 
     def viewport_menu(self, menu, selection) -> None:
         """Right-click in the viewport: part settings for the selected

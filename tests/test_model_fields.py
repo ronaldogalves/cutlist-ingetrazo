@@ -27,3 +27,18 @@ def test_round_trip_and_junk():
     assert Fields.from_list(FIELDS.to_list()) == FIELDS
     assert Fields.from_list([{"name": ""}, "x", {"name": "A"},
                              {"name": "A"}]).names == ("A",)
+
+
+def test_rules_typed_as_text():
+    from cutlist.model.fields import format_rules, parse_rules
+    rules = parse_rules("QTO = Quarto; BNH=Banheiro; junk; =x")
+    assert [(r.prefix, r.value) for r in rules] == [("QTO", "Quarto"),
+                                                   ("BNH", "Banheiro")]
+    assert format_rules(rules) == "QTO = Quarto; BNH = Banheiro"
+
+
+def test_part_field_values_round_trip():
+    from cutlist.model.parts import PartOverride
+    o = PartOverride().with_fields({"Ambiente": "Quarto", "Cliente": ""})
+    assert o.field_values == {"Ambiente": "Quarto"}
+    assert PartOverride.from_dict(o.to_dict()) == o

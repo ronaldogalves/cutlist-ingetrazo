@@ -148,6 +148,49 @@ class Store:
                 umats[spec.name] = spec.to_dict()
             self.write_user_data({**user, "materials": umats})
 
+    # ---- custom fields (D-009 §10) ----------------------------------------------
+    def fields(self):
+        """The model's custom fields; a model that has none yet starts from
+        the user's (their usual Cliente/Ambiente and tag rules)."""
+        from ..model.fields import Fields
+        doc = self.doc_data()
+        if "fields" in doc:
+            return Fields.from_list(doc.get("fields"))
+        return Fields.from_list(self.user_data().get("fields"))
+
+    def save_fields(self, fields, *, remember: bool) -> None:
+        doc = self.doc_data()
+        if doc.get("fields") != fields.to_list():
+            self.write_doc_data({**doc, "fields": fields.to_list()})
+        if remember:
+            self.write_user_data({**self.user_data(),
+                                  "fields": fields.to_list()})
+
+    # ---- export profiles (D-009 §1) --------------------------------------------
+    def profiles(self) -> dict:
+        """name → Profile; the generic one when the user has none."""
+        from ..export.profile import Profile, generic
+        raw = self.user_data().get("export_profiles")
+        out = {}
+        if isinstance(raw, dict):
+            for name, d in raw.items():
+                p = Profile.from_dict(d)
+                out[str(name)] = replace(p, name=str(name))
+        if not out:
+            g = generic()
+            out[g.name] = g
+        return out
+
+    def last_profile(self) -> str | None:
+        name = self.user_data().get("last_export_profile")
+        return name if isinstance(name, str) else None
+
+    def save_profiles(self, profiles: dict, last: str | None) -> None:
+        self.write_user_data({
+            **self.user_data(),
+            "export_profiles": {n: p.to_dict() for n, p in profiles.items()},
+            "last_export_profile": last})
+
     # ---- settings ------------------------------------------------------------
     def settings(self) -> Settings:
         return resolve(self.user_data().get("settings"),

@@ -114,6 +114,10 @@ IngeTrazo's API changes to `host/`.
   document data, keyed by material name.
 - Display lengths: `core.units.fmt_len_fine(metres)` (model units, mm
   precision).
+- The open document's path is `window._current_path` (private: read with
+  `getattr`, `None` for an unsaved model) — used for export file names.
+- A new document starts with a scale figure: a billboard group
+  (`group.billboard`), never a part.
 - Geometry mutations go through `viewport.history.execute(command)` then
   `viewport.notify_scene_changed()`. (`SnapshotImport` is for file imports
   that add groups — not a general-purpose wrapper.)

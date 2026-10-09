@@ -93,6 +93,7 @@ class CutListPanel(QWidget):
     settings_requested = Signal()
     #: Open the part settings for these part uids.
     part_settings_requested = Signal(object)
+    export_requested = Signal()
 
     #: Where the column widths are remembered (a per-user convenience).
     HEADER_KEY = "cutlist/panel_header"
@@ -151,6 +152,13 @@ class CutListPanel(QWidget):
         self.settings_button.setObjectName("cutlist_settings")
         self.settings_button.clicked.connect(self.settings_requested)
         bar.addWidget(self.settings_button)
+        self.export_button = QPushButton(tr("Export…"))
+        self.export_button.setObjectName("cutlist_export")
+        self.export_button.setToolTip(tr("Files for suppliers and "
+                                         "spreadsheets, through your saved "
+                                         "profiles."))
+        self.export_button.clicked.connect(self.export_requested)
+        bar.addWidget(self.export_button)
         layout.addLayout(bar)
 
         self.scope_label = QLabel()

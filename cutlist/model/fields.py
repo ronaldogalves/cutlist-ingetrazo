@@ -88,3 +88,19 @@ class Fields:
                 unique.append(d)
         return cls(tuple(unique))
 
+
+
+def parse_rules(text: str) -> tuple[TagRule, ...]:
+    """``"QTO = Quarto; BNH = Banheiro"`` → two rules (bad items skipped)."""
+    rules = []
+    for item in (text or "").replace("\n", ";").split(";"):
+        if "=" not in item:
+            continue
+        prefix, value = (s.strip() for s in item.split("=", 1))
+        if prefix and value:
+            rules.append(TagRule(prefix, value))
+    return tuple(rules)
+
+
+def format_rules(rules) -> str:
+    return "; ".join(f"{r.prefix} = {r.value}" for r in rules)

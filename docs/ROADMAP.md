@@ -58,20 +58,20 @@ yet deducted, totalled or laid out). Built in three visible steps.
       panel; components-only option.
 
 **Step C — export** (design: D-009)
-- [ ] `export/`: profiles (to/from dict), rows from the cut list (grain
+- [x] `export/`: profiles (to/from dict), rows from the cut list (grain
       first, bands relative to face 1, numbers, yes/no values, code
       table, fixed text and templates, one per piece or merged), split
       and file names; problems reported, never blanks.
-- [ ] Writers: delimited text (separator, encoding, line endings,
+- [x] Writers: delimited text (separator, encoding, line endings,
       quoting, trailing separator, header), `.xlsx` with the stdlib,
       clipboard.
-- [ ] Both real supplier templates reproduced byte for byte in tests.
-- [ ] Custom fields: defined in Settings, model values, tag rules,
+- [x] Both real supplier templates reproduced byte for byte in tests.
+- [x] Custom fields: defined in Settings, model values, tag rules,
       per-part overrides.
-- [ ] Export window: profile combo (save, save as, rename, delete,
+- [x] Export window: profile combo (save, save as, rename, delete,
       import/export file, `*` when changed), columns editor, file and
       number options, code table, live preview.
-- [ ] All strings through `tr()`; pt-BR and es catalogs complete.
+- [x] All strings through `tr()`; pt-BR and es catalogs complete.
 
 **Accept:** on the reference models the cut list matches a hand-checked
 list exactly (sizes to 1 mm, quantities, materials) — model D against its

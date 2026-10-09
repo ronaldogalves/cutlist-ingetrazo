@@ -69,6 +69,18 @@ class PartOverride:
     #: ``None`` = from the material; else "length", "width" or "none".
     grain: str | None = None
     can_rotate: bool | None = None
+    #: The part's own custom field values, as ``((name, value), …)``.
+    fields: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def field_values(self) -> dict[str, str]:
+        return dict(self.fields)
+
+    def with_fields(self, values: dict) -> PartOverride:
+        """These field values (empty ones removed), sorted for equality."""
+        from dataclasses import replace
+        clean = sorted((str(k), str(v)) for k, v in values.items() if v)
+        return replace(self, fields=tuple(clean))
 
     def to_dict(self) -> dict:
         """Only what differs from no override (what ``group.ext`` keeps)."""
@@ -83,6 +95,8 @@ class PartOverride:
             d["grain"] = self.grain
         if self.can_rotate is not None:
             d["can_rotate"] = self.can_rotate
+        if self.fields:
+            d["fields"] = dict(self.fields)
         return d
 
     @property
@@ -99,7 +113,9 @@ class PartOverride:
                    exclude=bool(d.get("exclude", False)),
                    note=str(d.get("note") or ""),
                    grain=grain if grain in GRAINS else None,
-                   can_rotate=rot if isinstance(rot, bool) else None)
+                   can_rotate=rot if isinstance(rot, bool) else None
+                   ).with_fields(d.get("fields")
+                                 if isinstance(d.get("fields"), dict) else {})
 
 
 #: Grain directions a part can be set to (``None`` = from its material).

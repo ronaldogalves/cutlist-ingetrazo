@@ -24,12 +24,16 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QPushButton,
     QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 from ..i18n import tr
+from ..model.fields import FieldDef, Fields, format_rules, parse_rules
 from ..model.materials import BoardKind, Library, MaterialSpec, Role
 from ..model.parts import PartOverride
 from ..model.settings import UNITS, Settings
@@ -277,7 +281,10 @@ class PartDialog(QDialog):
     """Settings of the selected parts; they all get the same values."""
 
     def __init__(self, override: PartOverride, count: int,
-                 title: str = "", parent=None) -> None:
+                 title: str = "", fields: dict | None = None,
+                 parent=None) -> None:
+        """``fields``: custom field name → the value the part gets without
+        its own (shown greyed in the empty box)."""
         super().__init__(parent)
         self.setObjectName("cutlist_part_dialog")
         self.setWindowTitle(tr("Cut List — Part settings"))
@@ -313,7 +320,26 @@ class PartDialog(QDialog):
         form.addRow("", self.flip)
         self.note = QLineEdit(override.note)
         form.addRow(tr("Note"), self.note)
+        self.field_edits: dict[str, QLineEdit] = {}
+        own = override.field_values
+        for name, inherited in (fields or {}).items():
+            edit = QLineEdit(own.get(name, "") if count == 1 else "")
+            edit.setPlaceholderText(inherited or "")
+            edit.setToolTip(tr("Empty: the value from Settings (model or "
+                               "tag rule)."))
+            self.field_edits[name] = edit
+            form.addRow(name, edit)
+        self.clear_fields = QCheckBox(tr("Clear these parts' own field "
+                                         "values"))
+        self.clear_fields.setVisible(bool(fields))
+        form.addRow("", self.clear_fields)
         layout.addWidget(_buttons(self))
+
+    def field_values(self) -> dict[str, str]:
+        """Typed field values (empty boxes are left out: they keep each
+        part's own value)."""
+        return {n: e.text().strip() for n, e in self.field_edits.items()
+                if e.text().strip()}
 
     def result(self) -> PartOverride:          # noqa: D401 — Qt-style name
         return PartOverride(flip_face1=self.flip.isChecked(),
@@ -333,7 +359,7 @@ class SettingsDialog(QDialog):
     again"."""
 
     def __init__(self, settings: Settings, tags=(), first_run: bool = False,
-                 parent=None) -> None:
+                 fields: Fields | None = None, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("cutlist_settings_dialog")
         self.setWindowTitle(tr("Cut List — What goes in the cut list")
@@ -420,6 +446,39 @@ class SettingsDialog(QDialog):
         bform.addRow(tr("Trim per sheet edge"), self.trim)
         layout.addWidget(sheets)
 
+        custom = QGroupBox(tr("Custom fields (client, room…)"))
+        cbox = QVBoxLayout(custom)
+        hint = QLabel(tr("Every part gets each field's value for this "
+                         "model, unless a tag rule (e.g. QTO = Quarto) or "
+                         "the part's own setting says otherwise. Exports "
+                         "can use them as columns, to split files and in "
+                         "file names."))
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: gray;")
+        cbox.addWidget(hint)
+        self.fields_table = QTableWidget(0, 3)
+        self.fields_table.setObjectName("cutlist_fields")
+        self.fields_table.setHorizontalHeaderLabels(
+            [tr("Field"), tr("Value in this model"),
+             tr("Tag rules (tag start = value; …)")])
+        self.fields_table.horizontalHeader().setStretchLastSection(True)
+        self.fields_table.verticalHeader().hide()
+        for f in (fields or Fields()).defs:
+            self._add_field_row(f.name, f.model_value, format_rules(f.rules))
+        cbox.addWidget(self.fields_table)
+        row = QHBoxLayout()
+        add = QPushButton(tr("Add field"))
+        add.clicked.connect(lambda: self._add_field_row("", "", ""))
+        remove = QPushButton(tr("Remove field"))
+        remove.clicked.connect(lambda: self.fields_table.removeRow(
+            self.fields_table.currentRow()))
+        row.addWidget(add)
+        row.addWidget(remove)
+        row.addStretch(1)
+        cbox.addLayout(row)
+        custom.setVisible(not first_run)
+        layout.addWidget(custom)
+
         self.remember = QCheckBox(tr("Make these my defaults for every "
                                      "model"))
         self.remember.setObjectName("cutlist_remember")
@@ -432,6 +491,22 @@ class SettingsDialog(QDialog):
             self.remember.setChecked(True)
         layout.addWidget(self.dont_ask)
         layout.addWidget(_buttons(self))
+
+    def _add_field_row(self, name, value, rules) -> None:
+        r = self.fields_table.rowCount()
+        self.fields_table.insertRow(r)
+        for c, text in enumerate((name, value, rules)):
+            self.fields_table.setItem(r, c, QTableWidgetItem(text))
+
+    def result_fields(self) -> Fields:
+        defs = []
+        for r in range(self.fields_table.rowCount()):
+            def text(c, r=r):
+                item = self.fields_table.item(r, c)
+                return item.text().strip() if item else ""
+            if text(0):
+                defs.append(FieldDef(text(0), text(1), parse_rules(text(2))))
+        return Fields.from_list([d.to_dict() for d in defs])
 
     def result(self) -> Settings:              # noqa: D401 — Qt-style name
         excluded = tuple(
