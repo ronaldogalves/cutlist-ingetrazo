@@ -124,7 +124,7 @@ def test_text_options_from_the_columns_table(win):
     profile = plugin("export.profile")
     d._load(replace(d.profile, columns=(
         profile.Column("Material", value="material"),)))
-    button = d.columns.cellWidget(0, 5)
+    button = d.columns.cellWidget(0, 6)
     assert button.text() == "As is"
     upper = next(a for a in button.menu().actions() if a.data() == "upper")
     upper.setChecked(True)
@@ -141,14 +141,37 @@ def test_yes_no_words_only_where_they_mean_something(win):
     d._load(replace(d.profile, columns=(
         profile.Column("Name", value="name"),
         profile.Column("Rotate", value="rotate", yes="S", no=""))))
-    name_yes, rotate_yes = d.columns.item(0, 3), d.columns.item(1, 3)
+    name_yes, rotate_yes = d.columns.item(0, 4), d.columns.item(1, 4)
     assert name_yes.text() == "" and not name_yes.flags() & \
         plugin("ui.export_dialog").Qt.ItemFlag.ItemIsEnabled
     assert rotate_yes.text() == "S"
     # Switching the first column to a yes/no field brings its words back.
-    combo = d.columns.cellWidget(0, 2)
+    combo = d.columns.cellWidget(0, 3)
     combo.setCurrentIndex(combo.findData("grain"))
-    assert d.columns.item(0, 3).text() == "1"
+    assert d.columns.item(0, 4).text() == "1"
     assert [(col.yes, col.no) for col in d.profile.columns] == \
         [("1", "0"), ("S", "")]
+    d.deleteLater()
+
+
+def test_the_on_switch_and_moving_columns(win):
+    c = setup_model(win)
+    d = dialog(c)
+    profile = plugin("export.profile")
+    Qt = plugin("ui.export_dialog").Qt
+    d._load(replace(d.profile, columns=(
+        profile.Column("A", value="qty"), profile.Column("B", value="name"),
+        profile.Column("C", value="length"))))
+    # Off: still in the profile, out of the file, the row faded.
+    d.columns.item(1, 0).setCheckState(Qt.CheckState.Unchecked)
+    assert d.profile.columns[1].hidden
+    assert d.preview.toPlainText().splitlines()[0].lstrip("\ufeff") == "A;C"
+    assert not d.columns.cellWidget(1, 3).isEnabled()
+    # A drop of row 0 below row 2, and Move up: the same reordering path.
+    d._move_column_to(0, 3)
+    assert [col.header for col in d.profile.columns] == ["B", "C", "A"]
+    d.columns.selectRow(2)
+    d._move_column(-1)
+    assert [col.header for col in d.profile.columns] == ["B", "A", "C"]
+    assert d.profile.columns[0].hidden          # the switch moved with it
     d.deleteLater()

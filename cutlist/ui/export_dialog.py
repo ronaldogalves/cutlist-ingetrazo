@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -54,6 +54,40 @@ PREVIEW_ROWS = 40
 
 #: Where a Yes/No cell keeps its word while the column does not use it.
 _KEPT = Qt.ItemDataRole.UserRole + 10
+
+#: Positions in the columns table.
+ON, HEADER, KIND, VALUE, YES, NO, TEXT = range(7)
+
+
+class _RowsTable(QTableWidget):
+    """A table whose rows can be dragged to a new place. Qt's own row
+    dragging cannot carry the combo boxes inside the cells, so the drop is
+    reported (``row_moved(from, to)``) and the dialog rebuilds the rows in
+    their new order — the same path as Move up / Move down."""
+
+    row_moved = Signal(int, int)
+
+    def __init__(self, rows: int, cols: int) -> None:
+        super().__init__(rows, cols)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.viewport().setAcceptDrops(True)
+        self.setDragDropOverwriteMode(False)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+
+    def dropEvent(self, event) -> None:                 # noqa: N802 — Qt
+        source = self.currentRow()
+        y = event.position().toPoint().y()
+        target = self.rowAt(y)
+        if target < 0:
+            target = self.rowCount()
+        elif y > self.visualRect(self.model().index(target, 0)).center().y():
+            target += 1
+        event.setDropAction(Qt.DropAction.IgnoreAction)
+        event.accept()
+        if source >= 0 and target not in (source, source + 1):
+            self.row_moved.emit(source, target)
 
 
 def field_label(name: str) -> str:
@@ -205,18 +239,25 @@ class ExportDialog(QDialog):
     def _columns_tab(self) -> QWidget:
         w = QWidget()
         box = QVBoxLayout(w)
-        self.columns = QTableWidget(0, 7)
+        self.columns = _RowsTable(0, 7)
         self.columns.setObjectName("cutlist_export_columns")
         self.columns.setHorizontalHeaderLabels([
-            tr("Header"), tr("Shows"), tr("Field, text or template"),
-            tr("Yes"), tr("No"), tr("Text"), tr("Hidden")])
+            tr("On"), tr("Header"), tr("Shows"), tr("Field, text or template"),
+            tr("Yes"), tr("No"), tr("Text")])
+        self.columns.horizontalHeaderItem(ON).setToolTip(tr(
+            "Ticked: the column is in the file. Unticked: kept in the "
+            "profile, left out of the file."))
         self.columns.horizontalHeader().setStretchLastSection(False)
-        self.columns.setColumnWidth(0, 160)
-        self.columns.setColumnWidth(1, 110)
-        self.columns.setColumnWidth(2, 300)
+        self.columns.setColumnWidth(ON, 36)
+        self.columns.setColumnWidth(HEADER, 160)
+        self.columns.setColumnWidth(KIND, 110)
+        self.columns.setColumnWidth(VALUE, 300)
         self.columns.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows)
-        self.columns.itemChanged.connect(self._edited)
+        self.columns.setToolTip(tr("Drag a row to move the column, or use "
+                                   "Move up / Move down."))
+        self.columns.itemChanged.connect(self._item_changed)
+        self.columns.row_moved.connect(self._move_column_to)
         box.addWidget(self.columns)
         row = QHBoxLayout()
         for text, slot in ((tr("Add column"), self._add_column),
@@ -407,49 +448,61 @@ class ExportDialog(QDialog):
              for n in self.session.fields]
 
     def _insert_column(self, r: int, c: Column) -> None:
-        self.columns.insertRow(r)
-        self.columns.setItem(r, 0, QTableWidgetItem(c.header))
-        kind = QComboBox()
-        kind.addItem(tr("Field"), "field")
-        kind.addItem(tr("Fixed text"), "text")
-        kind.addItem(tr("Template"), "template")
-        self._set(kind, c.kind)
-        kind.currentIndexChanged.connect(
-            lambda _i, k=kind: self._kind_changed(k))
-        self.columns.setCellWidget(r, 1, kind)
-        self._value_widget(r, c.kind, c.value)
-        for col_index, word in ((3, c.yes), (4, c.no)):
-            item = QTableWidgetItem(word)
-            item.setData(_KEPT, word)
-            self.columns.setItem(r, col_index, item)
-        self.columns.setCellWidget(r, 5, self._text_button(c.text))
-        hidden = QTableWidgetItem()
-        hidden.setFlags(hidden.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-        hidden.setCheckState(Qt.CheckState.Checked if c.hidden
-                             else Qt.CheckState.Unchecked)
-        self.columns.setItem(r, 6, hidden)
-        self._sync_yes_no(r)
+        self.columns.blockSignals(True)
+        try:
+            self.columns.insertRow(r)
+            on = QTableWidgetItem()
+            on.setFlags((on.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                        & ~Qt.ItemFlag.ItemIsEditable)
+            on.setCheckState(Qt.CheckState.Unchecked if c.hidden
+                             else Qt.CheckState.Checked)
+            self.columns.setItem(r, ON, on)
+            self.columns.setItem(r, HEADER, QTableWidgetItem(c.header))
+            kind = QComboBox()
+            kind.addItem(tr("Field"), "field")
+            kind.addItem(tr("Fixed text"), "text")
+            kind.addItem(tr("Template"), "template")
+            self._set(kind, c.kind)
+            kind.currentIndexChanged.connect(
+                lambda _i, k=kind: self._kind_changed(k))
+            self.columns.setCellWidget(r, KIND, kind)
+            self._value_widget(r, c.kind, c.value)
+            for col_index, word in ((YES, c.yes), (NO, c.no)):
+                item = QTableWidgetItem(word)
+                item.setData(_KEPT, word)
+                self.columns.setItem(r, col_index, item)
+            self.columns.setCellWidget(r, TEXT, self._text_button(c.text))
+        finally:
+            self.columns.blockSignals(False)
+        self._sync_row(r)
+
+    def _is_on(self, r: int) -> bool:
+        item = self.columns.item(r, ON)
+        return item is None or item.checkState() == Qt.CheckState.Checked
 
     def _uses_yes_no(self, r: int) -> bool:
         """Yes/No words matter for yes-or-no fields (grain, may rotate,
         band yes/no) and for templates (which may use them)."""
-        kind = self.columns.cellWidget(r, 1)
+        kind = self.columns.cellWidget(r, KIND)
         kind = kind.currentData() if kind is not None else "field"
         if kind == "template":
             return True
         if kind != "field":
             return False
-        value = self.columns.cellWidget(r, 2)
+        value = self.columns.cellWidget(r, VALUE)
         return value is not None and value.currentData() in FLAG_FIELDS
 
-    def _sync_yes_no(self, r: int) -> None:
-        """Show and allow editing the Yes/No words only where they are
-        used; elsewhere the cells are empty and greyed, and the words are
-        kept for when the column changes back."""
+    def _sync_row(self, r: int) -> None:
+        """How a row looks: faded when the column is off; Yes/No shown and
+        editable only where they are used (elsewhere empty and greyed, the
+        words kept for when the column changes back)."""
+        on = self._is_on(r)
         uses = self._uses_yes_no(r)
+        grey = self.palette().color(self.palette().ColorRole.PlaceholderText)
+        text = self.palette().color(self.palette().ColorRole.Text)
         self.columns.blockSignals(True)
         try:
-            for col_index in (3, 4):
+            for col_index in (YES, NO):
                 item = self.columns.item(r, col_index)
                 if item is None:
                     continue
@@ -463,8 +516,21 @@ class ExportDialog(QDialog):
                     item.setText("")
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable
                                   & ~Qt.ItemFlag.ItemIsEnabled)
+            for col_index in (HEADER, VALUE, YES, NO):
+                item = self.columns.item(r, col_index)
+                if item is not None:
+                    item.setForeground(text if on else grey)
+            for col_index in (KIND, VALUE, TEXT):
+                widget = self.columns.cellWidget(r, col_index)
+                if widget is not None:
+                    widget.setEnabled(on)
         finally:
             self.columns.blockSignals(False)
+
+    def _item_changed(self, item) -> None:
+        if item.column() == ON:
+            self._sync_row(item.row())
+        self._edited()
 
     def _text_button(self, options) -> QToolButton:
         """Text options of one column, ticked in a small menu; the button
@@ -506,22 +572,22 @@ class ExportDialog(QDialog):
             self._set(combo, value)
             combo.currentIndexChanged.connect(
                 lambda _i, w=combo: self._value_changed(w))
-            self.columns.setCellWidget(r, 2, combo)
+            self.columns.setCellWidget(r, VALUE, combo)
         else:
-            self.columns.removeCellWidget(r, 2)
-            self.columns.setItem(r, 2, QTableWidgetItem(value))
+            self.columns.removeCellWidget(r, VALUE)
+            self.columns.setItem(r, VALUE, QTableWidgetItem(value))
 
     def _kind_changed(self, kind_combo: QComboBox) -> None:
         for r in range(self.columns.rowCount()):
-            if self.columns.cellWidget(r, 1) is kind_combo:
+            if self.columns.cellWidget(r, KIND) is kind_combo:
                 self._value_widget(r, kind_combo.currentData(), "")
-                self._sync_yes_no(r)
+                self._sync_row(r)
         self._edited()
 
     def _value_changed(self, combo: QComboBox) -> None:
         for r in range(self.columns.rowCount()):
-            if self.columns.cellWidget(r, 2) is combo:
-                self._sync_yes_no(r)
+            if self.columns.cellWidget(r, VALUE) is combo:
+                self._sync_row(r)
         self._edited()
 
     def _load_codes(self, p: Profile) -> None:
@@ -554,11 +620,10 @@ class ExportDialog(QDialog):
             def text(c, r=r):
                 item = self.columns.item(r, c)
                 return item.text() if item else ""
-            kind = self.columns.cellWidget(r, 1).currentData()
-            value_widget = self.columns.cellWidget(r, 2)
+            kind = self.columns.cellWidget(r, KIND).currentData()
+            value_widget = self.columns.cellWidget(r, VALUE)
             value = value_widget.currentData() if kind == "field" and \
-                value_widget is not None else text(2)
-            hidden = self.columns.item(r, 6)
+                value_widget is not None else text(VALUE)
 
             def word(c, default, r=r):
                 item = self.columns.item(r, c)
@@ -569,11 +634,10 @@ class ExportDialog(QDialog):
                 kept = item.data(_KEPT)
                 return default if kept is None else kept
             cols.append(Column(
-                header=text(0), kind=kind, value=value or "",
-                yes=word(3, "1"), no=word(4, "0"),
-                text=self._text_options(self.columns.cellWidget(r, 5)),
-                hidden=bool(hidden and hidden.checkState()
-                            == Qt.CheckState.Checked)))
+                header=text(HEADER), kind=kind, value=value or "",
+                yes=word(YES, "1"), no=word(NO, "0"),
+                text=self._text_options(self.columns.cellWidget(r, TEXT)),
+                hidden=not self._is_on(r)))
         material_codes, band_codes = {}, {}
         for r in range(self.codes.rowCount()):
             kind = self.codes.item(r, 0).data(Qt.ItemDataRole.UserRole)
@@ -630,13 +694,23 @@ class ExportDialog(QDialog):
 
     def _move_column(self, step: int) -> None:
         r = self.columns.currentRow()
-        target = r + step
-        if r < 0 or not 0 <= target < self.columns.rowCount():
+        if r < 0 or not 0 <= r + step < self.columns.rowCount():
             return
+        self._move_column_to(r, r + step + (1 if step > 0 else 0))
+
+    def _move_column_to(self, source: int, target: int) -> None:
+        """Move column ``source`` to sit before row ``target`` (a drop, or
+        Move up / down)."""
         cols = list(self.current().columns)
-        cols[r], cols[target] = cols[target], cols[r]
+        if not 0 <= source < len(cols):
+            return
+        col = cols.pop(source)
+        at = target - 1 if target > source else target
+        at = max(0, min(at, len(cols)))
+        cols.insert(at, col)
         self._load(replace(self.current(), columns=tuple(cols)))
-        self.columns.selectRow(target)
+        self.columns.selectRow(at)
+        self._edited()
 
     # =====================================================================
     # Preview, problems, the profile combo
