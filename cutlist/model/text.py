@@ -18,6 +18,14 @@ _ITEM_SPLIT = re.compile(r"[;/\n|]+")
 _SIDE_SPLIT = re.compile(r"\s*[x×X*]\s*")
 
 
+def tidy(text: str) -> str:
+    """Spaces trimmed at both ends and runs of spaces made one — always
+    (D-010): an invisible trailing space is the classic reason a name
+    "does not match" (model D: "GAB MONT INT " beside "GAB MONT INT"),
+    and nobody types one on purpose."""
+    return re.sub(r"[ \t]{2,}", " ", (text or "").strip())
+
+
 def parse_number(text: str) -> float | None:
     """``"3,5"`` → 3.5; ``""`` → None; anything else unreadable → None."""
     t = (text or "").strip().replace(",", ".")

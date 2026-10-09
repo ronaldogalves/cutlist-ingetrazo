@@ -123,3 +123,10 @@ def test_a_cabinet_merged_into_one_group_is_flagged():
     faces = box(0.6, 0.5, 0.018) + box(0.6, 0.5, 0.018, at=(0, 0, 0.7))
     p = read_part(raw(faces), lib())
     assert Flag.SEVERAL_SOLIDS in p.flags
+
+
+def test_names_are_tidied():
+    # Regression (model D): "GAB MONT INT " and "GAB MONT INT" are one part.
+    a = read_part(raw(box(0.7, 0.4, 0.018), name="GAB MONT INT "), lib())
+    b = read_part(raw(box(0.7, 0.4, 0.018), name=" GAB  MONT INT"), lib())
+    assert a.name == b.name == "GAB MONT INT"

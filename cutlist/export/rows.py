@@ -19,6 +19,7 @@ from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from ..model.grouping import CutList, CutListLine, _natural
 from ..model.materials import Library
 from ..model.parts import Part
+from ..model.text import tidy
 from .profile import FIELDS, FLAG_FIELDS, LENGTH_FIELDS, Column, Numbers, Profile
 
 _UNITS = {"mm": Decimal("0.001"), "cm": Decimal("0.01"), "m": Decimal("1"),
@@ -87,14 +88,6 @@ def format_length(metres: float, numbers: Numbers) -> Cell:
 # ---------------------------------------------------------------------------
 # Text
 # ---------------------------------------------------------------------------
-
-def tidy(text: str) -> str:
-    """Spaces trimmed at both ends and runs of spaces made one — always:
-    an invisible trailing space is the classic reason a name "does not
-    match" in a supplier's matching step, and nobody types one on
-    purpose."""
-    return re.sub(r"[ \t]{2,}", " ", (text or "").strip())
-
 
 def no_accents(text: str) -> str:
     """"Família Souza" → "Familia Souza"; "ç" → "c"."""

@@ -15,6 +15,7 @@ from enum import StrEnum
 
 from .geometry import FaceIn, Measured, measure
 from .materials import Library, Role
+from .text import tidy
 
 #: Thinner than this (metres) a part is a surface, not a board — the same
 #: limit as IngeTrazo's ``core.parts.SURFACE_BELOW``.
@@ -249,10 +250,11 @@ def read_part(raw: RawPart, lib: Library,
         flags.add(Flag.NO_MATERIAL)
 
     return Part(
-        uid=raw.uid, name=raw.name, length=m.length, width=m.width,
+        uid=raw.uid, name=tidy(raw.name), length=m.length, width=m.width,
         thickness=m.thickness, core=core,
         face1=covers[face1_side], face2=covers[face2_side], edges=edges,
         face1_side=face1_side, tag=raw.tag, is_component=raw.is_component,
         auto_named=raw.auto_named, flags=frozenset(flags),
-        unassigned=frozenset(unassigned), excluded=excluded, note=over.note,
+        unassigned=frozenset(unassigned), excluded=excluded,
+        note=tidy(over.note),
         grain=over.grain, can_rotate=over.can_rotate, measured=m)

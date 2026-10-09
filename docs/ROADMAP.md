@@ -77,6 +77,13 @@ yet deducted, totalled or laid out). Built in three visible steps.
 list exactly (sizes to 1 mm, quantities, materials) — model D against its
 OpenCutList diagrams first (all 86 sheet parts).
 
+- [x] Model D: all 86 sheet parts match OpenCutList by name, size and
+      quantity, per board and thickness (`tests/host/test_acceptance.py`,
+      run locally: the model is private). It found one real difference
+      on the way — a part name with a trailing space — now tidied.
+- [ ] Ronaldo's hand checks: exports opened in Excel and accepted by the
+      supplier's site; the windows used on real work.
+
 ## Pre-release v0.0.x — the cut list and its exports
 
 *Planned 2026-10-09 (Ronaldo).* Once M1's acceptance check passes, publish
