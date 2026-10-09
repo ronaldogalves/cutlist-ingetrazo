@@ -76,6 +76,19 @@ class _RowsTable(QTableWidget):
         self.setDropIndicatorShown(True)
         self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
 
+    def no_drop_on(self, r: int) -> None:
+        """No cell of row ``r`` accepts a drop *onto* it, so Qt only ever
+        draws the drop line *between* rows (a whole row highlighted read as
+        "merge into this row", and the landing place was unclear). Cells
+        holding a widget get an empty item to carry that flag."""
+        for c in range(self.columnCount()):
+            item = self.item(r, c)
+            if item is None:
+                item = QTableWidgetItem()
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.setItem(r, c, item)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsDropEnabled)
+
     def dropEvent(self, event) -> None:                 # noqa: N802 — Qt
         source = self.currentRow()
         y = event.position().toPoint().y()
@@ -472,6 +485,7 @@ class ExportDialog(QDialog):
                 item.setData(_KEPT, word)
                 self.columns.setItem(r, col_index, item)
             self.columns.setCellWidget(r, TEXT, self._text_button(c.text))
+            self.columns.no_drop_on(r)
         finally:
             self.columns.blockSignals(False)
         self._sync_row(r)
@@ -576,6 +590,7 @@ class ExportDialog(QDialog):
         else:
             self.columns.removeCellWidget(r, VALUE)
             self.columns.setItem(r, VALUE, QTableWidgetItem(value))
+        self.columns.no_drop_on(r)
 
     def _kind_changed(self, kind_combo: QComboBox) -> None:
         for r in range(self.columns.rowCount()):

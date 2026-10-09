@@ -175,3 +175,22 @@ def test_the_on_switch_and_moving_columns(win):
     assert [col.header for col in d.profile.columns] == ["B", "A", "C"]
     assert d.profile.columns[0].hidden          # the switch moved with it
     d.deleteLater()
+
+
+def test_rows_only_take_drops_between_them(win):
+    """Regression (Ronaldo, 2026-10-09): no cell accepts a drop onto it,
+    so the drop indicator is always a line between rows."""
+    c = setup_model(win)
+    d = dialog(c)
+    Qt = plugin("ui.export_dialog").Qt
+    table = d.columns
+    for r in range(table.rowCount()):
+        for col in range(table.columnCount()):
+            flags = table.model().flags(table.model().index(r, col))
+            assert not flags & Qt.ItemFlag.ItemIsDropEnabled, (r, col)
+    # A column switched to fixed text keeps the rule on its new cell.
+    kind = table.cellWidget(0, 2)
+    kind.setCurrentIndex(kind.findData("text"))
+    flags = table.model().flags(table.model().index(0, 3))
+    assert not flags & Qt.ItemFlag.ItemIsDropEnabled
+    d.deleteLater()

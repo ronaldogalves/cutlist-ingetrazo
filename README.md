@@ -34,8 +34,9 @@ and [docs/BRIEF.md](docs/BRIEF.md).
 
 **Known limitations**
 
-- Dragging columns in the export window works but the drop position can
-  be unclear; Move up / Move down are exact.
+- Dragging columns in the export window shows a line where the row will
+  land, but the other rows do not slide apart yet; Move up / Move down
+  are there too.
 - `.skp` files arrive in IngeTrazo without their group hierarchy (an
   IngeTrazo import limitation): tag the boards, or check the "several
   solids" warnings.
