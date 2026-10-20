@@ -949,29 +949,42 @@ class ExportDialog(QDialog):
         self._load(self.saved)
         self._persist()
 
-    def import_profile(self) -> None:
+    def import_profile(self, paths: list[str] | None = None) -> None:
+        """Several files at once: a shop with a profile per supplier should
+        not import them one by one (Ronaldo, 2026-10-20). A file that cannot
+        be read is reported; the others still come in."""
         import json
-        path, _ = QFileDialog.getOpenFileName(
-            self, tr("Import a profile"), self.session.suggested_folder,
-            tr("Cut List profile (*.json)"))
-        if not path:
+        import os
+        if paths is None:
+            paths, _ = QFileDialog.getOpenFileNames(
+                self, tr("Import profiles"), self.session.suggested_folder,
+                tr("Cut List profile (*.json)"))
+        if not paths:
             return
-        try:
-            with open(path, encoding="utf-8") as fh:
-                p = Profile.from_dict(json.load(fh))
-        except (OSError, ValueError) as exc:
-            QMessageBox.warning(self, self.windowTitle(), str(exc))
-            return
-        name = p.name
-        n = 2
-        while name in self.profiles:
-            name = f"{p.name} ({n})"
-            n += 1
-        self.saved = replace(p, name=name)
-        self.profiles[name] = self.saved
-        self._fill_combo()
-        self._load(self.saved)
-        self._persist()
+        failed = []
+        for path in paths:
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    p = Profile.from_dict(json.load(fh))
+            except (OSError, ValueError, TypeError, AttributeError) as exc:
+                failed.append(f"{os.path.basename(path)}: {exc}")
+                continue
+            name = p.name
+            n = 2
+            while name in self.profiles:
+                name = f"{p.name} ({n})"
+                n += 1
+            self.saved = replace(p, name=name)
+            self.profiles[name] = self.saved
+        if len(failed) < len(paths):
+            self._fill_combo()
+            self._load(self.saved)
+            self._persist()
+        if failed:
+            QMessageBox.warning(
+                self, self.windowTitle(),
+                tr("These files could not be imported:") + "\n\n"
+                + "\n".join(failed))
 
     def export_profile(self) -> None:
         import json

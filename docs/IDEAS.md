@@ -79,6 +79,15 @@ Ronaldo.
 To collect: a sample file (or column list) from each supplier Ronaldo
 uses.
 
+**Where supplier codes live (Ronaldo, 2026-10-20 — to confirm).** Today
+each profile has a Codes tab: material or band name → the supplier's
+code. Ronaldo's view: "link a code to a material" is the practice, maybe
+for other suppliers too. Open question: keep codes per profile (one
+material can have a different code at each supplier) or also allow a
+code on the material itself (Materials window) as the default a profile
+falls back to. Not custom fields: those belong to parts, codes belong to
+materials. Wait for his confirmation on how Leo's codes work.
+
 ## Interactive tools
 
 - **A live painter for parts** (OpenCutList calls its version Smart

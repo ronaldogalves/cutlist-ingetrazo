@@ -239,3 +239,26 @@ def test_a_long_file_name_does_not_widen_the_window(win):
     d._edited()
     assert d.sizeHint().width() <= width + 5
     d.deleteLater()
+
+
+def test_several_profiles_import_at_once(win, tmp_path, monkeypatch):
+    c = setup_model(win)
+    d = dialog(c)
+    profile = plugin("export.profile")
+    paths = []
+    for name in ("Supplier A", "Supplier B"):
+        p = tmp_path / f"{name}.json"
+        p.write_text(json.dumps(profile.Profile(name=name).to_dict()),
+                     encoding="utf-8")
+        paths.append(str(p))
+    bad = tmp_path / "broken.json"
+    bad.write_text("{not json", encoding="utf-8")
+    warned = []
+    ui = plugin("ui.export_dialog")
+    monkeypatch.setattr(ui.QMessageBox, "warning",
+                        lambda *a: warned.append(a[2]))
+    d.import_profile(paths + [str(bad)])
+    assert {"Supplier A", "Supplier B"} <= set(d.profiles)
+    assert d.saved.name == "Supplier B"
+    assert len(warned) == 1 and "broken.json" in warned[0]
+    d.deleteLater()
