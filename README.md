@@ -41,7 +41,7 @@ and [docs/BRIEF.md](docs/BRIEF.md).
   IngeTrazo import limitation): tag the boards, or check the "several
   solids" warnings.
 
-Tested with **IngeTrazo 0.5.7**.
+Tested with **IngeTrazo 0.5.9**.
 
 ## Trying it (developers)
 

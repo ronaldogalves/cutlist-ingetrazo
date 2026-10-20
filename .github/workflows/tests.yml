@@ -6,7 +6,7 @@ on:
 
 env:
   # The IngeTrazo version we test against (keep in step with CLAUDE.md).
-  INGETRAZO_REF: v0.5.7
+  INGETRAZO_REF: v0.5.9
   INGETRAZO_SRC: ${{ github.workspace }}/ingetrazo
   QT_QPA_PLATFORM: offscreen
 
