@@ -109,11 +109,12 @@ a few trusted woodworkers before M2–M3.
   `tools/build_release.py` builds a reproducible zip, tested to install
   through IngeTrazo's own Extension manager code. No `extension.json`
   is needed: the manager writes it when it installs.
-- [ ] Publish the GitHub pre-release (tag `v0.0.1`, the zip attached) —
-  public: Ronaldo's go-ahead.
-- [ ] Catalog entry in `ingelibre/ingetrazo-extensions` (a TOML with the
-  zip's URL and SHA-256) and a note on IngeTrazo #199 — public: drafts
-  for Ronaldo to approve.
+- [x] Publish the GitHub pre-release: tag `v0.0.1`, the zip attached
+  (2026-10-20, approved by Ronaldo).
+- [x] Note on IngeTrazo #199 (2026-10-20, approved by Ronaldo).
+- [ ] Catalog entry in `ingelibre/ingetrazo-extensions`: pull request
+  #128 opened 2026-10-20, the catalog's checker passes, waiting for a
+  maintainer to merge. Add a screenshot later.
 - When listed on IngeTrazo's website (catalog entry, README, release
   notes): say that profile feedback is welcome and that profiles for
   other suppliers can join the shipped set (D-011).
