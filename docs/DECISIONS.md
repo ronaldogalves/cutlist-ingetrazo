@@ -246,20 +246,6 @@ never carry code.
 - **Per column**, by choice: no accents, UPPERCASE, spaces → `_`
   (combinable), for systems that want them.
 
-## D-010 — Export text hygiene is a rule, not an option
-
-*2026-10-09 · accepted · Ronaldo: "we just enforce it as a rule"*
-
-- **File names are always safe**: accents removed, spaces → `_`, only
-  letters, digits and `_ - . ( )` (`Família Souza - MDF Branco 15` →
-  `Familia_Souza_-_MDF_Branco_15`). An option that only exists to avoid
-  a problem should not be an option.
-- **Values are always tidied**: spaces trimmed at both ends, runs of
-  spaces made one — the invisible trailing space is the classic cause of
-  a name that "does not match" at a supplier.
-- **Per column**, by choice: no accents, UPPERCASE, spaces → `_`
-  (combinable), for systems that want them.
-
 ## D-011 — Ship supplier profiles; invite more from users
 
 *2026-10-09 · accepted · Ronaldo · supersedes D-009 §1's "no
@@ -282,3 +268,29 @@ shipped profile is a checked one.
 Neutral wording still applies to *describing* the export (README,
 outreach): it works for any supplier; the shipped profiles are named for
 what they are.
+
+## D-012 — Saw first, CNC later; layouts can be saved in the model
+
+*2026-10-20 · accepted · Ronaldo*
+
+1. **Guillotine layouts first** (v0.1): panel saw, table saw, track saw.
+   Every cut runs straight across the piece it is on. That is how most
+   shops cut ("way more productive" than a CNC, Ronaldo, who has both),
+   a CNC can cut it too, and it is what OpenCutList makes, so we can
+   benchmark against it. **CNC nesting** (free placement, the bit
+   diameter instead of the kerf) comes later as a second packer behind
+   the same `Packer` protocol (D-003).
+2. **People print and cut from the diagrams**, not only count sheets: the
+   diagram must be usable at the saw without the model open (M3
+   acceptance).
+3. **A layout can be saved in the document** (Ronaldo's pain with
+   OpenCutList: a layout not printed at once can rarely be made again —
+   the packing is dynamic, and rebuilding a selection set is a chore). A
+   saved layout keeps the parts (uids), their sizes then, the stock and
+   saw settings, and every placement. Reopening it **draws what was
+   saved; the packer does not run again**. If the model changed since,
+   it says which parts changed size or are gone and offers to redo the
+   layout for the same parts — never a stale plan shown as current.
+   Saved in the `.igz` as document data, one undo step. Hence the packer
+   returns a plain, JSON-safe `Layout` from M2 on; Save/Open arrive with
+   the diagram window (M3).
