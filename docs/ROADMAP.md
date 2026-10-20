@@ -93,7 +93,9 @@ the export are what they need. A GitHub pre-release with the `cutlist/`
 zip, a short CHANGELOG and the README's known limitations; feedback from
 a few trusted woodworkers before M2–M3.
 - Ship the **CorteCloud** and **Leo Madeiras** profiles (D-011), each
-  reproduced exactly in a test.
+  reproduced exactly in a test. Leo's is its **new web import**
+  (2026-10: header row required, free names, no SAP codes), checked
+  byte for byte against a file Leo's site accepted.
 - When listed on IngeTrazo's website (catalog entry, README, release
   notes): say that profile feedback is welcome and that profiles for
   other suppliers can join the shipped set (D-011).

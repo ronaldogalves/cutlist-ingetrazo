@@ -88,11 +88,12 @@ code on the material itself (Materials window) as the default a profile
 falls back to. Not custom fields: those belong to parts, codes belong to
 materials.
 
-Confirmed (2026-10-20): no shipped Leo codes — the catalogue is huge.
-Either a future integration with Leo, or the user types each code. Leo
-has a different code per thickness, so today a user needs one material
-per thickness. Possible fix: key the Codes tab by material **and**
-thickness (the board, as the export's board list already does).
+Update (2026-10-20, same day): Leo's **new** web import no longer needs
+SAP codes. Names are free and Leo maps them to its products, as
+CorteCloud does. The SAP-code layout we built from was Leo's old one.
+So no supplier we ship needs codes today. The Codes tab stays for
+suppliers that still want them. Keying codes by material **and**
+thickness is parked until one does.
 
 ## Interactive tools
 

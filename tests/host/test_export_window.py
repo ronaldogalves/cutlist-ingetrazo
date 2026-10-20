@@ -295,3 +295,16 @@ def test_the_import_button_opens_the_file_window(win, tmp_path, monkeypatch):
     button.click()
     assert "From file" in d.profiles
     d.deleteLater()
+
+
+def test_choosing_excel_shows_xlsx_and_keeps_the_text_extension(win):
+    c = setup_model(win)
+    d = dialog(c)
+    d.format.setCurrentIndex(d.format.findData("xlsx"))
+    assert d.extension.text() == "xlsx" and not d.extension.isEnabled()
+    assert not d.separator.isEnabled()
+    assert d.summary.toolTip().endswith(".xlsx")
+    d.format.setCurrentIndex(d.format.findData("text"))
+    assert d.extension.text() == "csv" and d.extension.isEnabled()
+    assert d.profile.extension == "csv"
+    d.deleteLater()

@@ -184,6 +184,7 @@ class ExportDialog(QDialog):
         self.saved = self.profiles[name]
         self.profile = self.saved
         self._loading = False
+        self._text_extension = self.saved.extension
 
         outer = QVBoxLayout(self)
         bar = QHBoxLayout()
@@ -404,8 +405,8 @@ class ExportDialog(QDialog):
                        self.quoting, self.rows, self.split):
             widget.currentIndexChanged.connect(self._edited)
         self.separator.currentTextChanged.connect(self._edited)
-        for widget in (self.extension, self.filename):
-            widget.textEdited.connect(self._edited)
+        self.filename.textEdited.connect(self._edited)
+        self.extension.textEdited.connect(self._extension_edited)
         for widget in (self.trailing, self.header, self.grain_first):
             widget.toggled.connect(self._edited)
         return w
@@ -474,6 +475,7 @@ class ExportDialog(QDialog):
             for c in p.columns:
                 self._insert_column(self.columns.rowCount(), c)
             self._set(self.format, p.format)
+            self._text_extension = p.extension
             self.extension.setText(p.extension)
             i = self.separator.findData(p.separator)
             if i >= 0:
@@ -730,7 +732,7 @@ class ExportDialog(QDialog):
         return replace(
             self.profile,
             format=self.format.currentData(),
-            extension=self.extension.text().strip().lstrip(".") or "csv",
+            extension=self._text_extension,
             separator=sep or ";",
             encoding=self.encoding.currentData(),
             newline=self.newline.currentData(),
@@ -790,6 +792,27 @@ class ExportDialog(QDialog):
     # =====================================================================
     # Preview, problems, the profile combo
     # =====================================================================
+    def _extension_edited(self, text: str) -> None:
+        self._text_extension = text.strip().lstrip(".") or "csv"
+        self._edited()
+
+    def _sync_format(self) -> None:
+        """Grey out what the chosen format does not use. The extension box
+        shows what will be written (.xlsx for a workbook) but keeps the text
+        file's own extension for when the format goes back to text."""
+        fmt = self.format.currentData()
+        text = fmt == "text"
+        shown = {"text": self._text_extension, "xlsx": "xlsx"}.get(fmt, "")
+        # Leave a text extension alone while it is being typed.
+        if (not text or not self.extension.isEnabled()) \
+                and self.extension.text() != shown:
+            self.extension.setText(shown)
+        for widget in (self.extension, self.separator, self.encoding,
+                       self.newline, self.quoting, self.trailing):
+            widget.setEnabled(text)
+        for widget in (self.filename, self.insert_button):
+            widget.setEnabled(fmt != "clipboard")
+
     def _edited(self, *_args) -> None:
         if self._loading:
             return
@@ -827,6 +850,7 @@ class ExportDialog(QDialog):
                                  skip_boards=self.skipped_boards())
 
     def _update(self) -> None:
+        self._sync_format()
         self._mark()
         ex = self.result_export()
         problems = list(ex.problems)

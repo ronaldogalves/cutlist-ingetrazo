@@ -266,8 +266,9 @@ never carry code.
 supplier-named profiles ship"*
 
 The extension ships with ready profiles for two suppliers Ronaldo works
-with — **CorteCloud** (paste from Excel) and **Leo Madeiras** (LeoPlan
-text file) — beside the generic one. They are examples of what a profile
+with — **CorteCloud** (paste from Excel) and **Leo Madeiras** (its web
+import CSV; the older LeoPlan text file with SAP codes was retired by
+Leo, 2026-10-20) — beside the generic one. They are examples of what a profile
 can do as much as presets: a woodworker who orders from either starts
 exporting at once.
 

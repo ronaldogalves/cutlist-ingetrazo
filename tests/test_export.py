@@ -81,8 +81,52 @@ def test_paste_template_row_exactly():
 
 
 # ---------------------------------------------------------------------------
-# Layout 2: the strict template (codes, no header, Windows-1252, CRLF,
-# a separator after the last field)
+# Layout 3: Leo Madeiras' web import (2026-10). A header is required (the
+# same row without it is refused); names are free, Leo maps them to its
+# products; bands: top/bottom long edges, left/right short ones.
+# ---------------------------------------------------------------------------
+
+LEO = Profile(
+    name="Leo Madeiras", format="text", extension="csv",
+    encoding="utf-8", newline="crlf", quoting="none", header=True,
+    columns=(
+        col("QUANTIDADE", "qty"), col("COMPRIMENTO", "length"),
+        col("LARGURA", "width"), col("DESCRICAO_PECA", "name"),
+        col("MATERIAL", "material"),
+        col("FITA_COMPRIMENTO_CIMA", "band_c1"),
+        col("FITA_COMPRIMENTO_BAIXO", "band_c2"),
+        col("FITA_LARGURA_ESQUERDA", "band_l1"),
+        col("FITA_LARGURA_DIREITA", "band_l2"),
+        col("NOME_AMBIENTE", "field:Ambiente"),
+    ))
+
+
+def test_leo_web_import_bytes_exactly():
+    # Ronaldo's file that Leo's site accepted (teste.csv), plus the line
+    # break we end every file with.
+    lib = Library({**LIB.specs,
+                   "5079350": MaterialSpec("5079350"),
+                   "5086698": MaterialSpec("5086698", role=Role.EDGE_BAND)})
+    part = read_part(RawPart("a", "PORTA", box(0.3, 0.25, 0.015,
+                                               default="5079350",
+                                               paint={"W-": "5086698"})),
+                     lib)
+    cl, parts = build([part]), {"a": part}
+    ex = make_rows(cl, parts, lib, LEO,
+                   part_fields={"a": {"Ambiente": "SALA"}})
+    assert ex.ok
+    (f,) = ex.files
+    assert text_bytes(f, LEO) == (
+        b"QUANTIDADE;COMPRIMENTO;LARGURA;DESCRICAO_PECA;MATERIAL;"
+        b"FITA_COMPRIMENTO_CIMA;FITA_COMPRIMENTO_BAIXO;FITA_LARGURA_ESQUERDA;"
+        b"FITA_LARGURA_DIREITA;NOME_AMBIENTE\r\n"
+        b"1;300;250;PORTA;5079350;;5086698;;;SALA\r\n")
+
+
+# ---------------------------------------------------------------------------
+# Layout 2: a strict template with supplier codes (no header, Windows-1252,
+# CRLF, a separator after the last field) — Leo's older import, kept as the
+# test of the Codes tab.
 # ---------------------------------------------------------------------------
 
 STRICT = Profile(
@@ -299,3 +343,12 @@ def test_boards_can_be_left_out_of_one_export():
     ex = make_rows(cl, parts, LIB, p,
                    skip_boards={board_key("Branco", 0.006)})
     assert [f.name for f in ex.files] == ["Branco_15.csv", "Freijo_18.csv"]
+
+
+def test_a_workbook_is_named_xlsx_whatever_the_text_extension():
+    cl, parts = cut(("a", "Side", 0.6, 0.3, 0.015, {"default": "Branco"},
+                     None))
+    p = Profile(format="xlsx", extension="csv", filename="{material}",
+                columns=(col("Name", "name"),))
+    assert [f.name for f in make_rows(cl, parts, LIB, p).files] == \
+        ["Branco.xlsx"]

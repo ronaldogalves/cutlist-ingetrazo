@@ -285,7 +285,10 @@ def _file_name(profile: Profile, key, group, context, used: set) -> str:
     if profile.split.startswith("field:"):
         values["value"] = str(key)
     stem = safe_stem(fill(profile.filename or "{model}", values))
-    ext = safe_stem(profile.extension.lstrip(".")) or "csv"
+    # An Excel workbook is .xlsx whatever the text extension says: a
+    # profile switched from CSV kept "csv" and wrote a workbook named .csv.
+    ext = ("xlsx" if profile.format == "xlsx"
+           else safe_stem(profile.extension.lstrip(".")) or "csv")
     name = f"{stem}.{ext}"
     n = 2
     while name.lower() in used:
