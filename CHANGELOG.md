@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.1 — pre-release (unreleased)
+## 0.0.1 — pre-release, 2026-10-20
 
 The first public version: the **cut list and its exports**. Cutting
 diagrams come later (M2–M3). For woodworkers who order pre-cut boards,
