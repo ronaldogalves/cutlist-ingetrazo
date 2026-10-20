@@ -10,7 +10,15 @@ from xml.dom import minidom
 
 import pytest
 
-from cutlist.export.profile import Column, Numbers, Profile, generic
+from cutlist.export.profile import (
+    Column,
+    Numbers,
+    Profile,
+    cortecloud,
+    generic,
+    leo_madeiras,
+    shipped,
+)
 from cutlist.export.rows import fill, format_length, make_rows
 from cutlist.export.writers import (
     clipboard_text,
@@ -48,17 +56,7 @@ def col(header, value, kind="field", **kw):
 # Layout 1: the paste-from-Excel template (header, named bands, S for rotate)
 # ---------------------------------------------------------------------------
 
-PASTE = Profile(
-    name="Paste template", format="clipboard",
-    columns=(
-        col("Quantidade", "qty"), col("Comprimento", "length"),
-        col("Largura", "width"), col("Função", "name"),
-        col("Fita C1", "band_c1"), col("Fita C2", "band_c2"),
-        col("Fita L1", "band_l1"), col("Fita L2", "band_l2"),
-        col("Material", "{material} {thickness}", kind="template"),
-        col("Complemento", "field:Ambiente"),
-        col("Ignorar veio", "rotate", yes="S", no=""),
-    ))
+PASTE = cortecloud()          # what ships (D-011)
 
 
 def test_paste_template_row_exactly():
@@ -86,19 +84,7 @@ def test_paste_template_row_exactly():
 # products; bands: top/bottom long edges, left/right short ones.
 # ---------------------------------------------------------------------------
 
-LEO = Profile(
-    name="Leo Madeiras", format="text", extension="csv",
-    encoding="utf-8", newline="crlf", quoting="none", header=True,
-    columns=(
-        col("QUANTIDADE", "qty"), col("COMPRIMENTO", "length"),
-        col("LARGURA", "width"), col("DESCRICAO_PECA", "name"),
-        col("MATERIAL", "material"),
-        col("FITA_COMPRIMENTO_CIMA", "band_c1"),
-        col("FITA_COMPRIMENTO_BAIXO", "band_c2"),
-        col("FITA_LARGURA_ESQUERDA", "band_l1"),
-        col("FITA_LARGURA_DIREITA", "band_l2"),
-        col("NOME_AMBIENTE", "field:Ambiente"),
-    ))
+LEO = leo_madeiras()          # what ships (D-011)
 
 
 def test_leo_web_import_bytes_exactly():
@@ -352,3 +338,10 @@ def test_a_workbook_is_named_xlsx_whatever_the_text_extension():
                 columns=(col("Name", "name"),))
     assert [f.name for f in make_rows(cl, parts, LIB, p).files] == \
         ["Branco.xlsx"]
+
+
+def test_the_shipped_profiles():
+    names = [p.name for p in shipped()]
+    assert names == ["Simple CSV", "CorteCloud", "Leo Madeiras"]
+    for p in shipped():                 # survive the trip through JSON
+        assert Profile.from_dict(p.to_dict()) == p

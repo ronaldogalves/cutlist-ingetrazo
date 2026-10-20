@@ -39,6 +39,7 @@ class Flag(StrEnum):
     SEVERAL_SOLIDS = "several_solids"       # boards merged into one group?
     NO_MATERIAL = "no_material"             # no face says what board it is
     UNASSIGNED = "unassigned_material"      # a finish whose role is not set
+    ODD_THICKNESS = "odd_thickness"         # not one of the board's thicknesses
 
 
 class Excluded(StrEnum):
@@ -188,6 +189,28 @@ def _find_core(m: Measured, lib: Library) -> str | None:
     return core
 
 
+#: How far a modelled board may be from a listed thickness and still match.
+THICKNESS_SLACK = 0.0005
+
+
+def _odd_thickness(thickness: float, core: str | None, faces, lib: Library
+                   ) -> bool:
+    """A part 14 mm thick on a board that only comes 15 mm thick is a
+    modelling slip the supplier would cut as 15 (antrrax's model on
+    IngeTrazo #199). Checked only when the board lists its thicknesses —
+    never guessed from its name. Coverings on the faces count when their
+    own thickness is set up: the board under them is what is listed."""
+    spec = lib.get(core)
+    if spec is None or not spec.thicknesses:
+        return False
+    for name in faces:
+        cover = lib.get(name)
+        if cover is not None:
+            thickness -= cover.thickness
+    return all(abs(thickness - t) > THICKNESS_SLACK
+               for t in spec.thicknesses)
+
+
 def read_part(raw: RawPart, lib: Library,
               override: PartOverride | None = None) -> Part:
     over = override or PartOverride()
@@ -235,6 +258,8 @@ def read_part(raw: RawPart, lib: Library,
         flags.add(Flag.SEVERAL_SOLIDS)
     if unassigned:
         flags.add(Flag.UNASSIGNED)
+    if _odd_thickness(m.thickness, core, (covers["T+"], covers["T-"]), lib):
+        flags.add(Flag.ODD_THICKNESS)
 
     excluded = None
     if over.exclude:

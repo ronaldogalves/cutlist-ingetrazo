@@ -218,3 +218,25 @@ def test_add_field_starts_typing(qt_app, win):
     assert table.currentRow() == 0 and table.item(0, 0).text() == "New field"
     assert table.state() == table.State.EditingState
     dlg.deleteLater()
+
+
+def test_shipped_profiles_are_offered_once(win, user_dir):
+    s = store(win)
+    assert list(s.profiles()) == ["Simple CSV", "CorteCloud",
+                                  "Leo Madeiras"]
+    # Deleted once, gone for good.
+    kept = {n: p for n, p in s.profiles().items() if n != "CorteCloud"}
+    s.save_profiles(kept, "Simple CSV")
+    assert "CorteCloud" not in s.profiles()
+
+
+def test_a_users_own_profile_keeps_its_name(win, user_dir):
+    s = store(win)
+    profile = plugin("export.profile")
+    mine = profile.Profile(name="Leo Madeiras", separator=",")
+    # A user from before profiles shipped: their own list, nothing offered.
+    s.write_user_data({"export_profiles": {"Leo Madeiras": mine.to_dict()},
+                       "settings": {"scope_asked": True}})
+    got = s.profiles()
+    assert got["Leo Madeiras"].separator == ","
+    assert "CorteCloud" in got and "Simple CSV" in got

@@ -170,8 +170,52 @@ def _codes(d) -> dict:
     return out
 
 
+def shipped() -> tuple[Profile, ...]:
+    """The profiles a new user starts with (D-011): the generic one and the
+    suppliers' layouts checked byte for byte in ``tests/test_export.py``
+    against files the suppliers accepted."""
+    return (generic(), cortecloud(), leo_madeiras())
+
+
+def cortecloud() -> Profile:
+    """CorteCloud's import, pasted from Excel: header, band names, "S" to
+    ignore the grain. Material and thickness go together in one column."""
+    f = Column
+    return Profile(
+        name="CorteCloud", format="clipboard", extension="csv",
+        encoding="utf-8-sig", columns=(
+            f("Quantidade", value="qty"), f("Comprimento", value="length"),
+            f("Largura", value="width"), f("Função", value="name"),
+            f("Fita C1", value="band_c1"), f("Fita C2", value="band_c2"),
+            f("Fita L1", value="band_l1"), f("Fita L2", value="band_l2"),
+            f("Material", kind="template", value="{material} {thickness}"),
+            f("Complemento", value="field:Ambiente"),
+            f("Ignorar veio", value="rotate", yes="S", no=""),
+        ))
+
+
+def leo_madeiras() -> Profile:
+    """Leo Madeiras' web import (2026-10): the header row is required,
+    names are free (Leo maps them to its products), bands on the two long
+    edges (top, bottom) then the two short ones (left, right)."""
+    f = Column
+    return Profile(
+        name="Leo Madeiras", format="text", extension="csv",
+        encoding="utf-8", newline="crlf", quoting="none", header=True,
+        columns=(
+            f("QUANTIDADE", value="qty"), f("COMPRIMENTO", value="length"),
+            f("LARGURA", value="width"), f("DESCRICAO_PECA", value="name"),
+            f("MATERIAL", value="material"),
+            f("FITA_COMPRIMENTO_CIMA", value="band_c1"),
+            f("FITA_COMPRIMENTO_BAIXO", value="band_c2"),
+            f("FITA_LARGURA_ESQUERDA", value="band_l1"),
+            f("FITA_LARGURA_DIREITA", value="band_l2"),
+            f("NOME_AMBIENTE", value="field:Ambiente"),
+        ))
+
+
 def generic() -> Profile:
-    """The one profile that ships: a plain, readable cut list."""
+    """A plain, readable cut list for any supplier or spreadsheet."""
     f = Column
     return Profile(columns=(
         f("Qty", value="qty"), f("Name", value="name"),

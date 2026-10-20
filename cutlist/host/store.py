@@ -195,15 +195,24 @@ class Store:
 
     # ---- export profiles (D-009 §1) --------------------------------------------
     def profiles(self) -> dict:
-        """name → Profile; the generic one when the user has none."""
-        from ..export.profile import Profile, generic
-        raw = self.user_data().get("export_profiles")
+        """name → Profile: the user's own, plus each shipped profile they
+        have not been offered yet (D-011) — a shipped profile the user
+        deleted or renamed does not come back, and one of the same name
+        they made themselves is kept as theirs."""
+        from ..export.profile import Profile, generic, shipped
+        data = self.user_data()
+        raw = data.get("export_profiles")
         out = {}
         if isinstance(raw, dict):
             for name, d in raw.items():
                 p = Profile.from_dict(d)
                 out[str(name)] = replace(p, name=str(name))
-        if not out:
+        offered = data.get("profiles_offered")
+        offered = set(offered) if isinstance(offered, list) else set()
+        for p in shipped():
+            if p.name not in offered and p.name not in out:
+                out[p.name] = p
+        if not out:                     # never an empty list to choose from
             g = generic()
             out[g.name] = g
         return out
@@ -213,10 +222,16 @@ class Store:
         return name if isinstance(name, str) else None
 
     def save_profiles(self, profiles: dict, last: str | None) -> None:
+        from ..export.profile import shipped
+        data = self.user_data()
+        offered = data.get("profiles_offered")
+        offered = list(offered) if isinstance(offered, list) else []
+        offered += [p.name for p in shipped() if p.name not in offered]
         self.write_user_data({
-            **self.user_data(),
+            **data,
             "export_profiles": {n: p.to_dict() for n, p in profiles.items()},
-            "last_export_profile": last})
+            "last_export_profile": last,
+            "profiles_offered": offered})
 
     # ---- settings ------------------------------------------------------------
     def settings(self) -> Settings:

@@ -11,9 +11,10 @@ Español from the start.
 
 ## Status
 
-**Early development — the cut list works, cutting diagrams do not exist
-yet.** No release has been published; to try it, follow *Trying it*
-below. Milestone M1 (the cut list) is built:
+**Pre-release 0.0.1 — the cut list and its exports work; cutting
+diagrams do not exist yet.** For woodworkers who order pre-cut boards,
+the supplier makes the cutting plan, so the cut list and the export are
+the whole job. What is in it (see [CHANGELOG.md](CHANGELOG.md)):
 
 - a **Cut List** tab that reads the selection or the whole model and
   groups parts by board and thickness, merging identical parts by
@@ -26,7 +27,9 @@ below. Milestone M1 (the cut list) is built:
   fields such as client or room), each change one undo step;
 - **exports** through named profiles you build once per supplier or
   workflow: CSV/TXT with every option suppliers differ on, Excel `.xlsx`,
-  or the clipboard; grain-first sizes, supplier codes, live preview;
+  or the clipboard; grain-first sizes, supplier codes, live preview.
+  Ready profiles for **CorteCloud** and **Leo Madeiras**, both checked
+  against files the supplier accepted;
 - English, Português (Brasil) and Español.
 
 Next: cutting diagrams (M2–M3). See [docs/ROADMAP.md](docs/ROADMAP.md)
@@ -40,22 +43,29 @@ and [docs/BRIEF.md](docs/BRIEF.md).
 - `.skp` files arrive in IngeTrazo without their group hierarchy (an
   IngeTrazo import limitation): tag the boards, or check the "several
   solids" warnings.
+- In a `.skp` import, SketchUp's groups and components do not stay apart
+  (some components arrive as plain groups and the other way round), so
+  "components only" cannot leave out a fridge or a wall modelled as a
+  group. They land under *Needs a look* (no material): exclude them
+  there, or paint them with a material set to *Ignore*.
 
 Tested with **IngeTrazo 0.5.9**.
 
-## Trying it (developers)
+## Installing
 
-The `cutlist/` folder is the extension. IngeTrazo loads it from its
-per-user plugins folder:
+1. Download `cutlist-0.0.1.zip` from the
+   [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
+   page.
+2. In IngeTrazo, **Extensions ▸ Open plugins folder**
+   (Windows: `%APPDATA%\ingetrazo\plugins\`, Linux:
+   `~/.local/share/ingetrazo/plugins/`).
+3. Unzip there, so the folder holds `cutlist\__init__.py`.
+4. Restart IngeTrazo: *Cut List* appears in the Extensions menu and as a
+   tab in the side tray.
 
-- Windows: `%APPDATA%\ingetrazo\plugins\`
-- Linux: `~/.local/share/ingetrazo/plugins/`
-
-(**Extensions ▸ Open plugins folder** in IngeTrazo opens it.) Copy or link
-`cutlist/` there and restart IngeTrazo: *Cut List* appears in the
-Extensions menu and as a tab in the side tray.
-
-To work on the code, see the development setup in [CLAUDE.md](CLAUDE.md).
+To work on the code, link the `cutlist/` folder of a checkout into the
+plugins folder instead; see the development setup in
+[CLAUDE.md](CLAUDE.md). `python tools/build_release.py` builds the zip.
 
 ## Relationship to OpenCutList
 

@@ -97,10 +97,23 @@ pre-cut boards, the supplier makes the cutting plan, so the cut list and
 the export are what they need. A GitHub pre-release with the `cutlist/`
 zip, a short CHANGELOG and the README's known limitations; feedback from
 a few trusted woodworkers before M2–M3.
-- Ship the **CorteCloud** and **Leo Madeiras** profiles (D-011), each
+- [x] Ship the **CorteCloud** and **Leo Madeiras** profiles (D-011), each
   reproduced exactly in a test. Leo's is its **new web import**
   (2026-10: header row required, free names, no SAP codes), checked
-  byte for byte against a file Leo's site accepted.
+  byte for byte against a file Leo's site accepted. Offered once to
+  every user; a deleted one does not come back.
+- [x] A part not as thick as its board comes is flagged (antrrax's 14 mm
+  part on a 15 mm board, IngeTrazo #199), when the board's thicknesses
+  are set up.
+- [x] CHANGELOG, README install steps and known limitations;
+  `tools/build_release.py` builds a reproducible zip, tested to install
+  through IngeTrazo's own Extension manager code. No `extension.json`
+  is needed: the manager writes it when it installs.
+- [ ] Publish the GitHub pre-release (tag `v0.0.1`, the zip attached) —
+  public: Ronaldo's go-ahead.
+- [ ] Catalog entry in `ingelibre/ingetrazo-extensions` (a TOML with the
+  zip's URL and SHA-256) and a note on IngeTrazo #199 — public: drafts
+  for Ronaldo to approve.
 - When listed on IngeTrazo's website (catalog entry, README, release
   notes): say that profile feedback is welcome and that profiles for
   other suppliers can join the shipped set (D-011).

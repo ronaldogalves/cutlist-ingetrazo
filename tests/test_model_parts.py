@@ -130,3 +130,28 @@ def test_names_are_tidied():
     a = read_part(raw(box(0.7, 0.4, 0.018), name="GAB MONT INT "), lib())
     b = read_part(raw(box(0.7, 0.4, 0.018), name=" GAB  MONT INT"), lib())
     assert a.name == b.name == "GAB MONT INT"
+
+
+def test_a_board_thinner_than_it_comes_is_flagged():
+    # antrrax's model (IngeTrazo #199): a 14 mm part on a 15 mm board.
+    boards = Library({"Madeirado": MaterialSpec("Madeirado",
+                                                thicknesses=(0.015, 0.018))})
+    thin = read_part(raw(box(0.757, 0.08, 0.014, default="Madeirado")),
+                     boards)
+    assert Flag.ODD_THICKNESS in thin.flags
+    right = read_part(raw(box(0.757, 0.08, 0.0152, default="Madeirado")),
+                      boards)
+    assert Flag.ODD_THICKNESS not in right.flags
+    # No thicknesses listed: nothing to check against, no guessing.
+    assert not read_part(raw(box(0.757, 0.08, 0.014, default="MDF")),
+                         lib()).flags
+
+
+def test_a_covering_s_thickness_is_not_the_board_s():
+    specs = Library({
+        "MDF": MaterialSpec("MDF", thicknesses=(0.018,)),
+        "Formica": MaterialSpec("Formica", role=Role.COVERING,
+                                thickness=0.0008)})
+    p = read_part(raw(box(0.7, 0.4, 0.0188, default="MDF",
+                          paint={"T+": "Formica"})), specs)
+    assert Flag.ODD_THICKNESS not in p.flags

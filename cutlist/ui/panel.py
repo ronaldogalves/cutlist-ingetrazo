@@ -46,6 +46,9 @@ def flag_text(flag: Flag) -> str:
                              "which board it is."),
         Flag.UNASSIGNED: tr("Has a finish whose material is not set up "
                             "yet."),
+        Flag.ODD_THICKNESS: tr("Not one of the thicknesses this board comes "
+                               "in (Materials window): a modelling slip? "
+                               "The supplier cuts it from the listed one."),
     }[flag]
 
 
@@ -56,6 +59,7 @@ def flag_label(flag: Flag) -> str:
         Flag.SEVERAL_SOLIDS: tr("several solids"),
         Flag.NO_MATERIAL: tr("no material"),
         Flag.UNASSIGNED: tr("finish not set up"),
+        Flag.ODD_THICKNESS: tr("odd thickness"),
     }[flag]
 
 
