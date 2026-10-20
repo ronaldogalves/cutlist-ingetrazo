@@ -81,8 +81,13 @@ OpenCutList diagrams first (all 86 sheet parts).
       quantity, per board and thickness (`tests/host/test_acceptance.py`,
       run locally: the model is private). It found one real difference
       on the way — a part name with a trailing space — now tidied.
-- [ ] Ronaldo's hand checks: exports opened in Excel and accepted by the
-      supplier's site; the windows used on real work.
+- [x] Ronaldo's hand checks: exports opened in Excel and accepted by the
+      supplier's site; the windows used on real work. Done 2026-10-20:
+      CorteCloud (clipboard paste, and an .xlsx opened in Excel then
+      pasted) and Leo Madeiras' new web import both accepted, edge bands
+      included. Found on the way and fixed: Export wrote nothing (a
+      click's checked flag), workbooks named .csv, one-by-one profile
+      import, Leo's retired SAP-code layout.
 
 ## Pre-release v0.0.x — the cut list and its exports
 
