@@ -203,7 +203,9 @@ class ExportDialog(QDialog):
             b = QPushButton(text)
             if obj:
                 b.setObjectName(obj)
-            b.clicked.connect(slot)
+            # clicked() passes a checked flag: never let it land in a
+            # slot's optional argument (it did — Export wrote nowhere).
+            b.clicked.connect(lambda _c=False, s=slot: s())
             bar.addWidget(b)
         bar.addStretch(1)
         outer.addLayout(bar)
@@ -266,7 +268,7 @@ class ExportDialog(QDialog):
         self.export_button = QPushButton(tr("Export…"))
         self.export_button.setObjectName("cutlist_export_write")
         self.export_button.setDefault(True)
-        self.export_button.clicked.connect(self.export)
+        self.export_button.clicked.connect(lambda _c=False: self.export())
         bottom.addWidget(self.export_button)
         close = QPushButton(tr("Close"))
         close.clicked.connect(self.reject)
@@ -308,7 +310,9 @@ class ExportDialog(QDialog):
                            (tr("Move up"), lambda: self._move_column(-1)),
                            (tr("Move down"), lambda: self._move_column(1))):
             b = QPushButton(text)
-            b.clicked.connect(slot)
+            # clicked() passes a checked flag: never let it land in a
+            # slot's optional argument (it did — Export wrote nowhere).
+            b.clicked.connect(lambda _c=False, s=slot: s())
             row.addWidget(b)
         row.addStretch(1)
         hint = QLabel(tr("Templates fill in {placeholders}: {name}, "

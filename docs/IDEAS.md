@@ -86,7 +86,13 @@ for other suppliers too. Open question: keep codes per profile (one
 material can have a different code at each supplier) or also allow a
 code on the material itself (Materials window) as the default a profile
 falls back to. Not custom fields: those belong to parts, codes belong to
-materials. Wait for his confirmation on how Leo's codes work.
+materials.
+
+Confirmed (2026-10-20): no shipped Leo codes — the catalogue is huge.
+Either a future integration with Leo, or the user types each code. Leo
+has a different code per thickness, so today a user needs one material
+per thickness. Possible fix: key the Codes tab by material **and**
+thickness (the board, as the export's board list already does).
 
 ## Interactive tools
 

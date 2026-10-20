@@ -262,3 +262,36 @@ def test_several_profiles_import_at_once(win, tmp_path, monkeypatch):
     assert d.saved.name == "Supplier B"
     assert len(warned) == 1 and "broken.json" in warned[0]
     d.deleteLater()
+
+
+def test_the_export_button_asks_where_and_writes(win, tmp_path, monkeypatch):
+    """Clicking, not calling: clicked() sends a checked flag, which once
+    landed in export(folder=...) and nothing was written (2026-10-20)."""
+    c = setup_model(win)
+    d = dialog(c)
+    ui = plugin("ui.export_dialog")
+    d._load(replace(d.profile, format="xlsx", extension="xlsx"))
+    out = tmp_path / "out"
+    out.mkdir()
+    target = str(out / "list.xlsx")
+    monkeypatch.setattr(ui.QFileDialog, "getSaveFileName",
+                        lambda *a, **k: (target, ""))
+    d.export_button.click()
+    assert (out / "list.xlsx").read_bytes()[:2] == b"PK"
+
+
+def test_the_import_button_opens_the_file_window(win, tmp_path, monkeypatch):
+    c = setup_model(win)
+    d = dialog(c)
+    ui = plugin("ui.export_dialog")
+    profile = plugin("export.profile")
+    f = tmp_path / "x.json"
+    f.write_text(json.dumps(profile.Profile(name="From file").to_dict()),
+                 encoding="utf-8")
+    monkeypatch.setattr(ui.QFileDialog, "getOpenFileNames",
+                        lambda *a, **k: ([str(f)], ""))
+    button = next(b for b in d.findChildren(ui.QPushButton)
+                  if b.text() == "Import…")
+    button.click()
+    assert "From file" in d.profiles
+    d.deleteLater()
