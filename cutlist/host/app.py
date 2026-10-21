@@ -330,6 +330,32 @@ class Controller:
         path = getattr(self.app.window, "_current_path", None)
         return Path(path) if path else None
 
+    def export_folder(self) -> str:
+        """Where save windows open: the model's folder; for a model not
+        saved yet, the folder last written to; else Documents — never the
+        folder IngeTrazo runs from (System32 for the installed app,
+        Ronaldo 2026-10-21)."""
+        from pathlib import Path
+
+        from PySide6.QtCore import QStandardPaths
+        path = self.model_path()
+        if path is not None:
+            return str(path.parent)
+        last = self.store.user_data().get("last_folder")
+        if isinstance(last, str) and Path(last).is_dir():
+            return last
+        docs = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DocumentsLocation)
+        return docs if docs and Path(docs).is_dir() else str(Path.home())
+
+    def folder_used(self, folder) -> None:
+        """Remember where the user writes files (for unsaved models)."""
+        from pathlib import Path
+        folder = str(Path(folder))
+        if self.store.user_data().get("last_folder") != folder:
+            self.store.write_user_data({**self.store.user_data(),
+                                        "last_folder": folder})
+
     def part_fields(self) -> dict:
         fields = self.store.fields()
         return {uid: fields.values(p.tag, self.overrides.get(uid).field_values
@@ -364,7 +390,7 @@ class Controller:
             save=self.store.save_profiles, materials=materials, bands=bands,
             fields=list(self.store.fields().names),
             write=self.write_files, copy=self.copy_text,
-            suggested_folder=str(path.parent) if path else "")
+            suggested_folder=self.export_folder())
 
     @staticmethod
     def _fmt_mm(metres: float) -> str:
@@ -398,6 +424,7 @@ class Controller:
             return
         for name, data in files.items():
             (target / name).write_bytes(data)
+        self.folder_used(target)
 
     def copy_text(self, text: str) -> None:
         from PySide6.QtWidgets import QApplication
@@ -475,8 +502,8 @@ class Controller:
             layouts=self.store.layouts, save_layout=self.store.save_layout,
             snapshot=snap,
             changes=lambda data: changes(data, self.model_parts()),
-            names=names,
-            suggested_folder=str(path.parent) if path else "")
+            names=names, folder_used=self.folder_used,
+            suggested_folder=self.export_folder())
 
     def open_diagrams(self, saved: str | None = None) -> None:
         if self.cut_list is None or self.stale:

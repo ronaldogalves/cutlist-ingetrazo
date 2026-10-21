@@ -155,7 +155,7 @@ change them — a smarter second pass is a later improvement, not a bug.
 
 ## M3 — Diagrams and exports (≈1–2 weeks)
 
-*Built 2026-10-21* (D-012 to D-016). Waiting for Ronaldo's check at the saw.
+*Done 2026-10-21* (D-012 to D-016). Released as 0.1.0 at Ronaldo's call.
 
 - [x] Diagram window: one sheet per page, parts lettered and labelled
       (letter, size), grain arrows, leftovers drawn as the real pieces the
@@ -180,8 +180,9 @@ change them — a smarter second pass is a later improvement, not a bug.
 
 **Accept:** a printed PDF of a kitchen-cabinet job is usable at the saw
 without the model open.
-- [ ] Ronaldo's check: Cozinha 03 (or a current job) printed and used at
-      the saw.
+- [x] Ronaldo's check (2026-10-21): "everything looks awesome", after two
+      fixes found on the way — Cancel on sheet sizes went on, and save
+      windows opened in System32 for an unsaved model.
 
 ## M4 — Release v0.1 (≈1 week)
 

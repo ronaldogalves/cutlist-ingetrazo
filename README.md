@@ -11,10 +11,8 @@ Español from the start.
 
 ## Status
 
-**Pre-release 0.0.1 — the cut list and its exports work; cutting
-diagrams do not exist yet.** For woodworkers who order pre-cut boards,
-the supplier makes the cutting plan, so the cut list and the export are
-the whole job. What is in it (see [CHANGELOG.md](CHANGELOG.md)):
+**0.1.0 — the cut list, supplier exports and cutting diagrams.** What
+is in it (see [CHANGELOG.md](CHANGELOG.md)):
 
 - a **Cut List** tab that reads the selection or the whole model and
   groups parts by board and thickness, merging identical parts by
@@ -29,13 +27,26 @@ the whole job. What is in it (see [CHANGELOG.md](CHANGELOG.md)):
   workflow: CSV/TXT with every option suppliers differ on, Excel `.xlsx`,
   or the clipboard; grain-first sizes, supplier codes, live preview.
   Ready profiles for **CorteCloud** and **Leo Madeiras**, both checked
-  against files the supplier accepted;
+  against files the supplier accepted — profiles for other suppliers are
+  welcome;
+- **cutting diagrams** for a panel or table saw: guillotine cuts in 2–4
+  stages, kerf, trim, grain, first cuts lengthwise or crosswise, several
+  sheet sizes, leftovers from the shop used first. Hover a part for the
+  cuts that free it and their fence distances; right-click it to switch
+  its grain and lay out again. Printed as PDF or SVG: a page per sheet,
+  part letters and sizes, identical sheets once, "Page n of N". Layouts
+  can be saved in the model;
 - English, Português (Brasil) and Español.
 
-Next: cutting diagrams (M2–M3). See [docs/ROADMAP.md](docs/ROADMAP.md)
-and [docs/BRIEF.md](docs/BRIEF.md).
+See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
 
 **Known limitations**
+
+- Solid wood is listed but not laid out (1D diagrams come later), and
+  CNC nesting (free placement) is not there yet: the layouts are for a
+  saw.
+- Tested on Windows with the installed IngeTrazo; on Linux by the test
+  suite only.
 
 - Dragging columns in the export window shows a line where the row will
   land, but the other rows do not slide apart yet; Move up / Move down
@@ -53,7 +64,7 @@ Tested with **IngeTrazo 0.5.9**.
 
 ## Installing
 
-1. Download `cutlist-0.0.1.zip` from the
+1. Download `cutlist-0.1.0.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page.
 2. In IngeTrazo, **Extensions ▸ Open plugins folder**

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-10-21
 
 **Cutting diagrams** (M2–M3).
 
@@ -24,6 +24,8 @@
   board. Parts: their own oversize; the list shows "cut +20 / +5", the
   saw gets the cut size, exports choose finished or cut size.
 - A part not as thick as its board comes is flagged.
+- Save windows open in the model's folder, the last one used, or
+  Documents — never IngeTrazo's program folder.
 
 ## 0.0.1 — pre-release, 2026-10-20
 

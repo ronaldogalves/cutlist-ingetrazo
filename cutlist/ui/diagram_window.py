@@ -99,6 +99,8 @@ class DiagramSession:
     #: uids → readable part names, for messages.
     names: Callable
     suggested_folder: str = ""
+    #: Told where files were written, to open there next time.
+    folder_used: Callable = lambda _folder: None
 
 
 # ---------------------------------------------------------------------------
@@ -803,6 +805,8 @@ class DiagramWindow(QDialog):
                 return
         self._remember_options()
         write_pdf(path, self._pages(), self.options().page)
+        import os
+        self.session.folder_used(os.path.dirname(path))
         self.status.setText(tr("Wrote {path}", path=path))
 
     def export_svg(self, folder: str | None = None) -> None:
@@ -824,6 +828,7 @@ class DiagramWindow(QDialog):
         for page in pages:
             (Path(folder) / f"{stem}_{page.number:02d}.svg").write_text(
                 page_svg(page, self.options().page), encoding="utf-8")
+        self.session.folder_used(folder)
         self.status.setText(tr("Wrote {n} SVG page(s) to {folder}",
                                n=len(pages), folder=folder))
 

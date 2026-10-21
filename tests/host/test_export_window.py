@@ -308,3 +308,17 @@ def test_choosing_excel_shows_xlsx_and_keeps_the_text_extension(win):
     assert d.extension.text() == "csv" and d.extension.isEnabled()
     assert d.profile.extension == "csv"
     d.deleteLater()
+
+
+def test_an_unsaved_model_does_not_export_into_the_program_folder(win,
+                                                                  tmp_path):
+    """Ronaldo, 2026-10-21: the save window opened in System32."""
+    import os
+    c = setup_model(win)
+    folder = c.export_folder()
+    assert folder and "system32" not in folder.lower()
+    assert os.path.isdir(folder)
+    out = tmp_path / "chosen"
+    out.mkdir()
+    c.write_files(str(out), {"a.csv": b"x"})
+    assert c.export_folder() == str(out)            # remembered
