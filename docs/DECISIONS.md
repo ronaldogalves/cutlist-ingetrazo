@@ -294,3 +294,38 @@ what they are.
    Saved in the `.igz` as document data, one undo step. Hence the packer
    returns a plain, JSON-safe `Layout` from M2 on; Save/Open arrive with
    the diagram window (M3).
+
+## D-013 — Stock, oversize and leftovers
+
+*2026-10-21 · accepted · Ronaldo (one point open, below)*
+
+1. **Real sheet sizes plus trim.** A material lists the sheets it comes
+   in at their true size (MDF: 2750 × 1830–1850); trim per edge is a
+   separate setting. The diagram draws the real sheet with the trimmed
+   border, and changing the trim never means retyping sizes.
+   (Ronaldo's OpenCutList setup typed trimmed sizes, 2740 × 1830.)
+2. **Size templates.** A short named list of sheet sizes in the user's
+   library (*MDF 2750 × 1850*…), applied to several materials at once in
+   the Materials window. Materials stay strict — parts of one material
+   only go on that material's sheets; templates only save the typing.
+3. **A board is material + thickness**, in the cut list, the exports
+   (one file per board; `{material} {thickness}` for suppliers that sell
+   each thickness as a product) and the diagrams (never a 15 mm part on
+   an 18 mm sheet). One material in the model can have several
+   thicknesses, as Ronaldo models. Sheet sizes apply to every thickness
+   of the material — *open:* a size for one thickness only, if real.
+4. **Oversize is a property, never geometry.** Per part (Part settings)
+   and per material as a default: total extra length and width (finished
+   500 × 50, oversize +20 / +5 → cut 520 × 55). The cut list shows the
+   finished size and marks the oversize; diagrams place the cut size;
+   each export column chooses finished or cut size. Gang-cutting several
+   parts as one blank is parked (IDEAS).
+5. **Words:** *leftover* (sobra) is any piece of sheet that is not a part
+   and not sawdust; *kerf* (serragem) is the sawdust; *oversize*
+   (sobremedida) is cutting bigger to finish later.
+6. **Leftovers on the diagram** are drawn as the real rectangles the
+   guillotine cuts produce, faded, with their size when it fits. No
+   minimum size: what to keep is the user's call.
+7. **Leftovers from the shop** can be listed per layout (size × quantity,
+   per board) and are used before full sheets, saved with the layout. A
+   permanent shop inventory, updated when a layout is cut, comes later.
