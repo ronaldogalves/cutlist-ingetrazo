@@ -335,7 +335,7 @@ what they are.
 
 ## D-014 — Saw defaults; the diagram is where you fix parts
 
-*2026-10-21 · accepted · Ronaldo (one point open, below)*
+*2026-10-21 · accepted · Ronaldo*
 
 1. **Defaults** for a new user: kerf **3 mm** (Ronaldo's saw; sectioning
    saws at cutting services are usually 5 mm, said in the tooltip), trim
@@ -355,6 +355,9 @@ what they are.
    with progress shown. The first time, a warning says the whole layout
    is redone ("don't show again"). A saved layout (D-012) then reads
    "changed since saved".
-3. *Open:* a change on one piece of a line of identical parts applies to
-   the whole line by default, with "only this piece" beside it. To
-   confirm with Ronaldo.
+3. A change on one piece of a line of identical parts applies to the
+   **whole line** by default, with **only this piece** beside it (that
+   piece then leaves the line).
+4. **The summary page is optional** in the printed diagrams. OpenCutList
+   opens with a page of totals that the person at the saw skips
+   (Ronaldo); a checkbox, remembered, decides whether it is printed.

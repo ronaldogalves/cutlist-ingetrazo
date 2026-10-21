@@ -138,7 +138,9 @@ within 10 %; a 200-part job packs in under 2 s.
 ## M3 — Diagrams and exports (≈1–2 weeks)
 
 - [ ] Diagram window: one sheet per page, parts numbered and labelled
-      (name, size), grain arrows, waste hatched, totals per material.
+      (name, size), grain arrows, leftovers drawn as the real pieces the
+      cuts make (D-013), totals per material; the totals page is
+      optional when printing (D-014).
 - [ ] Packing runs on a worker thread; UI stays responsive; result relayed
       per the threading rule in `CLAUDE.md`.
 - [ ] One layout description drawn by QPainter for screen and PDF
