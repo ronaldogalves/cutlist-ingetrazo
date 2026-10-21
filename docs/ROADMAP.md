@@ -159,6 +159,8 @@ change them — a smarter second pass is a later improvement, not a bug.
       (name, size), grain arrows, leftovers drawn as the real pieces the
       cuts make (D-013), totals per material; the totals page is
       optional when printing (D-014).
+- [ ] Hover a part: its cuts, stage by stage; hover a cut: its fence
+      distance; first-stage cuts marked as "can go first" (D-016 §8).
 - [ ] Packing runs on a worker thread; UI stays responsive; result relayed
       per the threading rule in `CLAUDE.md`.
 - [ ] One layout description drawn by QPainter for screen and PDF

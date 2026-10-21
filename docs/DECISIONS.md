@@ -418,3 +418,13 @@ the model and its gaps fixed:
 6. **Two text sizes**: *Large* (the default, so everyone can read it) and
    *Compact* (fewer pages, for those who see well).
 7. The totals page is optional (D-014).
+8. **On screen the diagram answers the mouse** (Ronaldo, 2026-10-21).
+   Hovering a part highlights it and lists the cuts that free it, stage
+   by stage. Hovering a cut shows its stage, its length and **where to
+   set the fence**: the distance from the edge of the piece being cut,
+   not from the sheet's corner. Every first-stage cut runs across the
+   whole sheet, so any of them can go first — to break a sheet into two
+   manageable halves before the rest. The window marks them as such, and
+   clicking one shows the split. Cut positions can also be printed as
+   dimension marks (a checkbox). Each cut keeps the piece it splits, so
+   the fence distance is exact.
