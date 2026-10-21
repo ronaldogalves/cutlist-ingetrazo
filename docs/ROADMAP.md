@@ -144,6 +144,9 @@ within 10 %; a 200-part job packs in under 2 s.
 - [ ] One layout description drawn by QPainter for screen and PDF
       (QPdfWriter, A4/Letter), and written as SVG by `export/svg.py`
       (stdlib only — IngeTrazo builds may not ship QtSvg).
+- [ ] Right-click a part on the diagram: switch grain, allow rotation,
+      oversize, exclude, show in model; written to the model, layout
+      redone (D-014).
 - [ ] Save a layout in the document and reopen it as it was; say what
       changed in the model since, and offer to redo it (D-012).
 - [ ] Part numbers consistent between cut list, diagrams and viewport
