@@ -297,7 +297,7 @@ what they are.
 
 ## D-013 — Stock, oversize and leftovers
 
-*2026-10-21 · accepted · Ronaldo (one point open, below)*
+*2026-10-21 · accepted · Ronaldo*
 
 1. **Real sheet sizes plus trim.** A material lists the sheets it comes
    in at their true size (MDF: 2750 × 1830–1850); trim per edge is a
@@ -312,8 +312,11 @@ what they are.
    (one file per board; `{material} {thickness}` for suppliers that sell
    each thickness as a product) and the diagrams (never a 15 mm part on
    an 18 mm sheet). One material in the model can have several
-   thicknesses, as Ronaldo models. Sheet sizes apply to every thickness
-   of the material — *open:* a size for one thickness only, if real.
+   thicknesses, as Ronaldo models. A sheet size applies to every
+   thickness of the material unless it names some (*2440 × 1220, only
+   3; 6 mm*): thickness is a parallel property, so the same size is
+   never typed once per thickness (OpenCutList's way, which Ronaldo
+   finds repetitive).
 4. **Oversize is a property, never geometry.** Per part (Part settings)
    and per material as a default: total extra length and width (finished
    500 × 50, oversize +20 / +5 → cut 520 × 55). The cut list shows the
@@ -329,3 +332,29 @@ what they are.
 7. **Leftovers from the shop** can be listed per layout (size × quantity,
    per board) and are used before full sheets, saved with the layout. A
    permanent shop inventory, updated when a layout is cut, comes later.
+
+## D-014 — Saw defaults; the diagram is where you fix parts
+
+*2026-10-21 · accepted · Ronaldo (one point open, below)*
+
+1. **Defaults** for a new user: kerf **3 mm** (Ronaldo's saw; sectioning
+   saws at cutting services are usually 5 mm, said in the tooltip), trim
+   **10 mm**. Trim on **all four edges** by default (a stranger's sheet
+   may have a damaged edge), or on **two** (one long, one short: where
+   the saw starts), as Ronaldo cuts; remembered once set. Kerf and trim
+   follow the cascade (user → model → material): another material may
+   need another blade or machine. Leftovers are never trimmed unless the
+   user says so.
+2. **Parts are fixed on the diagram**, not only in the model. Ronaldo:
+   in OpenCutList a part with its grain the wrong way means leaving the
+   diagram, finding the part, changing it, and rebuilding the selection.
+   Right-click a part on the diagram: **Switch grain**, **Allow
+   rotation**, **Oversize…**, **Exclude from this layout**, **Show in
+   model**. A change is written to the part in the model (one undo step,
+   as in Part settings), and the layout is redone for the same parts,
+   with progress shown. The first time, a warning says the whole layout
+   is redone ("don't show again"). A saved layout (D-012) then reads
+   "changed since saved".
+3. *Open:* a change on one piece of a line of identical parts applies to
+   the whole line by default, with "only this piece" beside it. To
+   confirm with Ronaldo.
