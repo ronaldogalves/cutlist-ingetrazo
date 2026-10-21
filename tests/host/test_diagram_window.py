@@ -137,3 +137,22 @@ def test_the_pdf_and_the_mouse(qt_app, win, ready, tmp_path):
     first = next(cut for cut in sheet.cuts if cut.stage == 1)
     assert "Can go first" in w.canvas._cut_tip(sheet, first)
     w.close()
+
+
+def test_one_letter_in_the_list_and_on_the_diagrams(qt_app, win, ready):
+    """D-016 §1: the panel's letter column and the diagrams agree."""
+    c = model(win)
+    panel = panel_of(win)
+    tree = panel.tree
+    assert tree.header().visualIndex(8) == 0          # shown first
+    in_list = {}
+    for i in range(tree.topLevelItemCount()):
+        top = tree.topLevelItem(i)
+        for j in range(top.childCount()):
+            line = top.child(j)
+            in_list[line.text(8)] = line.text(0)
+    w = opened(qt_app, c)
+    on_diagrams = {k: info.name for plan in w.plans
+                   for k, info in plan.parts.items()}
+    assert on_diagrams == in_list
+    w.close()

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.0 — unreleased
+
+**Cutting diagrams** (M2–M3).
+
+- **Diagrams…** lays every board out on its sheets: guillotine cuts as a
+  panel or table saw makes them (2, 3 or 4 stages), blade kerf, trim on
+  four or two edges, grain kept, first cuts lengthwise, crosswise or the
+  better of both, several sheet sizes, leftovers from the shop used
+  first. On Cozinha 03 it needs the same sheets as OpenCutList.
+- The sheets answer the mouse: a part shows the cuts that free it with
+  their fence distances; a cut shows its stage, fence and length.
+- Right-click a part to switch its grain, allow rotation, change its
+  settings or leave it out; the layout is redone for the same parts.
+- The printed plan (PDF, or SVG pages): a page per sheet with letters and
+  sizes, the parts table, identical sheets once "×3", "Page n of N" on
+  every page, Large or Compact text, an optional totals page.
+- Layouts can be saved in the model and reopened exactly as they were,
+  with what changed since.
+- Part letters A, B… AA in the cut list and on the diagrams.
+- Materials: sheet sizes in a table, sizes for some thicknesses only,
+  size templates applied to several materials at once, oversize per
+  board. Parts: their own oversize; the list shows "cut +20 / +5", the
+  saw gets the cut size, exports choose finished or cut size.
+- A part not as thick as its board comes is flagged.
+
 ## 0.0.1 — pre-release, 2026-10-20
 
 The first public version: the **cut list and its exports**. Cutting

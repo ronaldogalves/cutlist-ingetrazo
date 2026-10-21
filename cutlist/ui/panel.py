@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from ..i18n import tr
 from ..model.grouping import CutList, CutListLine
 from ..model.parts import EDGES, Excluded, Flag, Part
+from ..packing.jobs import letters
 
 UIDS = Qt.ItemDataRole.UserRole
 #: On rows that stand for a material (sections, "no role yet").
@@ -101,10 +102,12 @@ class CutListPanel(QWidget):
     diagrams_requested = Signal()
 
     #: Where the column widths are remembered (a per-user convenience).
-    HEADER_KEY = "cutlist/panel_header"
+    HEADER_KEY = "cutlist/panel_header_v2"     # v2: the letter column
 
+    #: The part's letter (D-016 §1) is the last column in the data and is
+    #: shown first: the same letter as on the cutting diagrams.
     COLUMNS = ("name", "qty", "length", "width", "thickness", "edges",
-               "faces", "notes")
+               "faces", "notes", "part")
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -196,6 +199,7 @@ class CutListPanel(QWidget):
         header.setStretchLastSection(True)
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setMinimumSectionSize(28)
+        header.moveSection(self.COLUMNS.index("part"), 0)
         self._widths_restored = self._restore_header()
         header.sectionResized.connect(self._save_header)
         self.tree.itemSelectionChanged.connect(self._on_selection)
@@ -266,7 +270,8 @@ class CutListPanel(QWidget):
                 if unit else title
         self.tree.setHeaderLabels([
             tr("Name"), tr("Qty"), sized(tr("Length")), sized(tr("Width")),
-            sized(tr("Thickness")), tr("Edges"), tr("Faces"), tr("Notes")])
+            sized(tr("Thickness")), tr("Edges"), tr("Faces"), tr("Notes"),
+            tr("Part")])
 
     def set_merge(self, on: bool) -> None:
         """Show the setting without emitting ``merge_changed``."""
@@ -320,6 +325,7 @@ class CutListPanel(QWidget):
         self.scope_label.setText(text)
 
         self.tree.clear()
+        names = letters(cl)
         for section in cl.sections:
             title = tr("{material} · {thickness} — {n} parts · {area}",
                        material=section.material or tr("(no material)"),
@@ -330,7 +336,7 @@ class CutListPanel(QWidget):
             top.setData(0, UIDS, [u for ln in section.lines for u in ln.uids])
             top.setData(0, MATERIAL, section.material)
             for line in section.lines:
-                top.addChild(self._line_item(line))
+                top.addChild(self._line_item(line, names[id(line)]))
             top.setExpanded(True)
 
         loud = [p for p in cl.flagged if p.flags & _LOUD]
@@ -381,7 +387,8 @@ class CutListPanel(QWidget):
         item.setFirstColumnSpanned(True)
         return item
 
-    def _line_item(self, line: CutListLine) -> QTreeWidgetItem:
+    def _line_item(self, line: CutListLine, letter: str = ""
+                   ) -> QTreeWidgetItem:
         fl = self._fmt_len
         names = line.display_names()
         shown = ", ".join(names[:3]) + (" …" if len(names) > 3 else "")
@@ -399,7 +406,8 @@ class CutListPanel(QWidget):
         item = QTreeWidgetItem([
             shown, str(line.qty), fl(line.length), fl(line.width),
             fl(line.thickness), " ".join(banded), " · ".join(faces),
-            " ".join(marks)])
+            " ".join(marks), letter])
+        item.setTextAlignment(8, Qt.AlignmentFlag.AlignCenter)
         item.setToolTip(0, "\n".join(names))
         if banded:
             item.setToolTip(5, "\n".join(

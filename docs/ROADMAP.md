@@ -155,27 +155,33 @@ change them — a smarter second pass is a later improvement, not a bug.
 
 ## M3 — Diagrams and exports (≈1–2 weeks)
 
-- [ ] Diagram window: one sheet per page, parts numbered and labelled
-      (name, size), grain arrows, leftovers drawn as the real pieces the
+*Built 2026-10-21* (D-012 to D-016). Waiting for Ronaldo's check at the saw.
+
+- [x] Diagram window: one sheet per page, parts lettered and labelled
+      (letter, size), grain arrows, leftovers drawn as the real pieces the
       cuts make (D-013), totals per material; the totals page is
       optional when printing (D-014).
-- [ ] Hover a part: its cuts, stage by stage; hover a cut: its fence
+- [x] Hover a part: its cuts, stage by stage; hover a cut: its fence
       distance; first-stage cuts marked as "can go first" (D-016 §8).
-- [ ] Packing runs on a worker thread; UI stays responsive; result relayed
+- [x] Packing runs on a worker thread; UI stays responsive; result relayed
       per the threading rule in `CLAUDE.md`.
-- [ ] One layout description drawn by QPainter for screen and PDF
-      (QPdfWriter, A4/Letter), and written as SVG by `export/svg.py`
-      (stdlib only — IngeTrazo builds may not ship QtSvg).
-- [ ] Right-click a part on the diagram: switch grain, allow rotation,
-      oversize, exclude, show in model; written to the model, layout
-      redone (D-014).
-- [ ] Save a layout in the document and reopen it as it was; say what
+- [x] One layout description (`export/plan.py`) drawn by QPainter for
+      screen and PDF (QPdfWriter, A4/Letter), and written as SVG by
+      `export/svg.py` (stdlib only).
+- [x] Right-click a part on the diagram: switch grain (line or one piece),
+      allow/forbid rotation, part settings (oversize), leave out of this
+      layout, show in model; written to the model, layout redone (D-014).
+- [x] Save a layout in the document and reopen it as it was; say what
       changed in the model since, and offer to redo it (D-012).
-- [ ] Part numbers consistent between cut list, diagrams and viewport
-      highlight.
+- [x] Part letters consistent between cut list (the panel's first
+      column), diagrams and viewport highlight (D-016 §1).
+- [x] Also: sheet sizes per thickness and size templates (D-013 §2–3),
+      oversize per board and per part (D-013 §4), sheet sizes asked once.
 
 **Accept:** a printed PDF of a kitchen-cabinet job is usable at the saw
 without the model open.
+- [ ] Ronaldo's check: Cozinha 03 (or a current job) printed and used at
+      the saw.
 
 ## M4 — Release v0.1 (≈1 week)
 
