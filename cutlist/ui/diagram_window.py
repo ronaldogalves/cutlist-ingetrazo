@@ -325,6 +325,8 @@ class DiagramWindow(QDialog):
         self.skipped: list = []
         self._generation = 0
         self._threads: list = []
+        #: The user cancelled before anything was laid out: do not show.
+        self.cancelled = False
 
         outer = QVBoxLayout(self)
         top = QHBoxLayout()
@@ -495,14 +497,35 @@ class DiagramWindow(QDialog):
                        totals_page=self.totals.isChecked(),
                        cut_marks=self.marks.isChecked())
 
-    def start(self) -> None:
-        """Prepare the boards and lay them out on the worker thread."""
+    def start(self) -> bool:
+        """Prepare the boards and lay them out on the worker thread.
+
+        Boards with no sheet size are asked once. Cancel stops: nothing is
+        laid out, and a window that had nothing to show yet is marked
+        ``cancelled`` for the host not to open it (Ronaldo, 2026-10-21).
+        Boards left without a size are said, not drawn as sheets where
+        nothing fits."""
         prep = self.session.prepare(self.scope, self.leftovers,
                                     self.left_out)
-        if prep.missing_sizes and self.session.ask_sizes(prep.missing_sizes):
+        if prep.missing_sizes:
+            if not self.session.ask_sizes(prep.missing_sizes):
+                if not self.boards:
+                    self.cancelled = True
+                else:
+                    self.status.setText(tr("Cancelled: the layout shown "
+                                           "is the one before."))
+                return False
             prep = self.session.prepare(self.scope, self.leftovers,
                                         self.left_out)
-        self.skipped = prep.skipped
+        unsized = set(prep.missing_sizes)
+        prep.plans = [p for p in prep.plans if p.material not in unsized]
+        self.skipped = prep.skipped + [(m, "no size") for m in sorted(unsized)]
+        if not prep.plans:
+            if not self.boards:
+                self.cancelled = True
+            self.status.setText(tr("Nothing to lay out: no board has a "
+                                   "sheet size."))
+            return False
         self.saved_name, self.saved_data = None, None
         self.redo_button.hide()
         self._generation += 1
@@ -521,6 +544,7 @@ class DiagramWindow(QDialog):
             (thread, worker)) if (thread, worker) in self._threads else None)
         self._threads.append((thread, worker))
         thread.start()
+        return True
 
     def _packed(self, result) -> None:
         generation, plans, error = result
@@ -811,7 +835,9 @@ class DiagramWindow(QDialog):
 
 def _why(reason: str) -> str:
     return {"solid": tr("solid wood: listed only, for now"),
-            "no material": tr("no material")}.get(reason, reason)
+            "no material": tr("no material"),
+            "no size": tr("no sheet size — set it in Materials")
+            }.get(reason, reason)
 
 
 def _join(folder: str, name: str) -> str:

@@ -488,10 +488,14 @@ class Controller:
         def run():
             if self.diagram_window is not None:
                 self.diagram_window.close()
-            self.diagram_window = DiagramWindow(self.diagram_session(),
-                                                saved=saved,
-                                                parent=self.app.window)
-            self.diagram_window.show()
+            window = DiagramWindow(self.diagram_session(), saved=saved,
+                                   parent=self.app.window)
+            if window.cancelled:            # sheet sizes not given: stop
+                window.deleteLater()
+                self.diagram_window = None
+                return False
+            self.diagram_window = window
+            window.show()
             return True
         self._guard(run)
 

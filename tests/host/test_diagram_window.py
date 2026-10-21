@@ -156,3 +156,31 @@ def test_one_letter_in_the_list_and_on_the_diagrams(qt_app, win, ready):
                    for k, info in plan.parts.items()}
     assert on_diagrams == in_list
     w.close()
+
+
+def test_cancel_on_sheet_sizes_stops(qt_app, win, ready, monkeypatch):
+    """Ronaldo, 2026-10-21: Cancel went on into the diagrams."""
+    c = model(win, sheets=False)
+    dialogs = plugin("ui.dialogs")
+    monkeypatch.setattr(dialogs.SheetSizesDialog, "exec", lambda self: 0)
+    c.open_diagrams()
+    assert c.diagram_window is None
+    assert not c.store.library().get("Freijo")
+
+
+def test_a_board_left_without_size_is_said_not_drawn(qt_app, win, ready,
+                                                     monkeypatch):
+    c = model(win, sheets=False)
+    dialogs = plugin("ui.dialogs")
+
+    def only_mdf(dlg):
+        for r in range(dlg.table.rowCount()):
+            if dlg.table.item(r, 0).text() == "MDF Branco":
+                dlg.table.item(r, 1).setText("2750")
+                dlg.table.item(r, 2).setText("1840")
+        return 1
+    monkeypatch.setattr(dialogs.SheetSizesDialog, "exec", only_mdf)
+    w = opened(qt_app, c)
+    assert [b.material for b in w.boards] == ["MDF Branco"]
+    assert "Freijo (no sheet size" in w.status.text()
+    w.close()
