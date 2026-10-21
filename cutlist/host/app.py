@@ -61,6 +61,8 @@ def install(app) -> None:
             lambda _c=False: controller.open_settings())
         menu.addAction(tr("Export…")).triggered.connect(
             lambda _c=False: controller.open_export())
+        menu.addAction(tr("Cutting diagrams…")).triggered.connect(
+            lambda _c=False: controller.open_diagrams())
     log.info("Cut List installed (key %r)", app.key)
 
 
@@ -151,6 +153,7 @@ class Controller:
         self.overrides: dict = {}
         self.library = None
         self.stale = True
+        self.diagram_window = None
         # While IngeTrazo builds its window the panel may "show": no
         # reading (and no questions) until the app is actually running.
         self._starting = True
@@ -165,6 +168,7 @@ class Controller:
         panel.settings_requested.connect(self.open_settings)
         panel.part_settings_requested.connect(self.open_part_settings)
         panel.export_requested.connect(self.open_export)
+        panel.diagrams_requested.connect(self.open_diagrams)
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
@@ -289,9 +293,10 @@ class Controller:
         self.open_part_settings_for([self.groups[u] for u in uids
                                      if u in self.groups])
 
-    def open_part_settings_for(self, groups) -> None:
+    def open_part_settings_for(self, groups) -> bool:
+        """True when the parts changed."""
         if not groups:
-            return
+            return False
         from ..ui.dialogs import PartDialog
 
         def run():
@@ -314,6 +319,8 @@ class Controller:
             return False
         if self._guard(run):
             self.refresh()
+            return True
+        return False
 
     # ---- export (D-009) -------------------------------------------------------
     def model_path(self):
@@ -409,6 +416,144 @@ class Controller:
         act.triggered.connect(lambda _c=False: QTimer.singleShot(
             0, lambda: self.open_part_settings_for(parts)))
 
+    # ---- cutting diagrams (M3) ------------------------------------------------
+    def model_parts(self) -> dict:
+        """Every part of the model by uid, whatever the selection and the
+        tag filter: a saved layout is checked against all of them, and a
+        layout covers the parts it was made for, not today's selection."""
+        ex = extract(self.app.scene, use_selection=False,
+                     excluded_tags=frozenset(),
+                     include_groups=True)
+        library = self.store.library()
+        overrides = self.store.overrides(ex.groups.values())
+        numbers = self.store.numbers([r.uid for r in ex.parts
+                                      if r.auto_named])
+        self.groups = {**self.groups, **ex.groups}
+        self.outlines = {**self.outlines, **ex.outlines}
+        return {p.uid: p for p in (read_part(r, library, overrides.get(r.uid))
+                                   for r in renamed(ex.parts, numbers))}
+
+    def diagram_session(self):
+        from datetime import date
+
+        from ..export.diagrams import changes, prepare, snapshot
+        from ..ui.diagram_window import DiagramSession
+        path = self.model_path()
+        scope = [u for line in self.cut_list.lines() for u in line.uids]
+
+        def prep(scope, leftovers, left_out):
+            parts = self.model_parts()
+            settings = self.store.settings()
+            return prepare([parts[u] for u in scope if u in parts],
+                           self.store.library(), settings,
+                           by_name=not settings.merge_by_size,
+                           leftovers=leftovers, left_out=left_out)
+
+        def snap(plans, leftovers, left_out):
+            parts = self.model_parts()
+            uids = {u for plan in plans for us in plan.uids.values()
+                    for u in us}
+            from datetime import datetime
+            return snapshot(plans, [parts[u] for u in sorted(uids)
+                                    if u in parts],
+                            created=datetime.now().strftime("%Y-%m-%d %H:%M"),
+                            leftovers=leftovers, left_out=left_out)
+
+        def names(uids):
+            parts = self.model_parts()
+            return [parts[u].name if u in parts else u for u in uids]
+
+        return DiagramSession(
+            model=path.stem if path else tr("cut list"),
+            date=date.today().isoformat(), scope=scope, prepare=prep,
+            settings=self.store.settings,
+            save_settings=self.store.save_model_setting,
+            part_action=self.diagram_part_action,
+            show_in_model=self.set_highlight, ask_sizes=self.ask_sheet_sizes,
+            options=self.store.plan_options(),
+            save_options=self.store.save_plan_options,
+            layouts=self.store.layouts, save_layout=self.store.save_layout,
+            snapshot=snap,
+            changes=lambda data: changes(data, self.model_parts()),
+            names=names,
+            suggested_folder=str(path.parent) if path else "")
+
+    def open_diagrams(self, saved: str | None = None) -> None:
+        if self.cut_list is None or self.stale:
+            self.refresh(ask=True)
+        if self.cut_list is None:
+            return
+        from ..ui.diagram_window import DiagramWindow
+
+        def run():
+            if self.diagram_window is not None:
+                self.diagram_window.close()
+            self.diagram_window = DiagramWindow(self.diagram_session(),
+                                                saved=saved,
+                                                parent=self.app.window)
+            self.diagram_window.show()
+            return True
+        self._guard(run)
+
+    def diagram_part_action(self, action: str, uids) -> bool:
+        """A part fixed on the diagram (D-014 §2): written to the part in
+        the model, one undo step; True when something changed."""
+        from ..packing.jobs import grain_of
+
+        def run():
+            parts = self.model_parts()
+            groups = [self.groups[u] for u in uids if u in self.groups]
+            if not groups:
+                return False
+            if action == "settings":
+                return bool(self.open_part_settings_for(groups))
+            library = self.store.library()
+            overrides = self.store.overrides(groups)
+            changed = {}
+            for g in groups:
+                part, over = parts.get(g.uid), overrides[g.uid]
+                if part is None:
+                    continue
+                grain = grain_of(part, library)
+                if action == "switch_grain":
+                    if grain == "none":
+                        continue
+                    changed[g] = replace(over, grain="width"
+                                         if grain == "length" else "length")
+                elif action == "toggle_rotation":
+                    now = part.can_rotate if part.can_rotate is not None \
+                        else grain == "none"
+                    changed[g] = replace(over, can_rotate=not now)
+            if not changed:
+                self._failed(None, tr("Cut List: these parts have no grain "
+                                      "to switch."))
+                return False
+            return self.store.set_overrides(changed)
+        done = bool(self._guard(run))
+        if done:
+            self.refresh()
+        return done
+
+    def ask_sheet_sizes(self, names) -> bool:
+        """Ask the sheet sizes of these boards once; True when saved."""
+        from ..model.materials import MaterialSpec, Role
+        from ..ui.dialogs import SheetSizesDialog
+
+        def run():
+            dlg = SheetSizesDialog(names, self.store.sheet_templates(),
+                                   parent=self.app.window)
+            if not dlg.exec() or not dlg.result_sizes():
+                return False
+            library = self.store.library()
+            specs = []
+            for name, sizes in dlg.result_sizes().items():
+                spec = library.get(name) or MaterialSpec(name, role=Role.BOARD)
+                specs.append(replace(spec, stocks=sizes))
+            self.store.save_materials(specs,
+                                      remember=dlg.remember.isChecked())
+            return True
+        return bool(self._guard(run))
+
     # ---- the viewport highlight ----------------------------------------
     def set_highlight(self, uids) -> None:
         self.highlight = list(uids)
@@ -444,7 +589,10 @@ class Controller:
             return None
 
     def _failed(self, exc, message: str) -> None:
-        log.error("%s", message, exc_info=exc)
+        if exc is None:
+            log.info("%s", message)
+        else:
+            log.error("%s", message, exc_info=exc)
         flash = getattr(self.app.viewport, "flash_status", None)
         if callable(flash):
             flash(message, 6000)

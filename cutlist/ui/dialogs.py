@@ -505,6 +505,79 @@ class MaterialsDialog(QDialog):
                 if self._roles[n] is None and n in self._known]
 
 
+class SheetSizesDialog(QDialog):
+    """Boards that have no sheet size yet, asked once when diagrams are
+    made (D-013: ask, never guess). One size per board, typed or taken
+    from a template; remembered in the library unless untick."""
+
+    def __init__(self, names, templates: dict | None = None,
+                 parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("cutlist_sheet_sizes_dialog")
+        self.setWindowTitle(tr("Cut List — Sheet sizes"))
+        self._templates = dict(templates or {})
+        layout = QVBoxLayout(self)
+        intro = QLabel(tr("These boards have no sheet size yet. Type the "
+                          "real sheet (the trim is set apart)."))
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+        self.table = QTableWidget(len(names), 3)
+        self.table.setObjectName("cutlist_sheet_sizes")
+        self.table.setHorizontalHeaderLabels(
+            [tr("Board"), tr("Length (mm)"), tr("Width (mm)")])
+        self.table.verticalHeader().hide()
+        self.table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Stretch)
+        for r, name in enumerate(names):
+            item = QTableWidgetItem(name)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(r, 0, item)
+            self.table.setItem(r, 1, QTableWidgetItem(""))
+            self.table.setItem(r, 2, QTableWidgetItem(""))
+        layout.addWidget(self.table)
+        if self._templates:
+            row = QHBoxLayout()
+            row.addWidget(QLabel(tr("For all of them:")))
+            self.template = QComboBox()
+            self.template.addItem("", None)
+            for name in sorted(self._templates, key=str.lower):
+                self.template.addItem(name, name)
+            self.template.activated.connect(
+                lambda _i: self.use_template(self.template.currentData()))
+            row.addWidget(self.template, 1)
+            layout.addLayout(row)
+        self.remember = QCheckBox(tr("Also use these sizes in my other "
+                                     "models"))
+        self.remember.setChecked(True)
+        layout.addWidget(self.remember)
+        layout.addWidget(_buttons(self))
+        self._sizes: dict[str, tuple] = {}
+
+    def use_template(self, name: str | None) -> None:
+        if not name:
+            return
+        first = self._templates[name][0]
+        for r in range(self.table.rowCount()):
+            self.table.item(r, 1).setText(fmt_length(first.length))
+            self.table.item(r, 2).setText(fmt_length(first.width))
+            self._sizes[self.table.item(r, 0).text()] = self._templates[name]
+
+    def result_sizes(self) -> dict:
+        """name → tuple of SheetSize; boards left empty are left out."""
+        out = {}
+        for r in range(self.table.rowCount()):
+            name = self.table.item(r, 0).text()
+            a = parse_length(self.table.item(r, 1).text())
+            b = parse_length(self.table.item(r, 2).text())
+            if not (a and b):
+                continue
+            chosen = self._sizes.get(name, ())
+            same = chosen and (chosen[0].length, chosen[0].width) == \
+                (max(a, b), min(a, b))
+            out[name] = chosen if same else (SheetSize(a, b),)
+        return out
+
+
 # ---------------------------------------------------------------------------
 # One part (or several)
 # ---------------------------------------------------------------------------

@@ -179,6 +179,33 @@ class Store:
             "sheet_templates": {n: [s.to_list() for s in sizes]
                                 for n, sizes in templates.items()}})
 
+    # ---- cutting diagrams (D-012, D-016) ----------------------------------
+    def layouts(self) -> dict:
+        """name → a saved plan (``export.diagrams.snapshot``), in the
+        model: it travels with the ``.igz``."""
+        raw = self.doc_data().get("layouts")
+        return {str(n): d for n, d in raw.items() if isinstance(d, dict)} \
+            if isinstance(raw, dict) else {}
+
+    def save_layout(self, name: str, data: dict | None) -> None:
+        """Save (or with ``None`` delete) one plan — one undo step."""
+        doc = self.doc_data()
+        layouts = dict(doc.get("layouts") or {})
+        if data is None:
+            layouts.pop(name, None)
+        else:
+            layouts[name] = data
+        self.write_doc_data({**doc, "layouts": layouts})
+
+    def plan_options(self) -> dict:
+        """How the user prints plans (page, text size…): theirs, every
+        model."""
+        raw = self.user_data().get("plan_options")
+        return dict(raw) if isinstance(raw, dict) else {}
+
+    def save_plan_options(self, options: dict) -> None:
+        self.write_user_data({**self.user_data(), "plan_options": options})
+
     def save_materials(self, specs: list[MaterialSpec], *,
                        remember: bool) -> None:
         """Store ``specs`` in the model (one undo step) and, with
