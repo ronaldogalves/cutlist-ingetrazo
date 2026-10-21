@@ -364,7 +364,7 @@ what they are.
 
 ## D-015 — What a good layout is; first-cut direction
 
-*2026-10-21 · accepted · Ronaldo (two points open, below)*
+*2026-10-21 · accepted · Ronaldo*
 
 1. **Order of what counts**: fewest sheets first, always. Among layouts
    with the same sheet count: **easy to cut** (fewer cuts, parts of one
@@ -384,8 +384,12 @@ what they are.
    first-cut direction, leftovers as real pieces. Existing Python packers
    (`rectpack`) know none of that; OpenCutList's Packy is C++ and stays
    the fallback.
-4. *Open:* the bar against OpenCutList (within one sheet, or match it on
-   Cozinha 03), and how many cutting stages a layout may use.
+4. **The bar**: M2 is done when no benchmark job needs more than one
+   sheet beyond OpenCutList's; on Cozinha 03 the aim is to match it,
+   reported board by board.
+5. **Cutting stages**: up to **3** by default (strips, parts, one more
+   cut on a part); a setting allows 2 (simpler at the saw) or more
+   (tighter layouts).
 
 ## D-016 — The printed cutting plan
 
