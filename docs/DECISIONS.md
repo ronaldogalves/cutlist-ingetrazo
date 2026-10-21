@@ -361,3 +361,28 @@ what they are.
 4. **The summary page is optional** in the printed diagrams. OpenCutList
    opens with a page of totals that the person at the saw skips
    (Ronaldo); a checkbox, remembered, decides whether it is printed.
+
+## D-015 — What a good layout is; first-cut direction
+
+*2026-10-21 · accepted · Ronaldo (two points open, below)*
+
+1. **Order of what counts**: fewest sheets first, always. Among layouts
+   with the same sheet count: **easy to cut** (fewer cuts, parts of one
+   width sharing a strip, fewer fence changes, fewer turns of the sheet),
+   then **big leftovers** (one usable piece beats several scraps of the
+   same area). Both are measured and shown per sheet. A later setting may
+   let a shop weigh them differently.
+2. **First-cut direction** (as OpenCutList offers): *lengthwise first*
+   (rip the full length into strips), *crosswise first* (shorter pieces
+   first — easier for someone cutting a 2750 mm sheet alone, Ronaldo), or
+   *best* (try both, keep the better; the default). Per job or as the
+   user's default, and changeable from the diagram (the layout is redone).
+3. **Our own packer, from published methods** (D-003 stands): sorted
+   first-fit with several placement rules and orders, multi-start within
+   a time budget — the textbook ideas every packer builds on, OpenCutList's
+   included. What is ours is what a saw needs: stages, kerf, trim, grain,
+   first-cut direction, leftovers as real pieces. Existing Python packers
+   (`rectpack`) know none of that; OpenCutList's Packy is C++ and stays
+   the fallback.
+4. *Open:* the bar against OpenCutList (within one sheet, or match it on
+   Cozinha 03), and how many cutting stages a layout may use.
