@@ -121,19 +121,37 @@ a few trusted woodworkers before M2–M3.
 
 ## M2 — 2D packer (≈1–2 weeks)
 
-- [ ] `packing/base.py`: `Packer` protocol, `Stock`, `Placement`, `Layout`.
-- [ ] `packing/guillotine.py`: kerf, trim, grain/rotation, several stock
-      sizes, multi-start with seed and time budget.
-- [ ] Property tests: no overlaps (kerf included), every part inside the
-      usable area, grain respected, every part placed or reported as not
-      fitting any stock.
-- [ ] `benchmarks/`: 10+ cases (real cabinet jobs and synthetic ones) with
-      sheet count and waste; where possible, OpenCutList's results for the
-      same parts recorded for comparison.
+*Done 2026-10-21.* Decisions D-012 to D-016.
+
+- [x] `packing/base.py`: `Packer` protocol, `Piece`, `Stock`, `SawSettings`,
+      `Placement`, `Cut`, `Sheet`, `Layout` — plain and JSON-safe, so a
+      layout can be saved in the model (D-012).
+- [x] `packing/guillotine.py`: staged guillotine (2, 3 or 4 stages), kerf,
+      trim on 4 or 2 edges, grain/rotation, first cuts lengthwise,
+      crosswise or the better of both, several stock sizes, shop
+      leftovers first and untrimmed, leftovers as the real pieces the cuts
+      make, multi-start with a seed (deterministic).
+- [x] `packing/jobs.py`: a cut list to one job per board — part letters
+      A…Z, AA… across the job (D-016), grain and rotation from the part
+      and its board, the board's kerf and trim.
+- [x] Property tests (`tests/test_packing.py`) with an independent
+      checker: no overlaps (kerf included), every part inside the trimmed
+      sheet, grain respected, cuttable with straight cuts, every part
+      placed or reported — on 150 random jobs and the special cases.
+- [x] `benchmarks/run.py`: 14 jobs — 10 synthetic (`benchmarks/cases/`)
+      and Cozinha 03's four boards (private) against OpenCutList's PDFs.
 
 **Accept:** all property tests pass; on the benchmark set, sheet count is
 never worse than OpenCutList's by more than one sheet and average waste is
 within 10 %; a 200-part job packs in under 2 s.
+
+**Result (2026-10-21):** Cozinha 03 — the same sheet count as OpenCutList
+on all four boards (plywood with grain: 5 = 5; MDF: 1 = 1 ×3) and the same
+cut counts within one (57/57, 47/48, 20/20, 11/11). Efficiency equal (ours
+is measured on the whole sheet, OpenCutList's on the trimmed one: 0.982 ×).
+197 parts in 0.3 s. Synthetic jobs: 4 of 10 one sheet above the area
+lower bound (which ignores the blade and the shapes); more attempts do not
+change them — a smarter second pass is a later improvement, not a bug.
 
 ## M3 — Diagrams and exports (≈1–2 weeks)
 

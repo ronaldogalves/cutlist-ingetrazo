@@ -36,9 +36,16 @@ class Settings:
     excluded_tags: tuple[str, ...] = ()
     #: The scope window was answered with "don't show again".
     scope_asked: bool = False
-    #: Defaults for boards that do not set their own (metres) — for M2.
-    kerf: float = 0.004
+    #: The saw (D-014), for boards that do not set their own (metres).
+    kerf: float = 0.003
     trim: float = 0.010
+    #: 4: every edge trimmed; 2: the two where the saw starts.
+    trim_edges: int = 4
+    #: First cuts along the sheet ("length"), across it ("width"), or the
+    #: better of both ("best") — D-015.
+    first_cut: str = "best"
+    #: Strips, parts, one more cut (3); 2 or 4 (D-015).
+    cut_stages: int = 3
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -47,6 +54,9 @@ class Settings:
 
 
 _TYPES = {f.name: f.type for f in fields(Settings)}
+#: Settings that take one of a few values.
+_CHOICES = {"trim_edges": (2, 4), "first_cut": ("best", "length", "width"),
+            "cut_stages": (2, 3, 4)}
 
 
 def _clean(raw: dict | None) -> dict:
@@ -65,6 +75,9 @@ def _clean(raw: dict | None) -> dict:
                 out[key] = None if value is None else int(value)
             elif key == "excluded_tags":
                 out[key] = tuple(str(t) for t in value)
+            elif key in _CHOICES:
+                if value in _CHOICES[key]:
+                    out[key] = value
             elif isinstance(default, bool):
                 out[key] = bool(value)
             elif isinstance(default, float):
