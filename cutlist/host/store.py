@@ -159,6 +159,26 @@ class Store:
                      if n not in names}
             self.write_user_data({**user, "materials": umats})
 
+    def sheet_templates(self) -> dict:
+        """name → tuple of :class:`SheetSize`: the user's named sheet sizes,
+        applied to several materials at once (D-013 §2). Always the user's,
+        never the model's: they are how this person buys boards."""
+        from ..model.materials import SheetSize
+        out = {}
+        raw = self.user_data().get("sheet_templates")
+        for name, sizes in (raw.items() if isinstance(raw, dict) else ()):
+            read = tuple(s for s in map(SheetSize.read, sizes or ())
+                         if s is not None)
+            if read:
+                out[str(name)] = read
+        return out
+
+    def save_sheet_templates(self, templates: dict) -> None:
+        self.write_user_data({
+            **self.user_data(),
+            "sheet_templates": {n: [s.to_list() for s in sizes]
+                                for n, sizes in templates.items()}})
+
     def save_materials(self, specs: list[MaterialSpec], *,
                        remember: bool) -> None:
         """Store ``specs`` in the model (one undo step) and, with

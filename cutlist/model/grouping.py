@@ -46,6 +46,17 @@ class CutListLine:
     flags: set[Flag] = field(default_factory=set)
     components: int = 0
     groups: int = 0
+    #: Oversize: the saw cuts this much more than the finished size.
+    extra_length: float = 0.0
+    extra_width: float = 0.0
+
+    @property
+    def cut_length(self) -> float:
+        return self.length + self.extra_length
+
+    @property
+    def cut_width(self) -> float:
+        return self.width + self.extra_width
 
     @property
     def qty(self) -> int:
@@ -116,11 +127,14 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
             section = sections[(p.core, t)] = Section(p.core, t)
         key = (p.core, t, quantize(p.length, tolerance),
                quantize(p.width, tolerance), p.face1, p.face2, p.edges,
-               p.grain, p.can_rotate, p.name if by_name else None)
+               p.grain, p.can_rotate, p.extra_length, p.extra_width,
+               p.name if by_name else None)
         line = lines.get(key)
         if line is None:
             line = lines[key] = CutListLine(p.core, key[2], key[3], t,
-                                            p.face1, p.face2, p.edges)
+                                            p.face1, p.face2, p.edges,
+                                            extra_length=p.extra_length,
+                                            extra_width=p.extra_width)
             section.lines.append(line)
         line.names.append(p.name)
         line.uids.append(p.uid)

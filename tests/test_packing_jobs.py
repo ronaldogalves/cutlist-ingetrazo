@@ -77,3 +77,51 @@ def test_one_letter_per_line_across_the_job():
     layout = pack(list(jobs[0].pieces), list(jobs[0].stocks),
                   jobs[0].settings)
     assert not layout.unplaced
+
+
+def test_a_sheet_size_for_some_thicknesses_only():
+    from cutlist.model.materials import SheetSize
+    lib = Library({"MDF": MaterialSpec("MDF", stocks=(
+        SheetSize(2.75, 1.84), SheetSize(2.44, 1.22, (0.003, 0.006))))})
+    parts = {}
+    for uid, t in (("thin", 0.006), ("thick", 0.015)):
+        parts[uid] = read_part(RawPart(uid, uid, box(0.5, 0.4, t,
+                                                     default="MDF")), lib)
+    cl = build(list(parts.values()))
+    names = letters(cl)
+    by_t = {round(s.thickness * 1000): board_job(s, parts, lib, Settings(),
+                                                  names)
+            for s in cl.sections}
+    assert len(by_t[6].stocks) == 2 and len(by_t[15].stocks) == 1
+
+
+def test_sheet_sizes_saved_before_thickness_lists_still_read():
+    from cutlist.model.materials import SheetSize
+    spec = MaterialSpec.from_dict({"stocks": [[1.84, 2.75],
+                                              [2.44, 1.22, [0.006]]]})
+    assert spec.stocks == (SheetSize(2.75, 1.84),
+                           SheetSize(2.44, 1.22, (0.006,)))
+    assert MaterialSpec.from_dict(spec.to_dict()) == spec
+
+
+def test_oversize_is_a_property_not_geometry():
+    """D-013 §4: finished 500 × 50, oversize +20 / +5 → the saw cuts
+    520 × 55; the list keeps the finished size."""
+    lib = Library({"Freijo": MaterialSpec("Freijo", extra_length=0.010,
+                                          stocks=((2.75, 1.84),))})
+    own = PartOverride(extra_length=0.020, extra_width=0.005)
+    parts = {
+        "a": read_part(RawPart("a", "Rail", box(0.5, 0.05, 0.018,
+                                                default="Freijo")), lib, own),
+        "b": read_part(RawPart("b", "Rail", box(0.5, 0.05, 0.018,
+                                                default="Freijo")), lib),
+    }
+    assert (parts["b"].extra_length, parts["b"].extra_width) == (0.010, 0.0)
+    cl = build(list(parts.values()))
+    (section,) = cl.sections
+    assert len(section.lines) == 2          # a different cut: its own line
+    assert all(ln.length == pytest.approx(0.5) for ln in section.lines)
+    j = board_job(section, parts, lib, Settings(), letters(cl))
+    sizes = sorted((round(p.length, 4), round(p.width, 4)) for p in j.pieces)
+    assert sizes == [(0.51, 0.05), (0.52, 0.055)]
+    assert PartOverride.from_dict(own.to_dict()) == own

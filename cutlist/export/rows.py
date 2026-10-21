@@ -346,6 +346,9 @@ def _values(unit, profile, library, context, problem, *, numbers,
     swapped = profile.grain_first and grain == "width"
     length, width = (line.width, line.length) if swapped else \
         (line.length, line.width)
+    # The size the saw cuts: with oversize (D-013 §4).
+    cut_length, cut_width = (line.cut_width, line.cut_length) if swapped \
+        else (line.cut_length, line.cut_width)
     bands = _bands(part, swapped)
     want = (lambda k: True) if only is None else (lambda k: k == only)
     v: dict = {}
@@ -357,6 +360,7 @@ def _values(unit, profile, library, context, problem, *, numbers,
     if want("qty"):
         put("qty", Cell(str(len(unit)), float(len(unit))))
     for key, metres in (("length", length), ("width", width),
+                        ("cut_length", cut_length), ("cut_width", cut_width),
                         ("thickness", line.thickness)):
         if want(key):
             put(key, format_length(metres, numbers))

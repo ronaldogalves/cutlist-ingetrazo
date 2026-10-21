@@ -242,11 +242,15 @@ class Controller:
 
         def run():
             library = self.store.library()
+            templates = self.store.sheet_templates()
             dlg = MaterialsDialog(set(self.materials_seen), library, focus,
                                   sources=self.store.material_sources(),
+                                  templates=templates,
                                   parent=self.app.window)
             if not dlg.exec():
                 return False
+            if dlg.result_templates() != templates:
+                self.store.save_sheet_templates(dlg.result_templates())
             remember = dlg.remember.isChecked()
             changed = False
             if dlg.result_specs():

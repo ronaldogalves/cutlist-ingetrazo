@@ -345,3 +345,14 @@ def test_the_shipped_profiles():
     assert names == ["Simple CSV", "CorteCloud", "Leo Madeiras"]
     for p in shipped():                 # survive the trip through JSON
         assert Profile.from_dict(p.to_dict()) == p
+
+
+def test_finished_or_cut_size_per_column():
+    lib = Library({**LIB.specs, "Freijo": MaterialSpec("Freijo",
+                                                       extra_length=0.02)})
+    part = read_part(RawPart("a", "Rail", box(0.5, 0.05, 0.018,
+                                              default="Freijo")), lib)
+    p = Profile(columns=(col("L", "length"), col("Cut L", "cut_length")),
+                header=False)
+    ex = make_rows(build([part]), {"a": part}, lib, p)
+    assert [c.text for c in ex.files[0].rows[0]] == ["500", "520"]

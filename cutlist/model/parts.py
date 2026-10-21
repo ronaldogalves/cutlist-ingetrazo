@@ -71,6 +71,10 @@ class PartOverride:
     #: ``None`` = from the material; else "length", "width" or "none".
     grain: str | None = None
     can_rotate: bool | None = None
+    #: Oversize (D-013 §4): cut this much longer / wider than finished, to
+    #: be brought to size later. ``None`` = from the board. Metres, total.
+    extra_length: float | None = None
+    extra_width: float | None = None
     #: The part's own custom field values, as ``((name, value), …)``.
     fields: tuple[tuple[str, str], ...] = ()
 
@@ -97,6 +101,10 @@ class PartOverride:
             d["grain"] = self.grain
         if self.can_rotate is not None:
             d["can_rotate"] = self.can_rotate
+        if self.extra_length is not None:
+            d["extra_length"] = self.extra_length
+        if self.extra_width is not None:
+            d["extra_width"] = self.extra_width
         if self.fields:
             d["fields"] = dict(self.fields)
         return d
@@ -111,11 +119,18 @@ class PartOverride:
             return cls()
         grain = d.get("grain")
         rot = d.get("can_rotate")
+
+        def extra(key):
+            v = d.get(key)
+            ok = isinstance(v, (int, float)) and not isinstance(v, bool)
+            return float(v) if ok and v >= 0 else None
         return cls(flip_face1=bool(d.get("flip_face1", False)),
                    exclude=bool(d.get("exclude", False)),
                    note=str(d.get("note") or ""),
                    grain=grain if grain in GRAINS else None,
-                   can_rotate=rot if isinstance(rot, bool) else None
+                   can_rotate=rot if isinstance(rot, bool) else None,
+                   extra_length=extra("extra_length"),
+                   extra_width=extra("extra_width"),
                    ).with_fields(d.get("fields")
                                  if isinstance(d.get("fields"), dict) else {})
 
@@ -146,6 +161,10 @@ class Part:
     note: str = ""
     grain: str | None = None
     can_rotate: bool | None = None
+    #: Oversize in force (the part's, else its board's): the saw cuts
+    #: ``length + extra_length`` × ``width + extra_width`` (D-013 §4).
+    extra_length: float = 0.0
+    extra_width: float = 0.0
     measured: Measured | None = field(default=None, compare=False, repr=False)
 
     @property
@@ -274,6 +293,11 @@ def read_part(raw: RawPart, lib: Library,
     if core is None and excluded is None:
         flags.add(Flag.NO_MATERIAL)
 
+    board = lib.get(core)
+    extra_length = over.extra_length if over.extra_length is not None \
+        else (board.extra_length if board is not None else 0.0)
+    extra_width = over.extra_width if over.extra_width is not None \
+        else (board.extra_width if board is not None else 0.0)
     return Part(
         uid=raw.uid, name=tidy(raw.name), length=m.length, width=m.width,
         thickness=m.thickness, core=core,
@@ -282,4 +306,5 @@ def read_part(raw: RawPart, lib: Library,
         auto_named=raw.auto_named, flags=frozenset(flags),
         unassigned=frozenset(unassigned), excluded=excluded,
         note=tidy(over.note),
-        grain=over.grain, can_rotate=over.can_rotate, measured=m)
+        grain=over.grain, can_rotate=over.can_rotate,
+        extra_length=extra_length, extra_width=extra_width, measured=m)

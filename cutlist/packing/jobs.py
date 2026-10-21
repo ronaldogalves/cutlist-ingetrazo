@@ -67,7 +67,7 @@ def board_job(section: Section, parts: dict[str, Part], library: Library,
     for line in section.lines:
         part = parts[line.uids[0]]          # a line is uniform (grouping key)
         grain = grain_of(part, library)
-        length, width = line.length, line.width
+        length, width = line.cut_length, line.cut_width   # oversize in
         if grain == "width":
             length, width = width, length
         rotate = grain == "none" if part.can_rotate is None \
@@ -76,8 +76,11 @@ def board_job(section: Section, parts: dict[str, Part], library: Library,
     spec = library.get(section.material)
     kerf = settings.kerf if spec is None or spec.kerf is None else spec.kerf
     trim = settings.trim if spec is None or spec.trim is None else spec.trim
-    stocks = tuple(Stock(max(a, b), min(a, b), key=f"{a}x{b}")
-                   for a, b in (spec.stocks if spec is not None else ()))
+    stocks = tuple(Stock(s.length, s.width,
+                         key=f"{round(s.length * 1000)}x"
+                             f"{round(s.width * 1000)}")
+                   for s in (spec.stocks if spec is not None else ())
+                   if s.fits(section.thickness))
     return Job(
         material=section.material, thickness=section.thickness,
         pieces=tuple(pieces), stocks=tuple(leftovers) + stocks,

@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -20,31 +21,39 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QPushButton,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from ..i18n import tr
 from ..model.fields import FieldDef, Fields, format_rules, parse_rules
-from ..model.materials import BoardKind, Library, MaterialSpec, Role
+from ..model.materials import (
+    BoardKind,
+    Library,
+    MaterialSpec,
+    Role,
+    SheetSize,
+)
 from ..model.parts import PartOverride
 from ..model.settings import UNITS, Settings
 from ..model.text import (
     MM,
     fmt_length,
     fmt_lengths,
-    fmt_sheets,
     parse_length,
     parse_lengths,
-    parse_sheets,
 )
 
 
@@ -80,6 +89,92 @@ def _buttons(dialog: QDialog) -> QDialogButtonBox:
 # Materials
 # ---------------------------------------------------------------------------
 
+class SheetsEditor(QWidget):
+    """The sheets a board comes in: a small table — length, width, and the
+    thicknesses a size is only for (empty: all). A table, not a line of
+    text: commas are decimals here, and a list inside a list would be
+    guesswork to type (D-013)."""
+
+    changed = Signal()
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        box = QVBoxLayout(self)
+        box.setContentsMargins(0, 0, 0, 0)
+        self.table = QTableWidget(0, 3)
+        self.table.setObjectName("cutlist_sheets")
+        self.table.setHorizontalHeaderLabels([
+            tr("Length (mm)"), tr("Width (mm)"),
+            tr("Only for thicknesses (mm)")])
+        self.table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().hide()
+        self.table.setMinimumHeight(90)
+        self.table.setToolTip(tr("Type the real sheet, not a trimmed one: "
+                                 "the trim is set apart. Leave the last "
+                                 "column empty when the size comes in "
+                                 "every thickness; else e.g. 3; 6."))
+        self.table.itemChanged.connect(lambda _i: self.changed.emit())
+        box.addWidget(self.table)
+        row = QHBoxLayout()
+        add = QPushButton(tr("Add size"))
+        add.setObjectName("cutlist_sheets_add")
+        add.clicked.connect(lambda _c=False: self._add())
+        remove = QPushButton(tr("Remove"))
+        remove.clicked.connect(lambda _c=False: self._remove())
+        self.templates = QToolButton()
+        self.templates.setObjectName("cutlist_sheets_templates")
+        self.templates.setText(tr("Templates"))
+        self.templates.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
+        row.addWidget(add)
+        row.addWidget(remove)
+        row.addStretch(1)
+        row.addWidget(self.templates)
+        box.addLayout(row)
+
+    def set_sheets(self, sheets) -> None:
+        self.table.blockSignals(True)
+        try:
+            self.table.setRowCount(0)
+            for s in sheets:
+                self._append(fmt_length(s.length), fmt_length(s.width),
+                             fmt_lengths(s.thicknesses))
+        finally:
+            self.table.blockSignals(False)
+
+    def sheets(self) -> tuple[SheetSize, ...]:
+        out = []
+        for r in range(self.table.rowCount()):
+            def text(c, r=r):
+                item = self.table.item(r, c)
+                return item.text() if item else ""
+            a, b = parse_length(text(0)), parse_length(text(1))
+            if a and b:
+                out.append(SheetSize(a, b, parse_lengths(text(2))))
+        return tuple(out)
+
+    def _append(self, *texts) -> None:
+        r = self.table.rowCount()
+        self.table.insertRow(r)
+        for c, t in enumerate(texts):
+            self.table.setItem(r, c, QTableWidgetItem(t))
+
+    def _add(self) -> None:
+        self.table.blockSignals(True)
+        self._append("", "", "")
+        self.table.blockSignals(False)
+        r = self.table.rowCount() - 1
+        self.table.setCurrentCell(r, 0)
+        self.table.editItem(self.table.item(r, 0))
+
+    def _remove(self) -> None:
+        r = self.table.currentRow()
+        if r >= 0:
+            self.table.removeRow(r)
+            self.changed.emit()
+
+
 class MaterialsDialog(QDialog):
     """One material at a time: pick it on the left, say what it is on the
     right. ``names`` are the materials found on the model's parts; the
@@ -92,8 +187,11 @@ class MaterialsDialog(QDialog):
     people (Ronaldo, 2026-10-09)."""
 
     def __init__(self, names, library: Library, focus: str | None = None,
-                 sources: dict | None = None, parent=None) -> None:
+                 sources: dict | None = None, templates: dict | None = None,
+                 parent=None) -> None:
         super().__init__(parent)
+        #: name → tuple of SheetSize (D-013 §2), edited here, kept by host.
+        self._templates = dict(templates or {})
         self.setObjectName("cutlist_materials_dialog")
         self.setWindowTitle(tr("Cut List — Materials"))
         self.resize(760, 500)
@@ -121,6 +219,9 @@ class MaterialsDialog(QDialog):
 
         self.list = QListWidget()
         self.list.setObjectName("cutlist_material_list")
+        # Several at once: a sheet-size template goes to all of them.
+        self.list.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection)
         for name in names:
             item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, name)
@@ -144,10 +245,27 @@ class MaterialsDialog(QDialog):
         self.grain = QCheckBox(tr("Has a grain direction"))
         self.thicknesses = QLineEdit()
         self.thicknesses.setPlaceholderText(tr("e.g. 15; 18"))
-        self.stocks = QLineEdit()
-        self.stocks.setPlaceholderText(tr("e.g. 2750 x 1840; 2440 x 1220"))
+        self.stocks = SheetsEditor()
+        self.stocks.changed.connect(self._changed)
+        self._template_menu = QMenu(self.stocks.templates)
+        self._template_menu.aboutToShow.connect(self._fill_template_menu)
+        self.stocks.templates.setMenu(self._template_menu)
         self.kerf = QLineEdit()
         self.trim = QLineEdit()
+        self.extra = QWidget()
+        extra_box = QHBoxLayout(self.extra)
+        extra_box.setContentsMargins(0, 0, 0, 0)
+        self.extra_length = QLineEdit()
+        self.extra_width = QLineEdit()
+        for label, edit in ((tr("length +"), self.extra_length),
+                            (tr("width +"), self.extra_width)):
+            edit.setPlaceholderText("0")
+            extra_box.addWidget(QLabel(label))
+            extra_box.addWidget(edit)
+        self.extra.setToolTip(tr("Every part of this board is cut this much "
+                                 "bigger, to be brought to size later; a "
+                                 "part can set its own. The model keeps "
+                                 "the finished size."))
         self.thickness = QLineEdit()
         self.oversize = QLineEdit()
         self.applied_over = QComboBox()
@@ -160,9 +278,10 @@ class MaterialsDialog(QDialog):
             "kind": (tr("Kind"), self.kind),
             "grain": ("", self.grain),
             "thicknesses": (tr("Thicknesses (mm)"), self.thicknesses),
-            "stocks": (tr("Stock sheets (mm)"), self.stocks),
+            "stocks": (tr("Sheets it comes in"), self.stocks),
             "kerf": (tr("Saw kerf (mm)"), self.kerf),
             "trim": (tr("Trim per sheet edge (mm)"), self.trim),
+            "extra": (tr("Cut oversize (mm)"), self.extra),
             "thickness": (tr("Its thickness (mm)"), self.thickness),
             "oversize": (tr("Oversize (mm)"), self.oversize),
             "applied_over": (tr("Goes on board"), self.applied_over),
@@ -177,7 +296,8 @@ class MaterialsDialog(QDialog):
         form.addRow(self.hint)
         body.addWidget(right, 3)
 
-        for w in (self.thicknesses, self.stocks, self.kerf, self.trim,
+        for w in (self.thicknesses, self.kerf, self.trim,
+                  self.extra_length, self.extra_width,
                   self.thickness, self.oversize, self.note):
             w.textEdited.connect(self._changed)
         for w in (self.grain, self.deduct):
@@ -239,11 +359,13 @@ class MaterialsDialog(QDialog):
             self.kind.setCurrentIndex(self.kind.findData(spec.kind))
             self.grain.setChecked(spec.grain)
             self.thicknesses.setText(fmt_lengths(spec.thicknesses))
-            self.stocks.setText(fmt_sheets(spec.stocks))
+            self.stocks.set_sheets(spec.stocks)
             self.kerf.setText(fmt_length(spec.kerf))
             self.kerf.setPlaceholderText(tr("default"))
             self.trim.setText(fmt_length(spec.trim))
             self.trim.setPlaceholderText(tr("default"))
+            self.extra_length.setText(fmt_length(spec.extra_length or None))
+            self.extra_width.setText(fmt_length(spec.extra_width or None))
             self.thickness.setText(fmt_length(spec.thickness or None))
             self.oversize.setText(fmt_length(spec.oversize or None))
             boards = sorted(n for n, r in self._roles.items()
@@ -262,7 +384,7 @@ class MaterialsDialog(QDialog):
         visible = {
             None: set(),
             Role.BOARD: {"kind", "grain", "thicknesses", "stocks", "kerf",
-                         "trim"},
+                         "trim", "extra"},
             Role.COVERING: {"grain", "thickness", "oversize", "stocks",
                             "applied_over"},
             Role.EDGE_BAND: {"thickness", "oversize", "deduct"},
@@ -301,9 +423,11 @@ class MaterialsDialog(QDialog):
                 kind=self.kind.currentData(),
                 grain=self.grain.isChecked(),
                 thicknesses=parse_lengths(self.thicknesses.text()),
-                stocks=parse_sheets(self.stocks.text()),
+                stocks=self.stocks.sheets(),
                 kerf=parse_length(self.kerf.text()),
                 trim=parse_length(self.trim.text()),
+                extra_length=parse_length(self.extra_length.text()) or 0.0,
+                extra_width=parse_length(self.extra_width.text()) or 0.0,
                 thickness=parse_length(self.thickness.text()) or 0.0,
                 oversize=parse_length(self.oversize.text()) or 0.0,
                 deduct=self.deduct.isChecked(),
@@ -314,6 +438,61 @@ class MaterialsDialog(QDialog):
         item = self.list.currentItem()
         if item is not None:
             self._label(item)
+
+    # ---- sheet-size templates (D-013 §2) ----------------------------------
+    def _selected_names(self) -> list[str]:
+        names = [i.data(Qt.ItemDataRole.UserRole)
+                 for i in self.list.selectedItems()]
+        return names or ([self._current] if self._current else [])
+
+    def _fill_template_menu(self) -> None:
+        menu = self._template_menu
+        menu.clear()
+        targets = self._selected_names()
+        for name in sorted(self._templates, key=str.lower):
+            act = menu.addAction(tr("Use “{name}” for {n} material(s)",
+                                    name=name, n=len(targets)))
+            act.triggered.connect(lambda _c=False, n=name:
+                                  self.apply_template(n))
+        if self._templates:
+            menu.addSeparator()
+        save = menu.addAction(tr("Save these sizes as a template…"))
+        save.setEnabled(bool(self.stocks.sheets()))
+        save.triggered.connect(lambda _c=False: self.save_template())
+        if self._templates:
+            remove = menu.addMenu(tr("Delete a template"))
+            for name in sorted(self._templates, key=str.lower):
+                act = remove.addAction(name)
+                act.triggered.connect(lambda _c=False, n=name:
+                                      self._templates.pop(n, None))
+
+    def apply_template(self, name: str) -> None:
+        """The template's sizes on every selected material. One not set up
+        yet becomes a board: sheet sizes are what boards have."""
+        sizes = self._templates[name]
+        for target in self._selected_names():
+            role = self._roles[target] or Role.BOARD
+            self._roles[target] = role
+            self._specs[target] = replace(self._specs[target], role=role,
+                                          stocks=sizes)
+            self._edited.add(target)
+        for i in range(self.list.count()):
+            self._label(self.list.item(i))
+        self._on_pick(self.list.currentItem())
+
+    def save_template(self, name: str | None = None) -> None:
+        if name is None:
+            name, ok = QInputDialog.getText(
+                self, tr("Save these sizes as a template"),
+                tr("Template name"), text=self._current or "")
+            if not ok:
+                return
+        name = (name or "").strip()
+        if name and self.stocks.sheets():
+            self._templates[name] = self.stocks.sheets()
+
+    def result_templates(self) -> dict:
+        return dict(self._templates)
 
     def result_specs(self) -> list[MaterialSpec]:
         """The materials the user set up here (only those are stored)."""
@@ -371,6 +550,20 @@ class PartDialog(QDialog):
                                  "decorative one)"))
         self.flip.setChecked(override.flip_face1)
         form.addRow("", self.flip)
+        self.extra_length = QLineEdit(fmt_length(override.extra_length))
+        self.extra_width = QLineEdit(fmt_length(override.extra_width))
+        extra = QWidget()
+        extra_box = QHBoxLayout(extra)
+        extra_box.setContentsMargins(0, 0, 0, 0)
+        for label, edit in ((tr("length +"), self.extra_length),
+                            (tr("width +"), self.extra_width)):
+            edit.setPlaceholderText(tr("board's"))
+            extra_box.addWidget(QLabel(label))
+            extra_box.addWidget(edit)
+        extra.setToolTip(tr("Cut bigger than finished, to be brought to "
+                            "size later (mm, total). Empty: the board's "
+                            "oversize. The model keeps the finished size."))
+        form.addRow(tr("Cut oversize (mm)"), extra)
         self.note = QLineEdit(override.note)
         form.addRow(tr("Note"), self.note)
         self.field_edits: dict[str, QLineEdit] = {}
@@ -399,7 +592,11 @@ class PartDialog(QDialog):
                             exclude=self.exclude.isChecked(),
                             note=self.note.text().strip(),
                             grain=self.grain.currentData(),
-                            can_rotate=self.rotate.currentData())
+                            can_rotate=self.rotate.currentData(),
+                            extra_length=parse_length(
+                                self.extra_length.text()),
+                            extra_width=parse_length(
+                                self.extra_width.text()))
 
 
 # ---------------------------------------------------------------------------

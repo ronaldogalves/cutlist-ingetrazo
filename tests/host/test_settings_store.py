@@ -240,3 +240,35 @@ def test_a_users_own_profile_keeps_its_name(win, user_dir):
     got = s.profiles()
     assert got["Leo Madeiras"].separator == ","
     assert "CorteCloud" in got and "Simple CSV" in got
+
+
+def test_a_sheet_template_on_several_materials(qt_app, win, user_dir):
+    dialogs = plugin("ui.dialogs")
+    materials = plugin("model.materials")
+    size = materials.SheetSize(2.75, 1.85)
+    dlg = dialogs.MaterialsDialog({"Branco", "Freijo", "Fita"},
+                                  materials.Library(),
+                                  templates={"MDF 2750": (size,)})
+    for i in range(dlg.list.count()):                  # Ctrl+click two
+        item = dlg.list.item(i)
+        item.setSelected(item.text().split(" — ")[0] in ("Branco", "Freijo"))
+    dlg.apply_template("MDF 2750")
+    specs = {s.name: s for s in dlg.result_specs()}
+    assert set(specs) == {"Branco", "Freijo"}
+    assert all(s.stocks == (size,) and s.role is materials.Role.BOARD
+               for s in specs.values())
+
+    # The table reads a size for some thicknesses only; save it as a
+    # template, and the store keeps it in the user's defaults.
+    dlg.list.setCurrentRow(1)
+    table = dlg.stocks.table
+    dlg.stocks._add()
+    for c, text in enumerate(("2440", "1220", "3; 6")):
+        table.item(table.rowCount() - 1, c).setText(text)
+    assert dlg.stocks.sheets()[-1] == materials.SheetSize(2.44, 1.22,
+                                                          (0.003, 0.006))
+    dlg.save_template("Fino")
+    s = store(win)
+    s.save_sheet_templates(dlg.result_templates())
+    assert s.sheet_templates()["Fino"][-1].thicknesses == (0.003, 0.006)
+    dlg.deleteLater()

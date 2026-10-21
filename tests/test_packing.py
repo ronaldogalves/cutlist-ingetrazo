@@ -189,3 +189,23 @@ def test_two_hundred_parts_in_under_two_seconds():
     layout = pack(pieces, [SHEET], SawSettings(kerf=0.005, trim=0.01))
     assert time.perf_counter() - start < 2.0
     check(layout, pieces)
+
+
+def test_every_cut_knows_its_piece_and_fence():
+    """The fence distance is measured from the edge of the piece being cut
+    (D-016 §8): the cut lies ``fence`` in from the parent's start edge."""
+    pieces = [Piece("A", 0.9, 0.5, qty=3), Piece("B", 0.4, 0.3, qty=5)]
+    for way in ("length", "width"):
+        layout = pack(pieces, [SHEET], SawSettings(first_cut=way, stages=4))
+        for sheet in layout.sheets:
+            for c in sheet.cuts:
+                p = c.parent
+                assert p is not None and c.fence > 0
+                if c.across:            # a crosscut: x is constant
+                    assert p.x - EPS <= c.x0 <= p.x + p.dx + EPS
+                    if c.stage:
+                        assert c.x0 - p.x == pytest.approx(c.fence, abs=1e-5)
+                else:
+                    assert p.y - EPS <= c.y0 <= p.y + p.dy + EPS
+                    if c.stage:
+                        assert c.y0 - p.y == pytest.approx(c.fence, abs=1e-5)

@@ -194,10 +194,14 @@ def _geometry(plan, types, stock, settings, transposed) -> Sheet:
         if dx > 0 and dy > 0:
             rests.append(to_sheet(x, y, dx, dy))
 
-    def cut(stage, x0, y0, x1, y1):
+    def cut(stage, x0, y0, x1, y1, fence, parent):
+        """A cut, the piece it splits (x, y, dx, dy) and its fence."""
         a = to_sheet(x0, y0, 0, 0)
         b = to_sheet(x1, y1, 0, 0)
-        cuts.append(Cut(stage, _m(a[0]), _m(a[1]), _m(b[0]), _m(b[1])))
+        px, py, pdx, pdy = to_sheet(*parent)
+        cuts.append(Cut(stage, _m(a[0]), _m(a[1]), _m(b[0]), _m(b[1]),
+                        fence=_m(fence),
+                        parent=Rect(_m(px), _m(py), _m(pdx), _m(pdy))))
 
     y = 0
     for h, segments in plan:
@@ -211,18 +215,19 @@ def _geometry(plan, types, stock, settings, transposed) -> Sheet:
                     piece.key, _m(sx), _m(sy), _m(sdx), _m(sdy),
                     rotated=sdx != piece.length))
                 if dx < s:                          # one more cut (stage 4)
-                    cut(4, x + dx, yy, x + dx, yy + dy)
+                    cut(4, x + dx, yy, x + dx, yy + dy, dx, (x, yy, s, dy))
                     rest(x + dx + kerf, yy, s - dx - kerf, dy)
                 if yy + dy < y + h:
-                    cut(3, x, yy + dy, x + s, yy + dy)
+                    cut(3, x, yy + dy, x + s, yy + dy, dy,
+                        (x, yy, s, y + h - yy))
                 yy += dy + kerf
             rest(x, yy, s, y + h - yy)
             if x + s < lx:
-                cut(2, x + s, y, x + s, y + h)
+                cut(2, x + s, y, x + s, y + h, s, (x, y, lx - x, h))
             x += s + kerf
         rest(x, y, lx - x, h)
         if y + h < ly:
-            cut(1, 0, y + h, lx, y + h)
+            cut(1, 0, y + h, lx, y + h, h, (0, y, lx, ly - y))
         y += h + kerf
     rest(0, y, lx, ly - y)
 
@@ -230,10 +235,16 @@ def _geometry(plan, types, stock, settings, transposed) -> Sheet:
     if not stock.leftover and settings.trim > 0:
         length, width = _m(_i(stock.length)), _m(_i(stock.width))
         tx, ty = _m(ox), _m(oy)
-        trims = [Cut(0, tx, 0.0, tx, width), Cut(0, 0.0, ty, length, ty)]
+        whole = Rect(0.0, 0.0, length, width)
+        trims = [Cut(0, tx, 0.0, tx, width, fence=tx, parent=whole),
+                 Cut(0, 0.0, ty, length, ty, fence=ty, parent=whole)]
         if settings.trim_edges != 2:
-            trims += [Cut(0, length - tx, 0.0, length - tx, width),
-                      Cut(0, 0.0, width - ty, length, width - ty)]
+            # The far edges, measured from the edges just trimmed.
+            rest = Rect(tx, ty, length - tx, width - ty)
+            trims += [Cut(0, length - tx, 0.0, length - tx, width,
+                          fence=_m(ulen), parent=rest),
+                      Cut(0, 0.0, width - ty, length, width - ty,
+                          fence=_m(uwid), parent=rest)]
     leftovers = sorted((Rect(_m(x), _m(y), _m(dx), _m(dy))
                         for x, y, dx, dy in rests),
                        key=lambda r: -r.area)

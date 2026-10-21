@@ -85,17 +85,28 @@ class Rect:
 @dataclass(frozen=True)
 class Cut:
     """A saw cut: ``stage`` 0 trims the sheet, 1 the first cuts (strips),
-    2 the next… From (x0, y0) to (x1, y1), on the near side of the blade."""
+    2 the next… From (x0, y0) to (x1, y1), on the near side of the blade.
+
+    ``parent`` is the piece this cut splits, and ``fence`` how far the cut
+    is from that piece's starting edge — the number set on the saw's fence
+    (D-016 §8), not a distance from the sheet's corner."""
 
     stage: int
     x0: float
     y0: float
     x1: float
     y1: float
+    fence: float = 0.0
+    parent: Rect | None = None
 
     @property
     def length(self) -> float:
         return abs(self.x1 - self.x0) + abs(self.y1 - self.y0)
+
+    @property
+    def across(self) -> bool:
+        """True for a cut parallel to the sheet's width (a crosscut)."""
+        return self.x0 == self.x1
 
 
 @dataclass(frozen=True)
@@ -147,13 +158,18 @@ class Layout:
             return Sheet(
                 stock=Stock(**s["stock"]),
                 placements=tuple(Placement(**p) for p in s["placements"]),
-                cuts=tuple(Cut(**c) for c in s["cuts"]),
+                cuts=tuple(_cut(c) for c in s["cuts"]),
                 leftovers=tuple(Rect(**r) for r in s["leftovers"]),
                 first_cut=s.get("first_cut", "length"))
         return cls(sheets=tuple(sheet(s) for s in d.get("sheets", ())),
                    unplaced=tuple((str(k), int(q))
                                   for k, q in d.get("unplaced", ())),
                    settings=SawSettings(**d.get("settings", {})))
+
+
+def _cut(d: dict) -> Cut:
+    parent = d.get("parent")
+    return Cut(**{**d, "parent": Rect(**parent) if parent else None})
 
 
 class Packer(Protocol):

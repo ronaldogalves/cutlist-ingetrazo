@@ -120,6 +120,8 @@ def field_label(name: str) -> str:
     return {
         "qty": tr("Quantity"), "length": tr("Length (along the grain)"),
         "width": tr("Width"), "thickness": tr("Thickness"),
+        "cut_length": tr("Cut length (with oversize)"),
+        "cut_width": tr("Cut width (with oversize)"),
         "name": tr("Part name"), "number": tr("Line number"),
         "material": tr("Material (your name)"),
         "material_code": tr("Material — supplier code"),

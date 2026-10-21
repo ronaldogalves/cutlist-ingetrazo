@@ -15,14 +15,15 @@ from dataclasses import asdict, dataclass, field, fields, replace
 #: fields use the column's yes/no words. Bands are named looking at face 1,
 #: grain first: C1/C2 along the "comprimento", L1/L2 along the "largura".
 FIELDS = (
-    "qty", "length", "width", "thickness", "name", "number",
+    "qty", "length", "width", "cut_length", "cut_width", "thickness",
+    "name", "number",
     "material", "material_code", "material_supplier",
     "band_c1", "band_c2", "band_l1", "band_l2",
     "band_c1_code", "band_c2_code", "band_l1_code", "band_l2_code",
     "band_c1_flag", "band_c2_flag", "band_l1_flag", "band_l2_flag",
     "grain", "rotate", "note", "tag", "model", "face1", "face2",
 )
-LENGTH_FIELDS = ("length", "width", "thickness")
+LENGTH_FIELDS = ("length", "width", "cut_length", "cut_width", "thickness")
 #: Text options a column can apply, in this order: accents removed,
 #: UPPERCASE, spaces → underscores (for systems that want them).
 TEXT_OPTIONS = ("ascii", "upper", "underscores")

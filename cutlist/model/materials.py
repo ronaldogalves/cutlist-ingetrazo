@@ -29,6 +29,48 @@ class BoardKind(StrEnum):
 
 
 @dataclass(frozen=True)
+class SheetSize:
+    """A sheet a board comes in, at its real size (D-013 §1): ``length`` ≥
+    ``width``, metres. ``thicknesses`` empty: every thickness of the board;
+    else only those (thin MDF that comes smaller) — so the same size is
+    never typed once per thickness (D-013 §3)."""
+
+    length: float
+    width: float
+    thicknesses: tuple[float, ...] = ()
+
+    def __post_init__(self) -> None:
+        a, b = float(self.length), float(self.width)
+        object.__setattr__(self, "length", max(a, b))
+        object.__setattr__(self, "width", min(a, b))
+        object.__setattr__(self, "thicknesses",
+                           tuple(float(t) for t in self.thicknesses))
+
+    def fits(self, thickness: float, slack: float = 0.0005) -> bool:
+        """Offered for a board this thick."""
+        return not self.thicknesses or any(abs(thickness - t) <= slack
+                                           for t in self.thicknesses)
+
+    def to_list(self) -> list:
+        out = [self.length, self.width]
+        if self.thicknesses:
+            out.append(list(self.thicknesses))
+        return out
+
+    @classmethod
+    def read(cls, raw) -> SheetSize | None:
+        """``[L, W]``, ``[L, W, [t…]]`` or a dict; None when unreadable."""
+        try:
+            if isinstance(raw, dict):
+                return cls(float(raw["length"]), float(raw["width"]),
+                           tuple(raw.get("thicknesses") or ()))
+            ths = tuple(raw[2]) if len(raw) > 2 and raw[2] else ()
+            return cls(float(raw[0]), float(raw[1]), ths)
+        except (TypeError, ValueError, KeyError, IndexError):
+            return None
+
+
+@dataclass(frozen=True)
 class MaterialSpec:
     """Everything the cut list knows about one material, by its name.
 
@@ -43,10 +85,14 @@ class MaterialSpec:
     grain: bool = False
     #: Nominal board thicknesses; a part's thickness is checked against them.
     thicknesses: tuple[float, ...] = ()
-    #: Stock sheets (length, width) for boards and coverings.
-    stocks: tuple[tuple[float, float], ...] = ()
+    #: The sheets it comes in, for boards and coverings.
+    stocks: tuple[SheetSize, ...] = ()
     kerf: float | None = None
     trim: float | None = None
+    #: Boards: oversize every part of it is cut with, unless the part sets
+    #: its own (D-013 §4) — total extra length and width.
+    extra_length: float = 0.0
+    extra_width: float = 0.0
     #: Coverings and bands: their own thickness.
     thickness: float = 0.0
     #: Coverings: per side; bands: per edge length.
@@ -62,12 +108,15 @@ class MaterialSpec:
         # ``spec.role is Role.IGNORE`` holds however the spec was made.
         object.__setattr__(self, "role", Role(self.role))
         object.__setattr__(self, "kind", BoardKind(self.kind))
+        object.__setattr__(self, "stocks", tuple(
+            s if isinstance(s, SheetSize) else SheetSize.read(s)
+            for s in self.stocks))
 
     def to_dict(self) -> dict:
         d = asdict(self)
         d["role"] = str(self.role)
         d["kind"] = str(self.kind)
-        d["stocks"] = [list(s) for s in self.stocks]
+        d["stocks"] = [s.to_list() for s in self.stocks]
         d["thicknesses"] = list(self.thicknesses)
         return d
 
@@ -97,12 +146,8 @@ class MaterialSpec:
             kind = BoardKind(d.get("kind", BoardKind.SHEET))
         except ValueError:
             kind = BoardKind.SHEET
-        stocks = []
-        for s in d.get("stocks") or ():
-            try:
-                stocks.append((float(s[0]), float(s[1])))
-            except (TypeError, ValueError, IndexError):
-                continue
+        stocks = [s for s in map(SheetSize.read, d.get("stocks") or ())
+                  if s is not None]
         thicknesses = []
         for t in d.get("thicknesses") or ():
             try:
@@ -114,6 +159,8 @@ class MaterialSpec:
             grain=bool(d.get("grain", False)),
             thicknesses=tuple(thicknesses), stocks=tuple(stocks),
             kerf=opt("kerf"), trim=opt("trim"),
+            extra_length=num("extra_length", 0.0),
+            extra_width=num("extra_width", 0.0),
             thickness=num("thickness", 0.0), oversize=num("oversize", 0.0),
             deduct=bool(d.get("deduct", False)),
             applied_over=d.get("applied_over") or None,

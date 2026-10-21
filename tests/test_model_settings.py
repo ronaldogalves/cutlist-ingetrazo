@@ -10,10 +10,8 @@ from cutlist.model.parts import PartOverride
 from cutlist.model.settings import Settings, diff, resolve
 from cutlist.model.text import (
     fmt_lengths,
-    fmt_sheets,
     parse_lengths,
     parse_number,
-    parse_sheets,
 )
 
 
@@ -60,13 +58,9 @@ def test_parse_number():
     assert parse_number("-1") is None
 
 
-def test_lengths_and_sheets():
+def test_lengths():
     assert parse_lengths("15; 18 / 6") == pytest.approx((0.015, 0.018, 0.006))
-    sheets = parse_sheets("2750 x 1840; 1220×2440; nonsense")
-    assert [v for sheet in sheets for v in sheet] == \
-        pytest.approx([2.75, 1.84, 2.44, 1.22])
     assert fmt_lengths((0.015, 0.0185)) == "15; 18.5"
-    assert fmt_sheets(((2.75, 1.84),)) == "2750 x 1840"
 
 
 def test_material_spec_coerces_plain_strings():

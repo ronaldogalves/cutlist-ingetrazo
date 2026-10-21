@@ -385,6 +385,9 @@ class CutListPanel(QWidget):
         marks = ["⚠ " + ", ".join(flag_label(f) for f in loud)] if loud else []
         if Flag.UNASSIGNED in line.flags:
             marks.append("?")
+        if line.extra_length or line.extra_width:
+            marks.append(tr("cut +{l} / +{w}", l=fl(line.extra_length),
+                            w=fl(line.extra_width)))
         item = QTreeWidgetItem([
             shown, str(line.qty), fl(line.length), fl(line.width),
             fl(line.thickness), " ".join(banded), " · ".join(faces),
