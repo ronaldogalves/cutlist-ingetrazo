@@ -386,3 +386,31 @@ what they are.
    the fallback.
 4. *Open:* the bar against OpenCutList (within one sheet, or match it on
    Cozinha 03), and how many cutting stages a layout may use.
+
+## D-016 — The printed cutting plan
+
+*2026-10-21 · accepted · Ronaldo*
+
+What cutting plans in shops look like (Ronaldo), with OpenCutList's as
+the model and its gaps fixed:
+
+1. **Part letters** A–Z, then AA, AB… (Excel's column names). Identical
+   parts share a letter; letters run across the whole job, so one letter
+   is one part on every board. The same letter in the cut list, the
+   diagram, the part tables and the 3D highlight.
+2. **On a part**: its letter and size; when the size does not fit, the
+   letter alone.
+3. **A sheet page**: the whole board with its cuts, then a table of the
+   parts on that sheet (letter, name, size, how many on this sheet). A
+   table that does not fit continues on the next page; a new drawing
+   always starts on a new page.
+4. **Identical sheets** are grouped ("×3", clearly marked) or shown one
+   by one — the user's choice, grouped by default. Unique sheets show
+   once.
+5. **Every page says "Page 3 of 12"**, with the model, board, thickness
+   and date: printed pages get scattered in the shop, and the reader must
+   be able to put them back and see that none is missing (OpenCutList
+   does not number pages).
+6. **Two text sizes**: *Large* (the default, so everyone can read it) and
+   *Compact* (fewer pages, for those who see well).
+7. The totals page is optional (D-014).
