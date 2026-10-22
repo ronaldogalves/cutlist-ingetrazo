@@ -112,10 +112,11 @@ a few trusted woodworkers before M2–M3.
 - [x] Publish the GitHub pre-release: tag `v0.0.1`, the zip attached
   (2026-10-20, approved by Ronaldo).
 - [x] Note on IngeTrazo #199 (2026-10-20, approved by Ronaldo).
-- [ ] Catalog entry in `ingelibre/ingetrazo-extensions`: pull request
-  #128 opened 2026-10-20, updated to 0.1.0 on 2026-10-21; the catalog's
-  checker passes, waiting for a maintainer to merge. Add a screenshot
-  later.
+- [x] Catalog entry in `ingelibre/ingetrazo-extensions`: pull request
+  #128 opened 2026-10-20, updated to 0.1.0, **merged 2026-10-21** —
+  listed at ingetrazo.com/extensiones as 0.1.0 ("Community" until a
+  maintainer reviews the code). Later versions sent from Ronaldo's
+  account publish on their own. Add a screenshot later.
 - When listed on IngeTrazo's website (catalog entry, README, release
   notes): say that profile feedback is welcome and that profiles for
   other suppliers can join the shipped set (D-011).
