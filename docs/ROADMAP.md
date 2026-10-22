@@ -190,15 +190,20 @@ without the model open.
 
 *0.1.0 published 2026-10-21 at Ronaldo's call* —
 https://github.com/ronaldogalves/cutlist-ingetrazo/releases/tag/v0.1.0 —
-before the items below; they remain for the next release.
+with three items below still open; they go in the next release.
 
 - [ ] README with screenshots, install steps for Linux/Windows/macOS, the
       tested IngeTrazo version, and the scope ("what v0.1 does not do").
+      *Done but the screenshots and the Linux/macOS steps (Windows steps,
+      tested version and limitations are in).*
 - [ ] User guide (`docs/user-guide.md`) in English, pt-BR and es.
-- [ ] Release zip (the `cutlist/` folder) attached to a GitHub release;
-      `CHANGELOG.md`.
-- [ ] Tested on a clean IngeTrazo Flatpak and on Windows.
-- [ ] Announced to IngeTrazo maintainers; listing requested.
+- [x] Release zip (the `cutlist/` folder) attached to a GitHub release;
+      `CHANGELOG.md` (v0.1.0, built reproducibly by
+      `tools/build_release.py`).
+- [ ] Tested on a clean IngeTrazo Flatpak and on Windows. *Windows: done
+      (Ronaldo, installed 0.5.9). Linux: the test suite only.*
+- [x] Announced to IngeTrazo maintainers; listing requested — listed in
+      the catalog (ingelibre/ingetrazo-extensions#128, merged 2026-10-21).
 
 ## v0.2 — Support and first feedback
 
