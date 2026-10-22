@@ -65,6 +65,13 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
 
 Tested with **IngeTrazo 0.5.9**.
 
+## User guide
+
+How to model, set up materials, export to a supplier and print cutting
+diagrams: [English](docs/user-guide.md) ·
+[Português (Brasil)](docs/user-guide.pt-BR.md) ·
+[Español](docs/user-guide.es.md).
+
 ## Installing
 
 1. Download `cutlist-0.1.0.zip` from the

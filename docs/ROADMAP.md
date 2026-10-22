@@ -194,9 +194,10 @@ with three items below still open; they go in the next release.
 
 - [ ] README with screenshots, install steps for Linux/Windows/macOS, the
       tested IngeTrazo version, and the scope ("what v0.1 does not do").
-      *Done but the screenshots and the Linux/macOS steps (Windows steps,
-      tested version and limitations are in).*
-- [ ] User guide (`docs/user-guide.md`) in English, pt-BR and es.
+      *Screenshot, Windows steps, tested version and limitations are in;
+      Linux/macOS steps wait for a real test there.*
+- [x] User guide (`docs/user-guide.md`) in English, pt-BR and es
+      (2026-10-22, linked from the README).
 - [x] Release zip (the `cutlist/` folder) attached to a GitHub release;
       `CHANGELOG.md` (v0.1.0, built reproducibly by
       `tools/build_release.py`).
