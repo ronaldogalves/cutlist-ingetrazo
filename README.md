@@ -9,6 +9,9 @@ and trim accounted for), with CSV, SVG and PDF exports.
 Free software under the GPL-3.0-or-later. English, Português (Brasil) and
 Español from the start.
 
+![A cutting diagram: one 2750 × 1840 sheet, parts lettered with their
+sizes, leftovers faded with theirs](docs/images/cutting-diagram.png)
+
 ## Status
 
 **0.1.0 — the cut list, supplier exports and cutting diagrams.** What
