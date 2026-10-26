@@ -428,3 +428,31 @@ the model and its gaps fixed:
    clicking one shows the split. Cut positions can also be printed as
    dimension marks (a checkbox). Each cut keeps the piece it splits, so
    the fence distance is exact.
+
+## D-017 — Edge-band totals; band width checked; deduction optional
+
+*2026-10-26 · accepted · Ronaldo*
+
+1. **Total metres is the number that matters**, per band material:
+   every banded edge (long edges count the part's length, short ones its
+   width, finished size) × quantity, **plus the band's oversize on each
+   banded edge** (the overhang trimmed after gluing) and **plus a waste
+   %**. Both default to 0: nothing is added unless the user says so.
+   A **roll length** is optional; when set, the total also says how many
+   rolls.
+2. **Band width is a property of the band** (22 mm is by far the most
+   common; 25 mm boards need wider). A band with a width is checked
+   against the thickness of every part it is on: narrower → flagged
+   "band narrower than the part". Nothing is guessed: the user makes a
+   22 mm and a 30 mm band like they make boards, and paints the right
+   one; totals come out per band. Bands spanning several glued boards
+   are not predicted.
+3. **Deduction is the user's choice per band** ("cut the board shorter by
+   the band thickness", off by default): thin 0.45 mm PVC is usually
+   ignored, but two of them make almost 1 mm. When on, the board is cut
+   smaller by the band thickness on each banded edge — bands on short
+   edges shorten the length, on long edges narrow the width. The list
+   keeps the finished size and shows the cut size, like oversize
+   (D-013 §4).
+4. **Where**: an *Edge bands* section in the Cut List panel; an optional
+   band list beside the export's files; the printed plan's totals page.
