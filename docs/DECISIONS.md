@@ -446,7 +446,12 @@ the model and its gaps fixed:
    "band narrower than the part". Nothing is guessed: the user makes a
    22 mm and a 30 mm band like they make boards, and paints the right
    one; totals come out per band. Bands spanning several glued boards
-   are not predicted.
+   are not predicted. A band also needs **room to be finished**: a 22 mm
+   band cannot go on a 22 mm board (Ronaldo). Each band has a
+   **finishing margin** (both sides together, default **2 mm**): it fits
+   when width ≥ part thickness + margin — a 22 mm band fits up to 20 mm.
+   The one default that is not zero: zero would let exactly that mistake
+   through.
 3. **Deduction is the user's choice per band** ("cut the board shorter by
    the band thickness", off by default): thin 0.45 mm PVC is usually
    ignored, but two of them make almost 1 mm. When on, the board is cut
