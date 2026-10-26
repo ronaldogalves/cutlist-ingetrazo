@@ -403,6 +403,11 @@ class ExportDialog(QDialog):
                                         "across the long side, swap length "
                                         "and width (and their bands)"))
         form.addRow("", self.grain_first)
+        self.band_list = QCheckBox(tr("Also a file with the edge bands to "
+                                      "buy (metres per band)"))
+        self.band_list.setObjectName("cutlist_export_band_list")
+        self.band_list.toggled.connect(self._edited)
+        form.addRow("", self.band_list)
         for widget in (self.format, self.encoding, self.newline,
                        self.quoting, self.rows, self.split):
             widget.currentIndexChanged.connect(self._edited)
@@ -500,6 +505,7 @@ class ExportDialog(QDialog):
             self._set(self.split, p.split)
             self.filename.setText(p.filename)
             self.grain_first.setChecked(p.grain_first)
+            self.band_list.setChecked(p.band_list)
             n = p.numbers
             self._set(self.unit, n.unit)
             self.decimals.setValue(n.decimals)
@@ -745,6 +751,7 @@ class ExportDialog(QDialog):
             split=self.split.currentData() or "none",
             filename=self.filename.text(),
             grain_first=self.grain_first.isChecked(),
+            band_list=self.band_list.isChecked(),
             numbers=Numbers(
                 unit=self.unit.currentData(),
                 decimals=self.decimals.value(),

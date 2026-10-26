@@ -50,6 +50,7 @@ from ..export.diagrams import (
     BoardPlan,
     Changes,
     pack_all,
+    saved_bands,
     saved_boards,
     saved_leftovers,
 )
@@ -325,6 +326,7 @@ class DiagramWindow(QDialog):
         self.saved_name: str | None = None
         self.saved_data: dict | None = None
         self.skipped: list = []
+        self.bands: list = []
         self._generation = 0
         self._threads: list = []
         #: The user cancelled before anything was laid out: do not show.
@@ -522,6 +524,7 @@ class DiagramWindow(QDialog):
         unsized = set(prep.missing_sizes)
         prep.plans = [p for p in prep.plans if p.material not in unsized]
         self.skipped = prep.skipped + [(m, "no size") for m in sorted(unsized)]
+        self.bands = prep.bands
         if not prep.plans:
             if not self.boards:
                 self.cancelled = True
@@ -722,7 +725,7 @@ class DiagramWindow(QDialog):
         ) != QMessageBox.StandardButton.Yes:
             return
         self.session.save_layout(name, self.session.snapshot(
-            self.plans, self.leftovers, self.left_out))
+            self.plans, self.leftovers, self.left_out, self.bands))
         self.status.setText(tr("Saved in the model as “{name}”.", name=name))
 
     def _fill_open_menu(self) -> None:
@@ -754,6 +757,7 @@ class DiagramWindow(QDialog):
         self.scope = list(data.get("uids", ()))
         self.plans = []
         self.boards = saved_boards(data)
+        self.bands = saved_bands(data)
         self.leftovers = saved_leftovers(data)
         self.left_out = frozenset(data.get("left_out", ()))
         self._fill_boards()
@@ -781,7 +785,7 @@ class DiagramWindow(QDialog):
     def _pages(self):
         return build(self.boards, model=self.session.model,
                      date=self.session.date, options=self.options(),
-                     fmt=self.canvas.fmt)
+                     fmt=self.canvas.fmt, bands=self.bands)
 
     def _remember_options(self) -> None:
         o = self.options()

@@ -16,6 +16,8 @@ import unicodedata
 from dataclasses import dataclass, field
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
+from ..i18n import tr
+from ..model.bands import band_totals
 from ..model.grouping import CutList, CutListLine, _natural
 from ..model.materials import Library
 from ..model.parts import Part
@@ -270,8 +272,40 @@ def make_rows(cut_list: CutList, parts: dict[str, Part], library: Library,
                            for c in visible])
         out.files.append(f)
 
+    if profile.band_list and profile.format != "clipboard" and pieces:
+        lines = list({id(p.line): p.line for p in pieces}.values())
+        band_file = _band_file(lines, library, profile, context, used_names)
+        if band_file is not None:
+            out.files.append(band_file)
+
     out.problems = list(problems.values())
     return out
+
+
+def _band_file(lines, library, profile: Profile, context, used):
+    """The edge bands to buy (D-017): one row per band, metres to two
+    decimals with the profile's decimal separator."""
+    totals = band_totals(lines, library)
+    if not totals:
+        return None
+    sep = profile.numbers.decimal_sep
+
+    def num(v: float, places: int = 2) -> Cell:
+        return Cell(f"{v:.{places}f}".replace(".", sep), round(v, places))
+    header = [tr("Edge band"), tr("Width (mm)"), tr("Edges"),
+              tr("Metres"), tr("Rolls")] if profile.header else None
+    stem = safe_stem(fill(profile.filename or "{model}", dict(context)))
+    ext = ("xlsx" if profile.format == "xlsx"
+           else safe_stem(profile.extension.lstrip(".")) or "csv")
+    name = f"{stem}_{safe_stem(tr('edge bands'))}.{ext}"
+    used.add(name.lower())
+    f = OutFile(name, header)
+    for b in totals:
+        f.rows.append([
+            Cell(b.name), num(b.width * 1000, 0) if b.width else Cell(""),
+            Cell(str(b.edges), float(b.edges)), num(b.total),
+            Cell(str(b.rolls), float(b.rolls)) if b.roll else Cell("")])
+    return f
 
 
 def _file_name(profile: Profile, key, group, context, used: set) -> str:

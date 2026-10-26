@@ -66,6 +66,19 @@ For a **board** you can also set:
 - **Cut oversize**: every part of this board is cut this much bigger, to
   be brought to size later. The model keeps the finished size.
 
+For an **edge band**:
+
+- **Thickness** and **width** (e.g. 0.45 and 22 mm), and the **room to
+  finish it** (2 mm by default, both sides together): a part thicker than
+  width − room is flagged *band too narrow* — a 22 mm band fits up to
+  20 mm. Make one band per width you use (22, 30…) and paint the right
+  one.
+- **Oversize** per banded edge (the overhang trimmed after gluing),
+  **waste %**, and a **roll length** if you buy it in rolls — all
+  optional.
+- **Cut the board shorter by the band thickness**: for thick bands; the
+  saw gets the smaller size, the list keeps the finished one.
+
 "Also use these materials in my other models" (ticked) puts them in your
 library: every model with a material of the same name starts from it. In
 the list, *my library* and *this model only* say where each setup comes
@@ -83,6 +96,9 @@ diagrams), name, quantity, length, width, thickness, banded **edges**
 rectangular, several boards merged in one group, parts with no material,
 finishes not set up, odd thicknesses. Nothing is dropped silently;
 **Excluded** lists what you or a material left out.
+
+**Edge bands** at the end: the metres of each band to buy, how many
+edges, and rolls when set.
 
 Click a line to see its parts highlighted in the model.
 
@@ -112,6 +128,8 @@ takes several profile files at once, **Export profile…** shares one. The
 preview shows exactly what will be written; problems (a missing supplier
 code, a character the file's encoding cannot hold) are listed and stop
 the export until fixed. Untick boards to leave them out of this export.
+"Also a file with the edge bands to buy" writes the band totals beside
+the list.
 
 ## 8. Cutting diagrams
 

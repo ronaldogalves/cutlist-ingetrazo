@@ -26,7 +26,9 @@ from PySide6.QtWidgets import (
 )
 
 from ..i18n import tr
+from ..model.bands import band_totals
 from ..model.grouping import CutList, CutListLine
+from ..model.materials import Library
 from ..model.parts import EDGES, Excluded, Flag, Part
 from ..packing.jobs import letters
 
@@ -50,6 +52,9 @@ def flag_text(flag: Flag) -> str:
         Flag.ODD_THICKNESS: tr("Not one of the thicknesses this board comes "
                                "in (Materials window): a modelling slip? "
                                "The supplier cuts it from the listed one."),
+        Flag.NARROW_BAND: tr("An edge band is narrower than the part plus "
+                             "the room needed to finish it (Materials "
+                             "window: the band's width and margin)."),
     }[flag]
 
 
@@ -61,6 +66,7 @@ def flag_label(flag: Flag) -> str:
         Flag.NO_MATERIAL: tr("no material"),
         Flag.UNASSIGNED: tr("finish not set up"),
         Flag.ODD_THICKNESS: tr("odd thickness"),
+        Flag.NARROW_BAND: tr("band too narrow"),
     }[flag]
 
 
@@ -116,6 +122,9 @@ class CutListPanel(QWidget):
         self._fmt_full: Callable[[float], str] = \
             lambda m: f"{m * 1000:.0f} mm"
         self._fmt_area: Callable[[float], str] = lambda a: f"{a:.2f} m²"
+        #: Lengths of band to buy: metres (feet in imperial models).
+        self._fmt_run: Callable[[float], str] = lambda m: f"{m:.1f} m"
+        self._library = Library()
         self._tags: list[str] = []
         self._excluded_tags: set[str] = set()
 
@@ -365,6 +374,13 @@ class CutListPanel(QWidget):
                     "\n".join(flag_text(f) for f in flags)))
             top.setExpanded(True)
 
+        bands = band_totals(cl.lines(), self._library)
+        if bands:
+            top = self._header(tr("Edge bands — {n}", n=len(bands)))
+            for b in bands:
+                top.addChild(self._band_item(b))
+            top.setExpanded(True)
+
         if cl.excluded:
             top = self._header(tr("Excluded — {n} parts", n=len(cl.excluded)))
             for p in cl.excluded:
@@ -376,6 +392,38 @@ class CutListPanel(QWidget):
         self.summary_label.setText(tr(
             "{n} parts in {lines} lines · {area}", n=cl.qty,
             lines=sum(len(s.lines) for s in cl.sections), area=fa(total)))
+
+    def set_library(self, library) -> None:
+        """The materials in force: band totals need their oversize, waste
+        and rolls."""
+        self._library = library
+
+    def set_run_format(self, fmt_run) -> None:
+        """How lengths of band to buy are written (m, or ft)."""
+        self._fmt_run = fmt_run
+
+    def _band_item(self, b) -> QTreeWidgetItem:
+        """One band: how many edges, how many metres to buy (D-017)."""
+        run = self._fmt_run
+        parts = [run(b.total)]
+        if b.added > 1e-9:
+            parts.append(tr("{net} of edge + {added} oversize and waste",
+                            net=run(b.net), added=run(b.added)))
+        if b.roll > 0:
+            parts.append(tr("{n} roll(s) of {length}", n=b.rolls,
+                            length=run(b.roll)))
+        if b.width > 0:
+            parts.insert(0, tr("{w} wide", w=self._fmt_full(b.width)))
+        item = QTreeWidgetItem([b.name, str(b.edges), "", "", "", "", "",
+                                " · ".join(parts)])
+        item.setToolTip(1, tr("Banded edges"))
+        item.setToolTip(7, tr("Metres to buy: every banded edge, plus the "
+                              "band's oversize on each edge and its waste "
+                              "(Materials window)."))
+        item.setTextAlignment(1, Qt.AlignmentFlag.AlignRight
+                              | Qt.AlignmentFlag.AlignVCenter)
+        item.setData(0, MATERIAL, b.name)
+        return item
 
     def _header(self, title: str) -> QTreeWidgetItem:
         """A bold row spanning the whole width (a section)."""
@@ -401,8 +449,8 @@ class CutListPanel(QWidget):
         if Flag.UNASSIGNED in line.flags:
             marks.append("?")
         if line.extra_length or line.extra_width:
-            marks.append(tr("cut +{l} / +{w}", l=fl(line.extra_length),
-                            w=fl(line.extra_width)))
+            marks.append(tr("cut {l} / {w}", l=_signed(fl, line.extra_length),
+                            w=_signed(fl, line.extra_width)))
         item = QTreeWidgetItem([
             shown, str(line.qty), fl(line.length), fl(line.width),
             fl(line.thickness), " ".join(banded), " · ".join(faces),
@@ -488,3 +536,8 @@ class CutListPanel(QWidget):
         for item in self.tree.selectedItems():
             uids.extend(item.data(0, UIDS) or [])
         self.highlight_requested.emit(list(dict.fromkeys(uids)))
+
+
+def _signed(fmt, metres: float) -> str:
+    """+20, −0.9: oversize adds, a band's deduction takes away."""
+    return ("+" if metres >= 0 else "−") + fmt(abs(metres))

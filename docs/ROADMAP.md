@@ -211,6 +211,10 @@ with three items below still open; they go in the next release.
 - [ ] Donation platform chosen (BRIEF §10.5); `.github/FUNDING.yml`.
 - [ ] "Support CutList" menu entry + About dialog section (links, optional
       PIX QR). No pop-ups, no network calls.
+- [x] Edge-band totals (D-017, 2026-10-26): metres per band to buy, with
+      oversize, waste and rolls; band width checked against the part
+      with room to finish it; deduction per band; in the panel, exports
+      and the printed plan.
 - [ ] Fixes and the top requests from v0.1 users.
 - [ ] Pick the next feature from the candidates list in BRIEF §4.
 

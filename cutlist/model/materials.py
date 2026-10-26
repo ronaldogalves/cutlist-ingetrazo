@@ -97,8 +97,15 @@ class MaterialSpec:
     thickness: float = 0.0
     #: Coverings: per side; bands: per edge length.
     oversize: float = 0.0
-    #: Bands: cut the board shorter by the band thickness.
+    #: Bands: cut the board shorter by the band thickness (D-017 §3).
     deduct: bool = False
+    #: Bands (D-017): width (0: not checked); the room needed to finish
+    #: it, both sides together — it fits parts up to width − margin thick;
+    #: waste as a fraction (0.05 = 5 %); metres per roll (0: no rolls).
+    width: float = 0.0
+    margin: float = 0.002
+    waste: float = 0.0
+    roll: float = 0.0
     #: Coverings: the board they go on when no face shows one.
     applied_over: str | None = None
     note: str = ""
@@ -163,6 +170,8 @@ class MaterialSpec:
             extra_width=num("extra_width", 0.0),
             thickness=num("thickness", 0.0), oversize=num("oversize", 0.0),
             deduct=bool(d.get("deduct", False)),
+            width=num("width", 0.0), margin=num("margin", 0.002),
+            waste=num("waste", 0.0), roll=num("roll", 0.0),
             applied_over=d.get("applied_over") or None,
             note=str(d.get("note", "")))
 

@@ -215,7 +215,9 @@ def groups(sheets) -> list[tuple[Sheet, int]]:
 
 
 def build(boards: list[Board], *, model: str, date: str,
-          options: Options | None = None, fmt=_mm) -> list[Page]:
+          options: Options | None = None, fmt=_mm,
+          bands=()) -> list[Page]:
+    """``bands``: :class:`model.bands.BandTotal` for the totals page."""
     o = options or Options()
     pw, ph = PAGES.get(o.page, PAGES["A4"])
     t = TEXT.get(o.text, TEXT["large"])
@@ -237,6 +239,8 @@ def build(boards: list[Board], *, model: str, date: str,
     if o.totals_page:
         page, y = new_page(tr("{model} — cutting plan", model=model))
         y = _totals(page, boards, m, y, width, t, fmt)
+        if bands:
+            _bands(page, bands, m, y + t * 1.5, width, t)
 
     for board in boards:
         name = f"{board.material} · {fmt(board.thickness)} mm"
@@ -325,6 +329,33 @@ def _table(page, sheet, count, board, y, m, width, ph, t, fmt,
                 "text", x + 1, y, width * share - 2, row,
                 style="td_key" if x == m else "td", text=text,
                 size=t, align=align, ref=k))
+            x += width * share
+        page.shapes.append(Shape("line", m, y + row, width, 0, style="grid"))
+        y += row
+    return y
+
+
+def _bands(page, bands, m, y, width, t) -> float:
+    """Edge bands to buy (D-017): metres per band, rolls when set."""
+    row = t * 1.8
+    cols = [(tr("Edge band"), 0.46, "left"), (tr("Edges"), 0.14, "right"),
+            (tr("Metres"), 0.2, "right"), (tr("Rolls"), 0.2, "right")]
+    x = m
+    for title, share, align in cols:
+        page.shapes.append(Shape("text", x + 1, y, width * share - 2, row,
+                                 style="th", text=title, size=t * 0.9,
+                                 align=align))
+        x += width * share
+    page.shapes.append(Shape("line", m, y + row, width, 0, style="grid"))
+    y += row
+    for b in bands:
+        rolls = f"{b.rolls} × {b.roll:g} m" if b.roll else ""
+        cells = [b.name, str(b.edges), f"{b.total:.1f}", rolls]
+        x = m
+        for text, (_t, share, align) in zip(cells, cols, strict=True):
+            page.shapes.append(Shape("text", x + 1, y, width * share - 2,
+                                     row, style="td", text=text, size=t,
+                                     align=align))
             x += width * share
         page.shapes.append(Shape("line", m, y + row, width, 0, style="grid"))
         y += row

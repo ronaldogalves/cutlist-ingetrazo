@@ -75,6 +75,14 @@ def fmt_sheet_area(square_metres: float) -> str:
     return f"{square_metres:.2f} m²"
 
 
+def fmt_run_length(metres: float) -> str:
+    """Band to buy: metres (feet in imperial models), one decimal."""
+    from core.units import model_unit
+    if model_unit() in _IMPERIAL:
+        return f"{metres / 0.3048:.1f} ft"
+    return f"{metres:.1f} m"
+
+
 #: Units whose numbers read fine bare, and metres per unit. Feet-and-inch
 #: and fractional forms keep their marks: they are part of the number.
 _BARE = {"mm": 0.001, "cm": 0.01, "m": 1.0, "in": 0.0254, "ft": 0.3048}
@@ -196,6 +204,8 @@ class Controller:
                              by_name=not settings.merge_by_size)
             self.panel.set_formatters(*length_formats(settings),
                                       fmt_sheet_area)
+            self.panel.set_library(library)
+            self.panel.set_run_format(fmt_run_length)
         except Exception as exc:                # noqa: BLE001 — UI boundary
             self._failed(exc, tr("Cut List could not read the model: "
                                  "{error}", error=f"{type(exc).__name__}: "
@@ -476,7 +486,7 @@ class Controller:
                            by_name=not settings.merge_by_size,
                            leftovers=leftovers, left_out=left_out)
 
-        def snap(plans, leftovers, left_out):
+        def snap(plans, leftovers, left_out, bands=()):
             parts = self.model_parts()
             uids = {u for plan in plans for us in plan.uids.values()
                     for u in us}
@@ -484,7 +494,8 @@ class Controller:
             return snapshot(plans, [parts[u] for u in sorted(uids)
                                     if u in parts],
                             created=datetime.now().strftime("%Y-%m-%d %H:%M"),
-                            leftovers=leftovers, left_out=left_out)
+                            leftovers=leftovers, left_out=left_out,
+                            bands=bands)
 
         def names(uids):
             parts = self.model_parts()

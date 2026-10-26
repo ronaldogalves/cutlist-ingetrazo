@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from ..model.bands import BandTotal, band_totals
 from ..model.grouping import build
 from ..model.materials import BoardKind, Library
 from ..model.parts import Part
@@ -61,6 +62,8 @@ class Prepared:
     missing_sizes: list[str] = field(default_factory=list)
     #: Boards not laid out (solid wood, no material…), with why.
     skipped: list[tuple[str, str]] = field(default_factory=list)
+    #: Edge bands to buy for these parts (D-017).
+    bands: list = field(default_factory=list)
 
 
 def prepare(parts: list[Part], library: Library, settings: Settings, *,
@@ -76,7 +79,7 @@ def prepare(parts: list[Part], library: Library, settings: Settings, *,
                by_name=by_name)
     by_uid = {p.uid: p for p in parts}
     names = letters(cl)
-    out = Prepared()
+    out = Prepared(bands=band_totals(cl.lines(), library))
     for section in cl.sections:
         spec = library.get(section.material)
         if section.material is None:
@@ -121,7 +124,7 @@ def pack_all(plans: list[BoardPlan], packer, progress=None) -> None:
 
 def snapshot(plans: list[BoardPlan], parts: list[Part], *,
              created: str, leftovers: dict | None = None,
-             left_out=()) -> dict:
+             left_out=(), bands=()) -> dict:
     """JSON-safe: what the plan was made from and what it is."""
     sizes = {p.uid: [p.length, p.width, p.thickness, p.extra_length,
                      p.extra_width] for p in parts}
@@ -131,6 +134,8 @@ def snapshot(plans: list[BoardPlan], parts: list[Part], *,
         "left_out": sorted(left_out),
         "leftovers": {b: [[s.length, s.width, s.qty] for s in stocks]
                       for b, stocks in (leftovers or {}).items()},
+        "bands": [[b.name, b.width, b.edges, b.net, b.total, b.roll,
+                   b.rolls] for b in (bands or ())],
         "boards": [{
             "material": p.material, "thickness": p.thickness,
             "grain": p.grain, "uids": p.uids,
@@ -152,6 +157,12 @@ def saved_boards(data: dict) -> list[Board]:
                          Layout.from_dict(b["layout"]), parts,
                          grain=bool(b.get("grain"))))
     return out
+
+
+def saved_bands(data: dict) -> list[BandTotal]:
+    return [BandTotal(str(r[0]), float(r[1]), int(r[2]), float(r[3]),
+                      float(r[4]), float(r[5]), int(r[6]))
+            for r in data.get("bands") or ()]
 
 
 def saved_leftovers(data: dict) -> dict[str, tuple[Stock, ...]]:

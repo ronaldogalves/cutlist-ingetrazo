@@ -40,6 +40,7 @@ class Flag(StrEnum):
     NO_MATERIAL = "no_material"             # no face says what board it is
     UNASSIGNED = "unassigned_material"      # a finish whose role is not set
     ODD_THICKNESS = "odd_thickness"         # not one of the board's thicknesses
+    NARROW_BAND = "narrow_band"             # a band too narrow for the part
 
 
 class Excluded(StrEnum):
@@ -230,6 +231,29 @@ def _odd_thickness(thickness: float, core: str | None, faces, lib: Library
                for t in spec.thicknesses)
 
 
+def _narrow_band(thickness: float, edges, lib: Library) -> bool:
+    """A band narrower than the part plus the room to finish it (D-017
+    §2): a 22 mm band cannot go on a 22 mm board. Only bands with a width
+    are checked."""
+    for name in set(filter(None, edges)):
+        spec = lib.get(name)
+        if spec is not None and spec.width > 0 and \
+                spec.width + 1e-6 < thickness + spec.margin:
+            return True
+    return False
+
+
+def _deduction(edges, lib: Library) -> tuple[float, float]:
+    """How much shorter and narrower the board is cut for its bands, where
+    the band says so (D-017 §3): bands on the ends (width1/2) shorten the
+    length, bands on the long edges (length1/2) narrow the width."""
+    def thick(name):
+        spec = lib.get(name)
+        return spec.thickness if spec is not None and spec.deduct else 0.0
+    l1, l2, w1, w2 = edges
+    return thick(w1) + thick(w2), thick(l1) + thick(l2)
+
+
 def read_part(raw: RawPart, lib: Library,
               override: PartOverride | None = None) -> Part:
     over = override or PartOverride()
@@ -279,6 +303,8 @@ def read_part(raw: RawPart, lib: Library,
         flags.add(Flag.UNASSIGNED)
     if _odd_thickness(m.thickness, core, (covers["T+"], covers["T-"]), lib):
         flags.add(Flag.ODD_THICKNESS)
+    if _narrow_band(m.thickness, edges, lib):
+        flags.add(Flag.NARROW_BAND)
 
     excluded = None
     if over.exclude:
@@ -298,6 +324,9 @@ def read_part(raw: RawPart, lib: Library,
         else (board.extra_length if board is not None else 0.0)
     extra_width = over.extra_width if over.extra_width is not None \
         else (board.extra_width if board is not None else 0.0)
+    less_length, less_width = _deduction(edges, lib)
+    extra_length -= less_length
+    extra_width -= less_width
     return Part(
         uid=raw.uid, name=tidy(raw.name), length=m.length, width=m.width,
         thickness=m.thickness, core=core,

@@ -52,8 +52,10 @@ from ..model.text import (
     MM,
     fmt_length,
     fmt_lengths,
+    fmt_number,
     parse_length,
     parse_lengths,
+    parse_number,
 )
 
 
@@ -75,6 +77,11 @@ def unit_label(unit: str | None) -> str:
             "in-frac": tr("Inches (fractions)"),
             "ft-in": tr("Feet and inches (decimal)"),
             "ft-in-frac": tr("Feet and inches (fractions)")}[unit]
+
+
+def _or(value, default):
+    """``value`` unless it is None (an empty box): 0 is a real answer."""
+    return default if value is None else value
 
 
 def _buttons(dialog: QDialog) -> QDialogButtonBox:
@@ -268,6 +275,16 @@ class MaterialsDialog(QDialog):
                                  "the finished size."))
         self.thickness = QLineEdit()
         self.oversize = QLineEdit()
+        self.band_width = QLineEdit()
+        self.band_width.setPlaceholderText(tr("not checked"))
+        self.margin = QLineEdit()
+        self.margin.setToolTip(tr("Room to finish the band, both sides "
+                                  "together: a 22 mm band with 2 mm fits "
+                                  "parts up to 20 mm thick."))
+        self.waste = QLineEdit()
+        self.waste.setPlaceholderText("0")
+        self.roll = QLineEdit()
+        self.roll.setPlaceholderText(tr("not in rolls"))
         self.applied_over = QComboBox()
         self.applied_over.setEditable(True)
         self.deduct = QCheckBox(tr("Cut the board shorter by the band "
@@ -284,6 +301,10 @@ class MaterialsDialog(QDialog):
             "extra": (tr("Cut oversize (mm)"), self.extra),
             "thickness": (tr("Its thickness (mm)"), self.thickness),
             "oversize": (tr("Oversize (mm)"), self.oversize),
+            "band_width": (tr("Width (mm)"), self.band_width),
+            "margin": (tr("Room to finish it (mm)"), self.margin),
+            "waste": (tr("Waste (%)"), self.waste),
+            "roll": (tr("Roll length (m)"), self.roll),
             "applied_over": (tr("Goes on board"), self.applied_over),
             "deduct": ("", self.deduct),
             "note": (tr("Note"), self.note),
@@ -298,7 +319,8 @@ class MaterialsDialog(QDialog):
 
         for w in (self.thicknesses, self.kerf, self.trim,
                   self.extra_length, self.extra_width,
-                  self.thickness, self.oversize, self.note):
+                  self.thickness, self.oversize, self.band_width,
+                  self.margin, self.waste, self.roll, self.note):
             w.textEdited.connect(self._changed)
         for w in (self.grain, self.deduct):
             w.toggled.connect(self._changed)
@@ -368,6 +390,11 @@ class MaterialsDialog(QDialog):
             self.extra_width.setText(fmt_length(spec.extra_width or None))
             self.thickness.setText(fmt_length(spec.thickness or None))
             self.oversize.setText(fmt_length(spec.oversize or None))
+            self.band_width.setText(fmt_length(spec.width or None))
+            self.margin.setText(fmt_length(spec.margin))
+            self.waste.setText(fmt_number(spec.waste * 100) if spec.waste
+                               else "")
+            self.roll.setText(fmt_number(spec.roll) if spec.roll else "")
             boards = sorted(n for n, r in self._roles.items()
                             if r is Role.BOARD and n != self._current)
             self.applied_over.clear()
@@ -387,7 +414,8 @@ class MaterialsDialog(QDialog):
                          "trim", "extra"},
             Role.COVERING: {"grain", "thickness", "oversize", "stocks",
                             "applied_over"},
-            Role.EDGE_BAND: {"thickness", "oversize", "deduct"},
+            Role.EDGE_BAND: {"thickness", "band_width", "margin",
+                             "oversize", "waste", "roll", "deduct"},
             Role.APPEARANCE: set(),
             Role.IGNORE: set(),
         }[role] | {"role"} | ({"note"} if role is not None else set())
@@ -404,7 +432,9 @@ class MaterialsDialog(QDialog):
                               "is added on each side; it gets its own "
                               "cutting diagrams later."),
             Role.EDGE_BAND: tr("Banding on an edge. Oversize is added to "
-                               "each band's length."),
+                               "each banded edge, waste to the total. With "
+                               "a width, parts too thick for it are "
+                               "flagged."),
             Role.APPEARANCE: tr("A texture that only shows something, like "
                                 "a plywood edge. Ignored by the cut list."),
             Role.IGNORE: tr("Parts made of it stay out of the cut list "
@@ -430,6 +460,10 @@ class MaterialsDialog(QDialog):
                 extra_width=parse_length(self.extra_width.text()) or 0.0,
                 thickness=parse_length(self.thickness.text()) or 0.0,
                 oversize=parse_length(self.oversize.text()) or 0.0,
+                width=parse_length(self.band_width.text()) or 0.0,
+                margin=_or(parse_length(self.margin.text()), 0.002),
+                waste=(parse_number(self.waste.text()) or 0.0) / 100,
+                roll=parse_number(self.roll.text()) or 0.0,
                 deduct=self.deduct.isChecked(),
                 applied_over=self.applied_over.currentText().strip() or None,
                 note=self.note.text().strip())

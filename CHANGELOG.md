@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+**Edge bands** (D-017).
+
+- An **Edge bands** section in the Cut List panel: metres of each band to
+  buy, the number of banded edges, rolls when the band has a roll length.
+- A band's **oversize per edge** (the overhang trimmed after gluing) and
+  **waste %** are added to the total; both start at 0.
+- A band can have a **width** and a **room to finish it** (2 mm by
+  default): a part too thick for its band is flagged "band too narrow" —
+  a 22 mm band fits up to 20 mm.
+- "Cut the board shorter by the band thickness" now works, per band: the
+  saw gets the smaller size, the list keeps the finished one and shows
+  "cut −0.9 / −0.9".
+- Exports can add a file with the edge bands to buy; the printed plan's
+  totals page lists them.
+
 ## 0.1.0 — 2026-10-21
 
 **Cutting diagrams** (M2–M3).

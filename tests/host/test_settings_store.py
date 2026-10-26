@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from tests.host.conftest import panel_of, plugin
 from tests.host.scenes import board
 
@@ -272,3 +274,34 @@ def test_a_sheet_template_on_several_materials(qt_app, win, user_dir):
     s.save_sheet_templates(dlg.result_templates())
     assert s.sheet_templates()["Fino"][-1].thicknesses == (0.003, 0.006)
     dlg.deleteLater()
+
+
+def test_edge_bands_in_the_panel_and_the_materials_window(qt_app, win,
+                                                           user_dir):
+    """D-017: the band fields save; the panel says the metres to buy."""
+    dialogs = plugin("ui.dialogs")
+    materials = plugin("model.materials")
+    dlg = dialogs.MaterialsDialog({"Fita"}, materials.Library(),
+                                  focus="Fita")
+    dlg.role.setCurrentIndex(dlg.role.findData(materials.Role.EDGE_BAND))
+    for edit, text in ((dlg.band_width, "22"), (dlg.margin, "3"),
+                       (dlg.waste, "10"), (dlg.roll, "50")):
+        edit.setText(text)
+        edit.textEdited.emit(text)
+    (spec,) = dlg.result_specs()
+    assert spec.width == pytest.approx(0.022)
+    assert spec.margin == pytest.approx(0.003)
+    assert spec.waste == pytest.approx(0.1) and spec.roll == 50.0
+    dlg.deleteLater()
+
+    win.viewport.scene.groups.append(
+        board(0.6, 0.4, 0.018, name="Side", paint={"W+": "Fita"}))
+    store(win).save_materials([spec], remember=False)
+    panel = refresh(win)
+    tree = panel.tree
+    tops = {tree.topLevelItem(i).text(0): tree.topLevelItem(i)
+            for i in range(tree.topLevelItemCount())}
+    (title,) = [t for t in tops if t.startswith("Edge bands")]
+    band = tops[title].child(0)
+    assert band.text(0) == "Fita" and band.text(1) == "1"
+    assert "0.7 m" in band.text(7) and "1 roll(s) of 50.0 m" in band.text(7)

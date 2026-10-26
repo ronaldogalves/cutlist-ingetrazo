@@ -80,6 +80,8 @@ class Profile:
     #: Materials to export (empty: every board).
     materials: tuple[str, ...] = ()
     grain_first: bool = True
+    #: Also write the edge bands to buy, as a file of its own (D-017 §4).
+    band_list: bool = False
     numbers: Numbers = field(default_factory=Numbers)
     columns: tuple[Column, ...] = ()
     #: name → {"code": …, "supplier": …} for materials and bands.

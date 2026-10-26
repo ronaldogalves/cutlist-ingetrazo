@@ -69,6 +69,19 @@ Para uma **chapa** você também pode definir:
 - **Sobremedida de corte**: toda peça desta chapa é cortada maior nesta
   medida, para levar à medida depois. O modelo mantém a medida acabada.
 
+Para uma **fita de borda**:
+
+- **Espessura** e **largura** (ex.: 0,45 e 22 mm), e a **folga para
+  acabamento** (2 mm por padrão, somando os dois lados): uma peça mais
+  grossa que largura − folga é marcada *fita estreita demais* — uma fita
+  de 22 mm serve até 20 mm. Crie uma fita por largura que você usa (22,
+  30…) e pinte a certa.
+- **Sobremedida** por borda (a sobra refilada depois de colar),
+  **perda %** e o **comprimento do rolo** se você compra em rolos — tudo
+  opcional.
+- **Cortar a chapa menor pela espessura da fita**: para fitas grossas; a
+  serra recebe a medida menor, a lista mantém a acabada.
+
 "Usar estes materiais também nos meus outros modelos" (marcado) os põe
 na sua biblioteca: todo modelo com um material do mesmo nome parte dela.
 Na lista, *minha biblioteca* e *só neste modelo* dizem de onde vem cada
@@ -87,6 +100,9 @@ são retangulares, várias chapas fundidas num só grupo, peças sem
 material, acabamentos não configurados, espessuras fora da lista. Nada
 some em silêncio; **Excluídas** lista o que você ou um material deixou de
 fora.
+
+**Fitas de borda** no fim: os metros de cada fita a comprar, quantas
+bordas e os rolos, quando definidos.
 
 Clique numa linha para ver as peças destacadas no modelo.
 
@@ -120,6 +136,8 @@ compartilha um. A prévia mostra exatamente o que será gravado; problemas
 (um código de fornecedor faltando, um caractere que a codificação do
 arquivo não aceita) são listados e travam a exportação até serem
 corrigidos. Desmarque chapas para deixá-las fora desta exportação.
+"Também um arquivo com as fitas de borda a comprar" grava os totais de
+fita junto da lista.
 
 ## 8. Planos de corte
 

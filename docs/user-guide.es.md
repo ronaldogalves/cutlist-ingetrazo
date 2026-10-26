@@ -71,6 +71,20 @@ Para un **tablero** también puedes definir:
   más grande, para llevarla a medida después. El modelo conserva la
   medida acabada.
 
+Para un **canto**:
+
+- **Espesor** y **ancho** (p. ej. 0,45 y 22 mm), y el **margen para el
+  acabado** (2 mm por defecto, sumando los dos lados): una pieza más
+  gruesa que ancho − margen se marca *canto demasiado angosto* — un canto
+  de 22 mm sirve hasta 20 mm. Crea un canto por cada ancho que uses (22,
+  30…) y pinta el correcto.
+- **Sobremedida** por borde (lo que se refila después de pegar),
+  **merma %** y el **largo del rollo** si lo compras en rollos — todo
+  opcional.
+- **Cortar el tablero más corto por el espesor del canto**: para cantos
+  gruesos; la sierra recibe la medida menor, la lista conserva la
+  acabada.
+
 "Usar estos materiales también en mis otros modelos" (marcado) los pone
 en tu biblioteca: todo modelo con un material del mismo nombre parte de
 ella. En la lista, *mi biblioteca* y *solo en este modelo* dicen de dónde
@@ -88,6 +102,9 @@ planos de corte), nombre, cantidad, largo, ancho, espesor, **cantos**
 varios tableros unidos en un grupo, piezas sin material, acabados sin
 configurar, espesores fuera de lista. Nada desaparece en silencio;
 **Excluidas** lista lo que tú o un material dejaron fuera.
+
+**Cantos** al final: los metros de cada canto a comprar, cuántos bordes
+y los rollos, cuando se definen.
 
 Haz clic en una línea para ver sus piezas resaltadas en el modelo.
 
@@ -122,6 +139,8 @@ escribirá; los problemas (un código de proveedor que falta, un carácter
 que la codificación del archivo no admite) se listan y detienen la
 exportación hasta corregirlos. Desmarca tableros para dejarlos fuera de
 esta exportación.
+"También un archivo con los cantos a comprar" escribe los totales de
+canto junto a la lista.
 
 ## 8. Planos de corte
 
