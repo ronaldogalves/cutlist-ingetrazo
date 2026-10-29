@@ -109,3 +109,32 @@ thickness is parked until one does.
   ambiguous). Needs a custom list instead of Qt's table. *(Ronaldo,
   2026-10-09)*
 
+
+## Lessons from Sawhorse (2026-10-29)
+
+[Sawhorse](https://github.com/sawhorse3d/sawhorse) is a separate
+SketchUp-style modeler (Rust/TypeScript, MIT/Apache, alpha, created
+2026-10-14) with a cut list and nesting built in, aimed at imperial
+shops. Its choices match ours (guillotine first, CNC second; grain never
+across; every part placed or reported; one drawing for screen, PDF and
+SVG). What we could take, best first:
+
+1. **The cut sequence printed under each diagram** ("Rip to 11 1/4 in",
+   "Crosscut to 34 1/2 in"). We already know every fence distance (hover
+   shows it); it does not reach the paper yet.
+2. **Labels on standard label sheets** (theirs: Avery 5160, 30 a page,
+   name, qty, size, stock, grain arrow). For Brazil: Pimaco sheets.
+3. **DXF of the diagrams** for CNC and laser: a layer per sheet, part
+   outlines, stock outlines, labels (ezdxf is bundled with IngeTrazo).
+4. **Two-way hover highlight**: a part hovered on the diagram lights up
+   in the model, and the reverse.
+5. **A "leave out" checkbox on each cut-list row**, not only in Part
+   settings.
+6. **"Not a board"**: a part thicker than any board in the library is
+   listed but not counted, with the reason (a cabinet drawn as one group).
+7. For solid wood later: **nominal vs actual thickness** (4/4 → 3/4 in
+   planed) and rough lumber counted in board feet.
+
+What we have that it does not: supplier exports and profiles, edge bands
+("not included" in its guide), per-face coverings, shop leftovers used
+first, saved layouts that say what changed.
