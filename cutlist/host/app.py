@@ -63,6 +63,8 @@ def install(app) -> None:
             lambda _c=False: controller.open_export())
         menu.addAction(tr("Cutting diagrams…")).triggered.connect(
             lambda _c=False: controller.open_diagrams())
+        menu.addAction(tr("Labels…")).triggered.connect(
+            lambda _c=False: controller.open_labels())
     log.info("Cut List installed (key %r)", app.key)
 
 
@@ -177,6 +179,7 @@ class Controller:
         panel.part_settings_requested.connect(self.open_part_settings)
         panel.export_requested.connect(self.open_export)
         panel.diagrams_requested.connect(self.open_diagrams)
+        panel.labels_requested.connect(lambda: self.open_labels())
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
@@ -515,6 +518,7 @@ class Controller:
             changes=lambda data: changes(data, self.model_parts()),
             names=names, folder_used=self.folder_used,
             selected=self.selected_uids,
+            open_labels=self.open_labels,
             suggested_folder=self.export_folder())
 
     def selected_uids(self) -> set:
@@ -603,6 +607,73 @@ class Controller:
                                       remember=dlg.remember.isChecked())
             return True
         return bool(self._guard(run))
+
+    # ---- labels (D-018) ------------------------------------------------------
+    def make_labels(self, entries) -> list:
+        """``entries``: ``(uid, letter, index, count, sheet)`` per piece →
+        :class:`Label` objects, read from the model as it is now."""
+        from ..export.labels import Label
+        from ..packing.jobs import grain_of
+        parts = self.model_parts()
+        library = self.store.library()
+        fields = self.store.fields()
+        groups = [self.groups[u] for u, *_ in entries if u in self.groups]
+        overrides = self.store.overrides(groups)
+        path = self.model_path()
+        model = path.stem if path else ""
+        out = []
+        for uid, letter, index, count, sheet in entries:
+            p = parts.get(uid)
+            if p is None:
+                continue
+            over = overrides.get(uid)
+            values = fields.values(p.tag, over.field_values if over else None)
+            info = " · ".join(v for v in [model, *values.values()] if v)
+            cut = None
+            if p.extra_length or p.extra_width:
+                cut = (p.length + p.extra_length, p.width + p.extra_width)
+            out.append(Label(letter, p.name, p.length, p.width,
+                             p.core or "", p.thickness,
+                             tuple(bool(e) for e in p.edges),
+                             grain_of(p, library), cut, info, index, count,
+                             sheet))
+        return out
+
+    def cut_list_labels(self) -> list:
+        """One label per piece, in the cut list's order."""
+        from ..packing.jobs import letters
+        names = letters(self.cut_list)
+        entries = []
+        for line in self.cut_list.lines():
+            for i, uid in enumerate(line.uids, 1):
+                entries.append((uid, names[id(line)], i, len(line.uids),
+                                None))
+        return self.make_labels(entries)
+
+    def open_labels(self, entries=None, title: str | None = None) -> None:
+        """The labels window: from the cut list, or from ``entries`` (the
+        diagrams, sorted by sheet)."""
+        if entries is None and (self.cut_list is None or self.stale):
+            self.refresh(ask=True)
+        if entries is None and self.cut_list is None:
+            return
+        from ..ui.labels_dialog import LabelsDialog
+
+        def run():
+            labels = self.make_labels(entries) if entries is not None \
+                else self.cut_list_labels()
+            path = self.model_path()
+            from ..export.rows import safe_stem
+            LabelsDialog(labels, title=title or tr("From the cut list"),
+                         options=self.store.label_options(),
+                         save_options=self.store.save_label_options,
+                         folder=self.export_folder(),
+                         stem=safe_stem(f"{path.stem if path else 'cut list'}"
+                                        f" {tr('labels')}"),
+                         folder_used=self.folder_used,
+                         parent=self.app.window).exec()
+            return True
+        self._guard(run)
 
     # ---- the viewport highlight ----------------------------------------
     def set_highlight(self, uids) -> None:

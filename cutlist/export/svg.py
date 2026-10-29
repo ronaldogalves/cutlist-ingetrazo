@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from xml.sax.saxutils import escape
 
-from .plan import PAGES, STYLES, Page
+from .plan import PAGES, STYLES, Page, arrow_head
 
 _ANCHOR = {"left": "start", "center": "middle", "right": "end"}
 
@@ -36,8 +36,9 @@ def page_svg(page: Page, size: str = "A4") -> str:
                        f'stroke="{st.get("stroke", "#000")}" '
                        f'stroke-width="{_n(st.get("width", 0.2))}"/>')
             if s.style == "grain":
-                tip = s.x + s.w
-                out.append(f'<path d="M{_n(tip)} {_n(s.y)} l-2 -1 v2 z" '
+                pts = " ".join(f"{_n(px)},{_n(py)}"
+                               for px, py in arrow_head(s))
+                out.append(f'<polygon points="{pts}" '
                            f'fill="{st.get("stroke", "#000")}"/>')
         elif s.kind == "text" and s.text:
             x = {"left": s.x, "center": s.x + s.w / 2,

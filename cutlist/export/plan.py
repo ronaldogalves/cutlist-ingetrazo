@@ -63,6 +63,14 @@ STYLES = {
     "leftover_text": {"color": "#7a7364"},
     "mark": {"color": "#333333"},
     "sequence": {"color": "#1e1e1e"},
+    # Labels (D-018): black on white, for any printer.
+    "label_frame": {"stroke": "#c8c8c8", "width": 0.15},
+    "label_letter": {"color": "#000000", "bold": True},
+    "label_name": {"color": "#000000", "bold": True},
+    "label_size": {"color": "#000000", "bold": True},
+    "label_text": {"color": "#222222"},
+    "label_part": {"fill": "#ffffff", "stroke": "#444444", "width": 0.2},
+    "label_band": {"stroke": "#000000", "width": 0.8},
 }
 
 
@@ -123,6 +131,19 @@ class Options:
     #: The cuts in sawing order under each sheet (lesson from Sawhorse).
     cut_sequence: bool = True
     margin: float = 12.0
+
+
+def arrow_head(s: Shape, size: float = 2.0) -> list[tuple[float, float]]:
+    """The three corners (mm) of the head at the end of a line shape,
+    pointing the way the line runs — across or along."""
+    import math
+    length = math.hypot(s.w, s.h) or 1.0
+    ux, uy = s.w / length, s.h / length
+    tx, ty = s.x + s.w, s.y + s.h
+    bx, by = tx - ux * size, ty - uy * size
+    half = size / 2
+    return [(tx, ty), (bx - uy * half, by + ux * half),
+            (bx + uy * half, by - ux * half)]
 
 
 def _mm(metres: float) -> str:

@@ -178,7 +178,19 @@ a guia, a partir da borda do pedaço que está sendo cortado); depois
 chapa e a data, para que folhas espalhadas na oficina possam ser
 reordenadas.
 
-## 10. Salvar um plano
+## 10. Etiquetas
+
+**Etiquetas…** (no painel, ou na janela dos planos) faz uma etiqueta
+para cada peça. Escolha a folha de etiquetas (folhas Pimaco e Avery em A4
+ou Carta, ou **Folha personalizada…** com as suas medidas) e **Começar na
+etiqueta** numa folha já usada. Cada etiqueta traz a letra da peça, nome
+e medida, material e espessura, o modelo e os seus campos
+personalizados, "3 de 4" e um pequeno desenho com as bordas com fita e o
+veio. Dos planos, as etiquetas saem em ordem de chapa e dizem de qual
+chapa cada peça sai. **Contornar cada etiqueta** imprime as molduras,
+para testar antes em papel comum.
+
+## 11. Salvar um plano
 
 **Salvar plano…** guarda o plano no modelo (salvo junto com o arquivo).
 **Planos salvos ▾** o reabre exatamente como era — mesmo que a
@@ -186,7 +198,7 @@ distribuição saísse diferente hoje. Se o modelo mudou desde então, a
 janela diz quais peças mudaram de medida ou sumiram, e **Refazer o plano
 para estas peças** as distribui de novo.
 
-## 11. Bom saber
+## 12. Bom saber
 
 - As medidas nas janelas são digitadas em milímetros; a lista segue as
   unidades do modelo, salvo o que for definido em **Ajustes…**.

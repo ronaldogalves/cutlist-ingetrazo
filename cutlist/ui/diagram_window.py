@@ -108,6 +108,8 @@ class DiagramSession:
     names: Callable
     #: The part uids selected in the model now (two-way highlight).
     selected: Callable = lambda: set()
+    #: (entries, title) → the labels window (D-018).
+    open_labels: Callable = lambda entries, title=None: None
     suggested_folder: str = ""
     #: Told where files were written, to open there next time.
     folder_used: Callable = lambda _folder: None
@@ -520,8 +522,14 @@ class DiagramWindow(QDialog):
         pdf.clicked.connect(lambda _c=False: self.export_pdf())
         svg = QPushButton(tr("SVG…"))
         svg.clicked.connect(lambda _c=False: self.export_svg())
+        labels = QPushButton(tr("Labels…"))
+        labels.setObjectName("cutlist_diagram_labels")
+        labels.setToolTip(tr("A sticker for every piece, sorted by sheet, "
+                             "each saying the sheet it is cut from."))
+        labels.clicked.connect(lambda _c=False: self.open_labels())
         box.addWidget(pdf)
         box.addWidget(svg)
+        box.addWidget(labels)
         box.addStretch(1)
         hint = QLabel(tr("Hover a part to see the cuts that free it, a cut to "
                          "see where to set the fence. Right-click a part to "
@@ -658,6 +666,32 @@ class DiagramWindow(QDialog):
                 if 0 <= row < len(boards) else {}
         plan = self.current_plan()
         return dict(plan.uids) if plan else {}
+
+    def label_entries(self) -> list[tuple]:
+        """``(uid, letter, index, count, sheet)`` for every piece, board
+        by board and sheet by sheet: the order they come off the saw."""
+        out = []
+        saved = self.saved_data.get("boards", []) if self.saved_data else []
+        for i, board in enumerate(self.boards):
+            if self.saved_data is not None:
+                uids = dict(saved[i].get("uids", {})) if i < len(saved) \
+                    else {}
+            else:
+                uids = dict(self.plans[i].uids) if i < len(self.plans) \
+                    else {}
+            seen: dict[str, int] = {}
+            for n, sheet in enumerate(board.layout.sheets, 1):
+                for p in sheet.placements:
+                    pieces = uids.get(p.key, [])
+                    k = seen.get(p.key, 0)
+                    seen[p.key] = k + 1
+                    if k < len(pieces):
+                        out.append((pieces[k], p.key, k + 1, len(pieces), n))
+        return out
+
+    def open_labels(self) -> None:
+        self.session.open_labels(self.label_entries(),
+                                 tr("From the cutting diagrams, by sheet"))
 
     def _hovered(self, key: str) -> None:
         """A part under the mouse lights up in the model (D-016 §8)."""

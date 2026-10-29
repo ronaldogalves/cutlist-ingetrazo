@@ -17,7 +17,7 @@ from PySide6.QtGui import (
     QPolygonF,
 )
 
-from ..export.plan import STYLES, Page, Shape
+from ..export.plan import STYLES, Page, Shape, arrow_head
 
 _ALIGN = {"left": Qt.AlignmentFlag.AlignLeft,
           "center": Qt.AlignmentFlag.AlignHCenter,
@@ -53,11 +53,10 @@ def draw_shapes(painter: QPainter, shapes, k: float, *, dx: float = 0.0,
             painter.setPen(QPen(colour, max(st.get("width", 0.2) * k, 0.6)))
             painter.drawLine(QPointF(x, y), QPointF(x + w, y + h))
             if s.style == "grain":
-                tip = QPointF(x + w, y)
                 painter.setBrush(colour)
                 painter.drawPolygon(QPolygonF([
-                    tip, QPointF(tip.x() - 2 * k, tip.y() - k),
-                    QPointF(tip.x() - 2 * k, tip.y() + k)]))
+                    QPointF((px + dx) * k, (py + dy) * k)
+                    for px, py in arrow_head(s)]))
         elif s.kind == "text" and s.text:
             font.setPixelSize(max(1, round(s.size * k)))
             font.setBold(bool(st.get("bold")))

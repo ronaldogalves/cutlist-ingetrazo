@@ -166,7 +166,19 @@ of the piece being cut); then **PDF…** or **SVG…**. Every page
 says "Page n of N" with the model, board and date, so scattered pages can
 be put back in order at the shop.
 
-## 10. Save a layout
+## 10. Labels
+
+**Labels…** (in the panel, or in the diagrams window) makes a sticker for
+every piece. Choose the sticker sheet (Pimaco and Avery sheets in A4 or
+Letter, or **Custom sheet…** with its sizes), and **Start at label** on a
+sheet you already used. Each label says the part's letter, name and
+size, material and thickness, the model and your custom fields, "3 of
+4", and a small drawing with the banded edges and the grain. From the
+diagrams the labels come sorted by sheet and say which sheet each piece
+is cut from. **Outline each label** prints the frames, to test on plain
+paper first.
+
+## 11. Save a layout
 
 **Save layout…** keeps the layout in the model (saved with the file).
 **Saved layouts ▾** reopens it exactly as it was — even if the packing
@@ -174,7 +186,7 @@ would come out differently today. If the model changed since, the window
 says which parts changed size or are gone, and **Redo the layout for
 these parts** lays them out again.
 
-## 11. Good to know
+## 12. Good to know
 
 - Lengths in the dialogs are typed in millimetres; the list follows the
   model's units unless set in **Settings…**.

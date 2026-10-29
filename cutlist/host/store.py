@@ -203,6 +203,14 @@ class Store:
         raw = self.user_data().get("plan_options")
         return dict(raw) if isinstance(raw, dict) else {}
 
+    def label_options(self) -> dict:
+        """The sticker sheet the user prints labels on (D-018)."""
+        raw = self.user_data().get("label_options")
+        return dict(raw) if isinstance(raw, dict) else {}
+
+    def save_label_options(self, options: dict) -> None:
+        self.write_user_data({**self.user_data(), "label_options": options})
+
     def save_plan_options(self, options: dict) -> None:
         self.write_user_data({**self.user_data(), "plan_options": options})
 

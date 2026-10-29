@@ -106,6 +106,7 @@ class CutListPanel(QWidget):
     part_settings_requested = Signal(object)
     export_requested = Signal()
     diagrams_requested = Signal()
+    labels_requested = Signal()
 
     #: Where the column widths are remembered (a per-user convenience).
     HEADER_KEY = "cutlist/panel_header_v2"     # v2: the letter column
@@ -183,6 +184,12 @@ class CutListPanel(QWidget):
                                            "saw."))
         self.diagrams_button.clicked.connect(self.diagrams_requested)
         bar.addWidget(self.diagrams_button)
+        self.labels_button = QPushButton(tr("Labels…"))
+        self.labels_button.setObjectName("cutlist_labels")
+        self.labels_button.setToolTip(tr("A sticker for every piece, on "
+                                         "label sheets for your printer."))
+        self.labels_button.clicked.connect(self.labels_requested)
+        bar.addWidget(self.labels_button)
         layout.addLayout(bar)
 
         self.scope_label = QLabel()

@@ -17,6 +17,15 @@
 - Exports can add a file with the edge bands to buy; the printed plan's
   totals page lists them.
 
+**Labels** (D-018)
+
+- **Labels…** in the panel and the diagrams: a sticker for every piece,
+  on Pimaco/Avery sheets (A4 or Letter) or a custom sheet, starting at
+  any label of a sheet already used. Each says the letter, name, size
+  (and cut size), material and thickness, model and custom fields, "3 of
+  4", and — from the diagrams — the sheet it is cut from, with a small
+  drawing of the banded edges and the grain.
+
 **Diagrams**
 
 - **The cuts in order** under each sheet, on screen and on paper: "Trim

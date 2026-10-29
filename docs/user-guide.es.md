@@ -182,7 +182,19 @@ corta); luego **PDF…** o **SVG…**. Cada página dice "Página n de N" con el
 modelo, el tablero y la fecha, para poder reordenar en el taller las hojas
 que se mezclen.
 
-## 10. Guardar un plan
+## 10. Etiquetas
+
+**Etiquetas…** (en el panel, o en la ventana de los planos) hace una
+etiqueta para cada pieza. Elige la hoja de etiquetas (hojas Pimaco y
+Avery en A4 o Carta, o **Hoja personalizada…** con sus medidas) y
+**Empezar en la etiqueta** en una hoja ya usada. Cada etiqueta lleva la
+letra de la pieza, nombre y medida, material y espesor, el modelo y tus
+campos personalizados, "3 de 4" y un pequeño dibujo con los bordes con
+canto y la veta. Desde los planos, las etiquetas salen por tablero y
+dicen de qué tablero sale cada pieza. **Contornear cada etiqueta**
+imprime los marcos, para probar antes en papel común.
+
+## 11. Guardar un plan
 
 **Guardar plan…** guarda el plan en el modelo (se guarda con el archivo).
 **Planes guardados ▾** lo reabre exactamente como era — aunque hoy la
@@ -190,7 +202,7 @@ distribución saliera distinta. Si el modelo cambió desde entonces, la
 ventana dice qué piezas cambiaron de medida o ya no están, y **Rehacer el
 plan para estas piezas** las distribuye de nuevo.
 
-## 11. Bueno saber
+## 12. Bueno saber
 
 - Las medidas en las ventanas se escriben en milímetros; la lista sigue
   las unidades del modelo, salvo lo definido en **Ajustes…**.
