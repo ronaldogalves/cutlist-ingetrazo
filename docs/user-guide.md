@@ -146,7 +146,8 @@ saw. Boards with no sheet size are asked once (Cancel stops).
 On the sheets:
 
 - **Hover a part**: its size and the cuts that free it, each with the
-  distance to set on the fence.
+  distance to set on the fence; it lights up in the model too. Parts you
+  select in the model light up on the diagram.
 - **Hover a cut**: its stage, fence distance and length. A first cut runs
   across the whole sheet, so any of them can go first — to split a big
   sheet in two before the rest.
@@ -159,7 +160,9 @@ On the sheets:
 
 Choose the paper (A4, Letter), the text size (**Large**, or **Compact**
 for fewer pages), whether identical sheets appear once (×n), a totals
-page, cut positions along the edge; then **PDF…** or **SVG…**. Every page
+page, cut positions along the edge, the cuts in order under each sheet
+("1 Rip 645 · 2 Crosscut 1982…": where to set the fence, from the edge
+of the piece being cut); then **PDF…** or **SVG…**. Every page
 says "Page n of N" with the model, board and date, so scattered pages can
 be put back in order at the shop.
 

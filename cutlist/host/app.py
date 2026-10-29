@@ -514,7 +514,15 @@ class Controller:
             snapshot=snap,
             changes=lambda data: changes(data, self.model_parts()),
             names=names, folder_used=self.folder_used,
+            selected=self.selected_uids,
             suggested_folder=self.export_folder())
+
+    def selected_uids(self) -> set:
+        """The parts selected in the model: the boards inside a selected
+        cabinet count too."""
+        from core.group import Group
+        chosen = [e for e in self.app.scene.selection if isinstance(e, Group)]
+        return {g.uid for g in leaf_parts(chosen)}
 
     def open_diagrams(self, saved: str | None = None) -> None:
         if self.cut_list is None or self.stale:

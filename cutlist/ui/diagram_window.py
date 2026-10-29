@@ -54,7 +54,14 @@ from ..export.diagrams import (
     saved_boards,
     saved_leftovers,
 )
-from ..export.plan import TEXT, Options, build, groups, sheet_shapes
+from ..export.plan import (
+    TEXT,
+    Options,
+    build,
+    groups,
+    sequence_shapes,
+    sheet_shapes,
+)
 from ..i18n import tr
 from ..model.text import fmt_length, parse_length, parse_number
 from ..packing.base import Stock
@@ -99,6 +106,8 @@ class DiagramSession:
     changes: Callable
     #: uids → readable part names, for messages.
     names: Callable
+    #: The part uids selected in the model now (two-way highlight).
+    selected: Callable = lambda: set()
     suggested_folder: str = ""
     #: Told where files were written, to open there next time.
     folder_used: Callable = lambda _folder: None
@@ -131,6 +140,8 @@ class SheetsCanvas(QWidget):
     """Every sheet of one board, stacked, drawn from the plan shapes."""
 
     part_menu = Signal(str, object)         # key, global pos
+    #: The part key under the mouse ("" when none): lit up in the model.
+    hovered = Signal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -141,6 +152,9 @@ class SheetsCanvas(QWidget):
         self.blocks: list = []              # (sheet, count, shapes, y)
         self.height_mm = 10.0
         self.highlight: set = set()
+        #: Keys of the parts selected in the model (lit up here too).
+        self.selected: set = set()
+        self._hover_key = ""
         self.fmt = lambda m: f"{round(m * 1000)}"
 
     def set_board(self, board, group_identical: bool) -> None:
@@ -168,8 +182,11 @@ class SheetsCanvas(QWidget):
             shapes = [replace(s, ref=f"{i}:{s.ref}")
                       if s.ref.startswith(("cut:", "leftover:")) else s
                       for s in shapes]
-            self.blocks.append((sheet, count, shapes, y - t * 1.8))
-            y += used + 8.0
+            seq, seq_h = sequence_shapes(sheet, 6.0, y + used + 2.0,
+                                         CANVAS_MM - 12.0, size=t,
+                                         fmt=self.fmt)
+            self.blocks.append((sheet, count, shapes + seq, y - t * 1.8))
+            y += used + seq_h + 8.0
         self.height_mm = y
         self.updateGeometry()
 
@@ -205,7 +222,8 @@ class SheetsCanvas(QWidget):
             if sheet.stock.leftover:
                 label += "   ·   " + tr("a leftover from the shop")
             p.drawText(QPointF(6.0 * k, (y + t * 1.2) * k), label)
-            draw_shapes(p, shapes, k, highlight=self.highlight)
+            draw_shapes(p, shapes, k, highlight=self.highlight
+                        | self.selected)
         p.end()
 
     # ---- the mouse ----------------------------------------------------------
@@ -234,6 +252,10 @@ class SheetsCanvas(QWidget):
             index = int(shape.ref.split(":")[-1])
             tip = self._cut_tip(sheet, sheet.cuts[index])
             highlight = {shape.ref}
+        key = hit[3].ref if hit and hit[0] == "part" else ""
+        if key != self._hover_key:
+            self._hover_key = key
+            self.hovered.emit(key)
         if highlight != self.highlight:
             self.highlight = highlight
             self.update()
@@ -243,8 +265,16 @@ class SheetsCanvas(QWidget):
             QToolTip.hideText()
 
     def leaveEvent(self, _event) -> None:
+        if self._hover_key:
+            self._hover_key = ""
+            self.hovered.emit("")
         if self.highlight:
             self.highlight = set()
+            self.update()
+
+    def set_selected(self, keys: set) -> None:
+        if keys != self.selected:
+            self.selected = set(keys)
             self.update()
 
     def contextMenuEvent(self, event) -> None:
@@ -362,6 +392,14 @@ class DiagramWindow(QDialog):
         split.addWidget(self._left())
         self.canvas = SheetsCanvas()
         self.canvas.part_menu.connect(self._part_menu)
+        self.canvas.hovered.connect(self._hovered)
+        # The model's selection, followed while the window is open: no
+        # signal for it in the extension API, so a light poll.
+        from PySide6.QtCore import QTimer
+        self._follow = QTimer(self)
+        self._follow.setInterval(300)
+        self._follow.timeout.connect(self._follow_selection)
+        self._follow.start()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.canvas)
@@ -468,11 +506,14 @@ class DiagramWindow(QDialog):
         self.totals.setChecked(o.get("totals_page", True))
         self.marks = QCheckBox(tr("Cut positions along the edge"))
         self.marks.setChecked(o.get("cut_marks", False))
+        self.sequence = QCheckBox(tr("The cuts in order under each sheet"))
+        self.sequence.setChecked(o.get("cut_sequence", True))
         form.addRow(tr("Paper"), self.page)
         form.addRow(tr("Text"), self.text)
         form.addRow("", self.group_identical)
         form.addRow("", self.totals)
         form.addRow("", self.marks)
+        form.addRow("", self.sequence)
         box.addWidget(group)
         pdf = QPushButton(tr("PDF…"))
         pdf.setObjectName("cutlist_diagram_pdf")
@@ -499,7 +540,8 @@ class DiagramWindow(QDialog):
                        text=self.text.currentData(),
                        group_identical=self.group_identical.isChecked(),
                        totals_page=self.totals.isChecked(),
-                       cut_marks=self.marks.isChecked())
+                       cut_marks=self.marks.isChecked(),
+                       cut_sequence=self.sequence.isChecked())
 
     def start(self) -> bool:
         """Prepare the boards and lay them out on the worker thread.
@@ -606,6 +648,31 @@ class DiagramWindow(QDialog):
         self.canvas.set_board(self.boards[row],
                               self.group_identical.isChecked())
         self._load_leftovers()
+
+    def board_uids(self) -> dict[str, list[str]]:
+        """Letter → part uids on the board shown (a saved plan's too)."""
+        row = self.board_list.currentRow()
+        if self.saved_data is not None:
+            boards = self.saved_data.get("boards", [])
+            return dict(boards[row].get("uids", {})) \
+                if 0 <= row < len(boards) else {}
+        plan = self.current_plan()
+        return dict(plan.uids) if plan else {}
+
+    def _hovered(self, key: str) -> None:
+        """A part under the mouse lights up in the model (D-016 §8)."""
+        self.session.show_in_model(self.board_uids().get(key, [])
+                                   if key else [])
+
+    def _follow_selection(self) -> None:
+        if not self.isVisible():
+            return
+        try:
+            chosen = set(self.session.selected())
+        except Exception:                   # noqa: BLE001 — cosmetic
+            return
+        self.canvas.set_selected({k for k, uids in self.board_uids().items()
+                                  if chosen & set(uids)})
 
     def current_plan(self) -> BoardPlan | None:
         row = self.board_list.currentRow()
@@ -792,7 +859,8 @@ class DiagramWindow(QDialog):
         self.session.options.update(page=o.page, text=o.text,
                                     group_identical=o.group_identical,
                                     totals_page=o.totals_page,
-                                    cut_marks=o.cut_marks)
+                                    cut_marks=o.cut_marks,
+                                    cut_sequence=o.cut_sequence)
         self.session.save_options(dict(self.session.options))
 
     def export_pdf(self, path: str | None = None) -> None:
@@ -837,6 +905,8 @@ class DiagramWindow(QDialog):
                                n=len(pages), folder=folder))
 
     def closeEvent(self, event) -> None:
+        self._follow.stop()
+        self.session.show_in_model([])
         self._generation += 1
         self.wait(5000)
         super().closeEvent(event)

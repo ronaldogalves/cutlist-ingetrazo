@@ -17,6 +17,15 @@
 - Exports can add a file with the edge bands to buy; the printed plan's
   totals page lists them.
 
+**Diagrams**
+
+- **The cuts in order** under each sheet, on screen and on paper: "Trim
+  10 (4 edges) · 1 Rip 645 · 2 Crosscut 1982 · …" — each number is where
+  to set the fence, from the edge of the piece being cut. A test saws
+  every printed sequence to prove it can be cut in that order.
+- **Two-way highlight**: a part under the mouse on the diagram lights up
+  in the model; parts selected in the model light up on the diagram.
+
 ## 0.1.0 — 2026-10-21
 
 **Cutting diagrams** (M2–M3).

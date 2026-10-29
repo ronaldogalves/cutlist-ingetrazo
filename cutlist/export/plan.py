@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 
 from ..i18n import tr
 from ..packing.base import Layout, Sheet
+from ..packing.sequence import sequence
 
 PAGES = {"A4": (210.0, 297.0), "Letter": (215.9, 279.4)}
 #: Text heights in mm: Large reads for everyone; Compact saves pages.
@@ -61,6 +62,7 @@ STYLES = {
     "part_letter": {"color": "#000000", "bold": True},
     "leftover_text": {"color": "#7a7364"},
     "mark": {"color": "#333333"},
+    "sequence": {"color": "#1e1e1e"},
 }
 
 
@@ -118,6 +120,8 @@ class Options:
     group_identical: bool = True
     totals_page: bool = True
     cut_marks: bool = False
+    #: The cuts in sawing order under each sheet (lesson from Sawhorse).
+    cut_sequence: bool = True
     margin: float = 12.0
 
 
@@ -192,6 +196,51 @@ def sheet_shapes(sheet: Sheet, x: float, y: float, w: float, h: float, *,
         out.append(Shape("line", x + sl * scale * 0.4, top + sw * scale + 4,
                          sl * scale * 0.2, 0, style="grain"))
     return out, sw * scale + (8 if grain else 0)
+
+
+def sequence_words(sheet: Sheet, fmt=_mm) -> list[str]:
+    """The sheet's cuts in sawing order, as numbered words: "1 Rip 660",
+    "2 Crosscut 1060"… A rip runs along the sheet's length (the grain), a
+    crosscut across it; the number is where to set the fence, from the
+    edge of the piece being cut. Trims are said once, first."""
+    order = sequence(sheet)
+    words = []
+    trims = [c for c in order if c.stage == 0]
+    if trims:
+        words.append(tr("Trim {d} ({n} edges)", d=fmt(trims[0].fence),
+                        n=len(trims)))
+    n = 0
+    for c in order:
+        if c.stage == 0:
+            continue
+        n += 1
+        words.append(tr("{n} Crosscut {d}", n=n, d=fmt(c.fence)) if c.across
+                     else tr("{n} Rip {d}", n=n, d=fmt(c.fence)))
+    return words
+
+
+def sequence_shapes(sheet: Sheet, x: float, y: float, w: float, *,
+                    size: float, fmt=_mm) -> tuple[list[Shape], float]:
+    """The cut sequence as wrapped lines under a drawing; returns the
+    shapes and the height they take."""
+    words = sequence_words(sheet, fmt)
+    if not words:
+        return [], 0.0
+    label = tr("Cuts:") + " "
+    lines, line = [], label
+    for word in words:
+        piece = word if line == label else "  ·  " + word
+        if len(line + piece) * size * CHAR > w and line != label:
+            lines.append(line)
+            line = "    " + word
+        else:
+            line += piece
+    lines.append(line)
+    row = size * 1.5
+    shapes = [Shape("text", x, y + i * row, w, row, style="sequence",
+                    text=text, size=size)
+              for i, text in enumerate(lines)]
+    return shapes, len(lines) * row
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +322,11 @@ def build(boards: list[Board], *, model: str, date: str,
                 size=t, fmt=fmt, grain=board.grain, cut_marks=o.cut_marks)
             page.shapes.extend(shapes)
             y += used + t * 1.5
+            if o.cut_sequence:
+                seq, used = sequence_shapes(sheet, m, y, width, size=t * 0.85,
+                                            fmt=fmt)
+                page.shapes.extend(seq)
+                y += used + (t * 1.2 if seq else 0)
             y = _table(page, sheet, count, board, y, m, width, ph, t, fmt,
                        lambda n=name: new_page(f"{model} — {n}"))
     total = len(pages)

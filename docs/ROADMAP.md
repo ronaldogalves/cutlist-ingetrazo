@@ -215,10 +215,11 @@ with three items below still open; they go in the next release.
       oversize, waste and rolls; band width checked against the part
       with room to finish it; deduction per band; in the panel, exports
       and the printed plan.
-- [ ] The cut sequence printed under each diagram: the cuts in order with
-      their fence distances (lesson from Sawhorse, 2026-10-29).
+- [x] The cut sequence printed under each diagram: the cuts in order with
+      their fence distances (lesson from Sawhorse, 2026-10-29); checked by
+      sawing every sequence in a test.
 - [ ] Part labels on standard label sheets (Pimaco, Avery).
-- [ ] Two-way highlight: a part hovered on a diagram lights up in the
+- [x] Two-way highlight: a part hovered on a diagram lights up in the
       model, and a part picked in the model lights up on the diagram.
 - [ ] Fixes and the top requests from v0.1 users.
 - [ ] Pick the next feature from the candidates list in BRIEF §4.

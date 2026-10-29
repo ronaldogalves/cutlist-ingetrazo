@@ -209,3 +209,57 @@ def test_every_cut_knows_its_piece_and_fence():
                     assert p.y - EPS <= c.y0 <= p.y + p.dy + EPS
                     if c.stage:
                         assert c.y0 - p.y == pytest.approx(c.fence, abs=1e-5)
+
+
+def _saw(sheet, s):
+    """Make the sheet's cuts in sequence order, like a saw: each must run
+    right across a piece there is at that moment (the one it says it
+    splits); at the end every part is alone in its piece."""
+    from cutlist.packing.sequence import sequence
+    x0, y0, x1, y1 = usable(sheet.stock, s)
+    pieces = [(x0, y0, x1, y1)]
+    cuts = [c for c in sequence(sheet) if c.stage > 0]
+    assert len(cuts) == len([c for c in sheet.cuts if c.stage > 0])
+    for c in cuts:
+        p = c.parent
+        match = [q for q in pieces
+                 if abs(q[0] - p.x) < 1e-6 and abs(q[1] - p.y) < 1e-6
+                 and abs(q[2] - (p.x + p.dx)) < 1e-6
+                 and abs(q[3] - (p.y + p.dy)) < 1e-6]
+        assert match, (c, pieces)
+        q = match[0]
+        pieces.remove(q)
+        if c.across:                    # x constant: split along x
+            assert abs(c.y0 - q[1]) < 1e-6 and abs(c.y1 - q[3]) < 1e-6
+            pieces += [(q[0], q[1], c.x0, q[3]),
+                       (min(c.x0 + s.kerf, q[2]), q[1], q[2], q[3])]
+        else:
+            assert abs(c.x0 - q[0]) < 1e-6 and abs(c.x1 - q[2]) < 1e-6
+            pieces += [(q[0], q[1], q[2], c.y0),
+                       (q[0], min(c.y0 + s.kerf, q[3]), q[2], q[3])]
+    for pl in sheet.placements:
+        holders = [q for q in pieces
+                   if q[0] - 1e-6 <= pl.x and pl.x + pl.dx <= q[2] + 1e-6
+                   and q[1] - 1e-6 <= pl.y and pl.y + pl.dy <= q[3] + 1e-6]
+        assert len(holders) == 1
+        inside = [o for o in sheet.placements
+                  if holders[0][0] - 1e-6 <= o.x
+                  and o.x + o.dx <= holders[0][2] + 1e-6
+                  and holders[0][1] - 1e-6 <= o.y
+                  and o.y + o.dy <= holders[0][3] + 1e-6]
+        assert inside == [pl]
+
+
+@pytest.mark.parametrize("seed", range(40))
+def test_the_cut_sequence_can_be_sawn(seed):
+    rng = random.Random(1000 + seed)
+    pieces = [Piece(f"P{i}", rng.uniform(0.1, 1.2), rng.uniform(0.05, 0.6),
+                    qty=rng.randint(1, 4), rotate=rng.random() < 0.7)
+              for i in range(rng.randint(2, 20))]
+    s = SawSettings(kerf=rng.choice([0.0, 0.003, 0.005]),
+                    trim=rng.choice([0.0, 0.01]),
+                    trim_edges=rng.choice([2, 4]),
+                    first_cut=rng.choice(["length", "width"]),
+                    stages=rng.choice([2, 3, 4]), attempts=4, seed=seed)
+    for sheet in pack(pieces, [SHEET], s).sheets:
+        _saw(sheet, s)

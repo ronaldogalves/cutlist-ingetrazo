@@ -159,7 +159,9 @@ detiene).
 En las hojas:
 
 - **Pasa el ratón sobre una pieza**: su medida y los cortes que la
-  liberan, cada uno con la distancia a poner en la guía.
+  liberan, cada uno con la distancia a poner en la guía; también se
+  ilumina en el modelo. Las piezas seleccionadas en el modelo se iluminan
+  en el plano.
 - **Pasa el ratón sobre un corte**: su etapa, la distancia de la guía y
   su largo. Un primer corte cruza todo el tablero, así que cualquiera
   puede ir primero — para partir un tablero grande en dos antes del
@@ -174,7 +176,9 @@ En las hojas:
 Elige el papel (A4, Carta), el tamaño del texto (**Grande**, o
 **Compacto** para menos páginas), si los tableros iguales aparecen una
 vez (×n), una página de totales, las posiciones de los cortes en el
-borde; luego **PDF…** o **SVG…**. Cada página dice "Página n de N" con el
+borde, los cortes en orden bajo cada tablero ("1 Longitudinal 645 · 2
+Transversal 1982…": dónde poner la guía, desde el borde del trozo que se
+corta); luego **PDF…** o **SVG…**. Cada página dice "Página n de N" con el
 modelo, el tablero y la fecha, para poder reordenar en el taller las hojas
 que se mezclen.
 

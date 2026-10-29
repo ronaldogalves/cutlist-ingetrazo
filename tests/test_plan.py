@@ -117,3 +117,21 @@ def test_a_page_as_svg():
                      if t.tag.endswith("text"))
     assert "Família <Souza>" in words and "B&C" in words
     assert "Page 2 of 2" in words
+
+
+def test_the_cut_sequence_under_each_sheet():
+    from cutlist.export.plan import sequence_words
+    b = board([Piece("A", 1.2, 0.6, qty=3), Piece("B", 0.4, 0.3, qty=4)])
+    sheet = b.layout.sheets[0]
+    words = sequence_words(sheet)
+    assert words[0].startswith("Trim 10 (4 edges)")
+    assert words[1].startswith("1 ") and words[-1].split()[0] == str(
+        len(words) - 1)
+    assert all(w.split()[1] in ("Rip", "Crosscut") for w in words[1:])
+    pages = build([b], model="M", date="d",
+                  options=Options(totals_page=False))
+    seq = [s.text for s in pages[0].shapes if s.style == "sequence"]
+    assert seq and seq[0].startswith("Cuts: Trim")
+    off = build([b], model="M", date="d",
+                options=Options(totals_page=False, cut_sequence=False))
+    assert not [s for s in off[0].shapes if s.style == "sequence"]

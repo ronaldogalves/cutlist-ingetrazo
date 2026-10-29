@@ -184,3 +184,30 @@ def test_a_board_left_without_size_is_said_not_drawn(qt_app, win, ready,
     assert [b.material for b in w.boards] == ["MDF Branco"]
     assert "Freijo (no sheet size" in w.status.text()
     w.close()
+
+
+def test_two_way_highlight(qt_app, win, ready):
+    """A part hovered on the diagram lights up in the model; a part
+    selected in the model lights up on the diagram."""
+    c = model(win)
+    w = opened(qt_app, c)
+    w.show()
+    row = next(i for i, b in enumerate(w.boards) if b.material == "MDF Branco")
+    w.board_list.setCurrentRow(row)
+    (key,) = w.plans[row].uids
+    doors = set(w.plans[row].uids[key])
+    w.canvas.hovered.emit(key)
+    assert set(c.highlight) == doors
+    w.canvas.hovered.emit("")
+    assert c.highlight == []
+
+    scene = win.viewport.scene
+    scene.selection.clear()
+    scene.selection.add(next(g for g in scene.groups if g.name == "Door"))
+    w._follow_selection()
+    assert w.canvas.selected == {key}
+    scene.selection.clear()
+    w._follow_selection()
+    assert w.canvas.selected == set()
+    w.close()
+    assert c.highlight == []

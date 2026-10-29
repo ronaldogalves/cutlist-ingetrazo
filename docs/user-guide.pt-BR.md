@@ -156,7 +156,8 @@ para tudo).
 Nas chapas:
 
 - **Passe o mouse sobre uma peça**: a sua medida e os cortes que a
-  liberam, cada um com a distância para pôr na guia.
+  liberam, cada um com a distância para pôr na guia; ela também acende no
+  modelo. Peças selecionadas no modelo acendem no plano.
 - **Passe o mouse sobre um corte**: a etapa, a distância da guia e o
   comprimento. Um primeiro corte atravessa a chapa inteira, então
   qualquer um deles pode ser o primeiro — para dividir uma chapa grande
@@ -170,7 +171,9 @@ Nas chapas:
 
 Escolha o papel (A4, Carta), o tamanho do texto (**Grande**, ou
 **Compacto** para menos páginas), se chapas iguais aparecem uma vez só
-(×n), uma página de totais, posições dos cortes na borda; depois
+(×n), uma página de totais, posições dos cortes na borda, os cortes em
+ordem sob cada chapa ("1 Longitudinal 645 · 2 Transversal 1982…": onde pôr
+a guia, a partir da borda do pedaço que está sendo cortado); depois
 **PDF…** ou **SVG…**. Toda página diz "Página n de N" com o modelo, a
 chapa e a data, para que folhas espalhadas na oficina possam ser
 reordenadas.
