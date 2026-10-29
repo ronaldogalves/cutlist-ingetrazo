@@ -461,3 +461,22 @@ the model and its gaps fixed:
    (D-013 §4).
 4. **Where**: an *Edge bands* section in the Cut List panel; an optional
    band list beside the export's files; the printed plan's totals page.
+
+## D-018 — Part labels on sticker sheets
+
+*2026-10-29 · accepted · Ronaldo*
+
+1. **Sticker sheets on an ordinary printer** (Ronaldo's shop; thermal
+   label printers maybe later). Presets for the common Pimaco sheets and
+   their Avery twins, A4 and Letter, plus a custom sheet (label size,
+   rows × columns, margins, spacing). **Start at label n**: a sheet
+   already partly used is not wasted.
+2. **One label per piece**: four doors, four labels.
+3. **On a label**: the letter, large; the name; the finished size (the
+   cut size too when oversize or a band changes it); material and
+   thickness; a small drawing of the part with its **banded edges** and
+   its **grain arrow**; the model and the custom fields (client,
+   room…); "3 of 4"; and the **sheet** it is cut from when printed from
+   the diagrams.
+4. **From the cut list** (in its order) **or from the diagrams** (sorted
+   by sheet, in the order the pieces come off the saw).
