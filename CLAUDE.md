@@ -50,7 +50,7 @@ cutlist/
   packing/         PURE: Packer protocol + guillotine packer. No Qt.
   export/          CSV and SVG with the stdlib (no QtSvg: IngeTrazo does
                    not use it, so not every build is sure to ship it —
-                   the Windows 0.5.9 installer does); PDF via Qt's
+                   the Windows 0.6.0 installer does); PDF via Qt's
                    QPdfWriter in ui/.
   ui/              Qt widgets: tray panel, diagram window, dialogs.
   i18n/            en.json (empty identity), pt-BR.json, es.json
@@ -60,7 +60,7 @@ cutlist/
 without IngeTrazo**. That keeps tests fast and limits the blast radius when
 IngeTrazo's API changes to `host/`.
 
-## IngeTrazo facts we rely on (verified at IngeTrazo 0.5.9, tag v0.5.9, commit 24e7ada — 2026-10-20)
+## IngeTrazo facts we rely on (verified at IngeTrazo 0.6.0, tag v0.6.0, commit e61132a — 2026-11-03)
 
 - Plugin entry: a package (`cutlist/__init__.py`) in the user plugins
   folder — `%APPDATA%\ingetrazo\plugins\` on Windows,
@@ -97,7 +97,8 @@ IngeTrazo's API changes to `host/`.
   `QTimer.singleShot(0, …)`), `app.add_overlay`, `app.world_to_pixels`.
   Since 0.5.9 several right-click entries from one extension are gathered
   in a submenu named after it, and `add_panel(..., start_hidden=True)`
-  exists. Also available, not yet planned: `add_outliner_kind` (our type
+  exists; 0.6.0 adds `on_document_closed(fn)` and
+  `restore_toolbar_layout()`. Also available, not yet planned: `add_outliner_kind` (our type
   in the Browser), `add_pickable`, `add_file_opener`,
   `enter_workspace` (shows our own document in the viewport instead of
   the model — a possible home for cutting diagrams).
@@ -151,7 +152,7 @@ OneDrive.
 
 ```powershell
 # IngeTrazo source at the tested tag (update: delete the folder, re-clone)
-git clone --depth 1 --branch v0.5.9 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.0 https://github.com/ingelibre/ingetrazo.git ingetrazo
 # Environment outside OneDrive (3.12 is what IngeTrazo bundles; 3.13 is fine for tests)
 py -m venv $HOME\.venvs\cutlist
 & $HOME\.venvs\cutlist\Scripts\python.exe -m pip install -r ingetrazo\requirements.txt ruff
@@ -171,7 +172,7 @@ redirected (verified).
 ### Linux
 
 ```bash
-git clone --depth 1 --branch v0.5.9 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.0 https://github.com/ingelibre/ingetrazo.git ingetrazo
 python3 -m venv ~/.venvs/cutlist && . ~/.venvs/cutlist/bin/activate
 pip install -r ingetrazo/requirements.txt ruff
 ln -sfn "$PWD/cutlist" ~/.local/share/ingetrazo/plugins/cutlist

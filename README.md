@@ -63,7 +63,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
   group. They land under *Needs a look* (no material): exclude them
   there, or paint them with a material set to *Ignore*.
 
-Tested with **IngeTrazo 0.5.9**.
+Tested with **IngeTrazo 0.6.0**.
 
 ## User guide
 
