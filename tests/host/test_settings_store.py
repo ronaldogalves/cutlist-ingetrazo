@@ -308,6 +308,11 @@ def test_edge_bands_in_the_panel_and_the_materials_window(qt_app, win,
                for i in range(panel.bands.topLevelItemCount())]
     assert [band.text(c) for c in range(5)] == [
         "Fita", "0.022 m", "1", "0.7 m", "1 × 50.0 m"]
+    # The user can resize every column (Ronaldo).
+    from PySide6.QtWidgets import QHeaderView
+    header = panel.bands.header()
+    assert all(header.sectionResizeMode(c)
+               is QHeaderView.ResizeMode.Interactive for c in range(5))
 
 
 def test_a_band_without_a_width_says_it_is_not_checked(qt_app, win,

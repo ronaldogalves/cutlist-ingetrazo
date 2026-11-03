@@ -115,6 +115,7 @@ class CutListPanel(QWidget):
 
     #: Where the column widths are remembered (a per-user convenience).
     HEADER_KEY = "cutlist/panel_header_v2"     # v2: the letter column
+    BANDS_HEADER_KEY = "cutlist/bands_header"
 
     #: The part's letter (D-016 §1) is the last column in the data and is
     #: shown first: the same letter as on the cutting diagrams.
@@ -244,10 +245,13 @@ class CutListPanel(QWidget):
         self.bands.setRootIsDecorated(False)
         self.bands.setUniformRowHeights(True)
         self.bands.setHeaderLabels(BAND_COLUMNS())
+        # Columns the user can resize, remembered like the list's (Ronaldo).
         header = self.bands.header()
-        header.setStretchLastSection(False)
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setMinimumSectionSize(28)
+        self._band_widths_restored = self._restore_bands_header()
+        header.sectionResized.connect(self._save_bands_header)
         self.bands.itemSelectionChanged.connect(self._on_band_selection)
         self.bands.setContextMenuPolicy(
             Qt.ContextMenuPolicy.CustomContextMenu)
@@ -294,6 +298,22 @@ class CutListPanel(QWidget):
         try:
             self._settings().setValue(self.HEADER_KEY,
                                       self.tree.header().saveState())
+        except Exception:                           # noqa: BLE001 — cosmetic
+            pass
+
+    def _restore_bands_header(self) -> bool:
+        try:
+            state = self._settings().value(self.BANDS_HEADER_KEY)
+            return bool(state) and self.bands.header().restoreState(state)
+        except Exception:                           # noqa: BLE001 — cosmetic
+            return False
+
+    def _save_bands_header(self, *_args) -> None:
+        if getattr(self, "_filling", False):
+            return
+        try:
+            self._settings().setValue(self.BANDS_HEADER_KEY,
+                                      self.bands.header().saveState())
         except Exception:                           # noqa: BLE001 — cosmetic
             pass
 
@@ -463,7 +483,7 @@ class CutListPanel(QWidget):
             item = QTreeWidgetItem([
                 b.name, self._fmt_full(b.width) if b.width > 0
                 else tr("not set"), str(b.edges), run(b.total), rolls])
-            for c in (1, 2, 3, 4):
+            for c in (1, 2, 3):        # rolls, the stretching column: left
                 item.setTextAlignment(c, right)
             font = item.font(3)
             font.setBold(True)
@@ -489,6 +509,15 @@ class CutListPanel(QWidget):
             item.setData(0, MATERIAL, b.name)
             item.setData(0, UIDS, uids)
             self.bands.addTopLevelItem(item)
+        if not self._band_widths_restored:
+            self._filling = True
+            try:
+                for c in range(len(BAND_COLUMNS())):
+                    self.bands.resizeColumnToContents(c)
+            finally:
+                self._filling = False
+            self._band_widths_restored = True
+            self._save_bands_header()
         # Tall enough for every band (up to six; then it scrolls), the rest
         # for the parts. The splitter can give it more.
         row = max(self.bands.sizeHintForRow(0),
