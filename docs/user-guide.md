@@ -1,7 +1,7 @@
 # Cut List for IngeTrazo — user guide
 
 *Also in [Português (Brasil)](user-guide.pt-BR.md) and
-[Español](user-guide.es.md).* For version 0.2.0, IngeTrazo 0.6.0.
+[Español](user-guide.es.md).* For version 0.2.1, IngeTrazo 0.6.0.
 
 Cut List turns a furniture model into the list of parts to cut, sends it
 to the supplier who cuts your boards, and draws the cutting diagrams for
@@ -11,7 +11,7 @@ your own saw.
 
 ## 1. Install
 
-1. Download `cutlist-0.2.0.zip` from the
+1. Download `cutlist-0.2.1.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page — or install **Cut List** from IngeTrazo's Extension manager.
 2. By hand: in IngeTrazo, **Extensions ▸ Open plugins folder**, unzip

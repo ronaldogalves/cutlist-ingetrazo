@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-11-03
 
 - **Support Cut List…** in the menu, and a quiet link at the bottom of
   the panel: PIX (key and QR code) and GitHub Sponsors (D-005). Opened

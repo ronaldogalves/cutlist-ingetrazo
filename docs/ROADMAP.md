@@ -212,6 +212,7 @@ with three items below still open; they go in the next release.
 edge bands, the cut sequence, labels and the two-way highlight —
 https://github.com/ronaldogalves/cutlist-ingetrazo/releases/tag/v0.2.0;
 catalog updated (ingelibre/ingetrazo-extensions#224, auto-merged).
+*0.2.1 published 2026-11-03*: the Support window (PIX, GitHub Sponsors).
 
 - [x] Donation platform chosen (BRIEF §10.5): PIX and GitHub Sponsors
       (D-005, 2026-11-03); `.github/FUNDING.yml`.
