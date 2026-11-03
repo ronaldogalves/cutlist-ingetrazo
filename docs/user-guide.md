@@ -97,8 +97,10 @@ rectangular, several boards merged in one group, parts with no material,
 finishes not set up, odd thicknesses. Nothing is dropped silently;
 **Excluded** lists what you or a material left out.
 
-**Edge bands** at the end: the metres of each band to buy, how many
-edges, and rolls when set.
+**Edge bands to buy**, a table of its own below the list: each band's
+width, how many edges, the metres to buy (in bold) and the rolls when
+set. Click a band to see the parts that carry it. A band whose width is
+*not set* is not checked against the parts' thickness.
 
 Click a line to see its parts highlighted in the model.
 

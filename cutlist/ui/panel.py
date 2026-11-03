@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMenu,
     QPushButton,
+    QSplitter,
     QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
@@ -37,6 +38,10 @@ UIDS = Qt.ItemDataRole.UserRole
 MATERIAL = Qt.ItemDataRole.UserRole + 1
 #: On rows of real parts (lines, flagged and excluded parts).
 PARTS = Qt.ItemDataRole.UserRole + 2
+
+
+def BAND_COLUMNS() -> list[str]:         # noqa: N802 — a constant, translated
+    return [tr("Band"), tr("Width"), tr("Edges"), tr("To buy"), tr("Rolls")]
 
 
 def flag_text(flag: Flag) -> str:
@@ -222,7 +227,44 @@ class CutListPanel(QWidget):
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._context_menu)
         self.tree.itemDoubleClicked.connect(self._double_clicked)
-        layout.addWidget(self.tree, 1)
+
+        # Edge bands in a table of their own below the list (Ronaldo): what
+        # matters is the length to buy, which the parts' columns would push
+        # out of sight in a narrow tray.
+        self.bands_box = QWidget()
+        box = QVBoxLayout(self.bands_box)
+        box.setContentsMargins(0, 4, 0, 0)
+        title = QLabel(tr("Edge bands to buy"))
+        font = title.font()
+        font.setBold(True)
+        title.setFont(font)
+        box.addWidget(title)
+        self.bands = QTreeWidget()
+        self.bands.setObjectName("cutlist_bands")
+        self.bands.setRootIsDecorated(False)
+        self.bands.setUniformRowHeights(True)
+        self.bands.setHeaderLabels(BAND_COLUMNS())
+        header = self.bands.header()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.bands.itemSelectionChanged.connect(self._on_band_selection)
+        self.bands.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu)
+        self.bands.customContextMenuRequested.connect(self._band_menu)
+        self.bands.itemDoubleClicked.connect(
+            lambda item, _c: self.materials_requested.emit(
+                item.data(0, MATERIAL)))
+        box.addWidget(self.bands, 1)
+        self.bands_box.hide()
+
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.setChildrenCollapsible(False)
+        self.splitter.addWidget(self.tree)
+        self.splitter.addWidget(self.bands_box)
+        self.splitter.setStretchFactor(0, 1)
+        self.splitter.setStretchFactor(1, 0)
+        layout.addWidget(self.splitter, 1)
 
         self.summary_label = QLabel()
         self.summary_label.setObjectName("cutlist_summary")
@@ -381,12 +423,7 @@ class CutListPanel(QWidget):
                     "\n".join(flag_text(f) for f in flags)))
             top.setExpanded(True)
 
-        bands = band_totals(cl.lines(), self._library)
-        if bands:
-            top = self._header(tr("Edge bands — {n}", n=len(bands)))
-            for b in bands:
-                top.addChild(self._band_item(b))
-            top.setExpanded(True)
+        self._show_bands(cl)
 
         if cl.excluded:
             top = self._header(tr("Excluded — {n} parts", n=len(cl.excluded)))
@@ -409,28 +446,77 @@ class CutListPanel(QWidget):
         """How lengths of band to buy are written (m, or ft)."""
         self._fmt_run = fmt_run
 
-    def _band_item(self, b) -> QTreeWidgetItem:
-        """One band: how many edges, how many metres to buy (D-017)."""
+    def _show_bands(self, cl: CutList) -> None:
+        """The bands table: one row per band, the length to buy in bold."""
+        self.bands.clear()
+        totals = band_totals(cl.lines(), self._library)
+        self.bands_box.setVisible(bool(totals))
+        if not totals:
+            return
         run = self._fmt_run
-        parts = [run(b.total)]
-        if b.added > 1e-9:
-            parts.append(tr("{net} of edge + {added} oversize and waste",
-                            net=run(b.net), added=run(b.added)))
-        if b.roll > 0:
-            parts.append(tr("{n} roll(s) of {length}", n=b.rolls,
-                            length=run(b.roll)))
-        if b.width > 0:
-            parts.insert(0, tr("{w} wide", w=self._fmt_full(b.width)))
-        item = QTreeWidgetItem([b.name, str(b.edges), "", "", "", "", "",
-                                " · ".join(parts)])
-        item.setToolTip(1, tr("Banded edges"))
-        item.setToolTip(7, tr("Metres to buy: every banded edge, plus the "
-                              "band's oversize on each edge and its waste "
-                              "(Materials window)."))
-        item.setTextAlignment(1, Qt.AlignmentFlag.AlignRight
-                              | Qt.AlignmentFlag.AlignVCenter)
-        item.setData(0, MATERIAL, b.name)
-        return item
+        right = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        for b in totals:
+            uids = [u for line in cl.lines() if b.name in line.edges
+                    for u in line.uids]
+            rolls = (tr("{n} × {length}", n=b.rolls, length=run(b.roll))
+                     if b.roll > 0 else "")
+            item = QTreeWidgetItem([
+                b.name, self._fmt_full(b.width) if b.width > 0
+                else tr("not set"), str(b.edges), run(b.total), rolls])
+            for c in (1, 2, 3, 4):
+                item.setTextAlignment(c, right)
+            font = item.font(3)
+            font.setBold(True)
+            item.setFont(3, font)
+            if b.width <= 0:
+                # The thickness check needs the width: say it is off
+                # rather than stay silent (D-017 §2).
+                item.setForeground(1, Qt.GlobalColor.darkYellow)
+                item.setToolTip(1, tr(
+                    "No width set: parts too thick for this band are not "
+                    "checked. Set it in the Materials window."))
+            else:
+                spec = self._library.get(b.name)
+                margin = spec.margin if spec is not None else 0.0
+                item.setToolTip(1, tr(
+                    "Fits parts up to {t} thick (the width less the room "
+                    "to finish it).", t=self._fmt_full(b.width - margin)))
+            why = [tr("{net} of edge", net=run(b.net))]
+            if b.added > 1e-9:
+                why.append(tr("+ {added} oversize and waste",
+                              added=run(b.added)))
+            item.setToolTip(3, " ".join(why))
+            item.setData(0, MATERIAL, b.name)
+            item.setData(0, UIDS, uids)
+            self.bands.addTopLevelItem(item)
+        # Tall enough for every band (up to six; then it scrolls), the rest
+        # for the parts. The splitter can give it more.
+        row = max(self.bands.sizeHintForRow(0),
+                  self.bands.fontMetrics().height() + 4)
+        self.bands.setMinimumHeight(
+            row * min(len(totals), 6) + self.bands.header().sizeHint().height()
+            + 2 * self.bands.frameWidth() + 2)
+
+    def _on_band_selection(self) -> None:
+        """A band lights up every part that carries it."""
+        items = self.bands.selectedItems()
+        if not items:
+            return
+        self.tree.blockSignals(True)
+        self.tree.clearSelection()
+        self.tree.blockSignals(False)
+        uids = [u for item in items for u in item.data(0, UIDS) or []]
+        self.highlight_requested.emit(list(dict.fromkeys(uids)))
+
+    def _band_menu(self, pos) -> None:
+        item = self.bands.itemAt(pos)
+        if item is None:
+            return
+        name = item.data(0, MATERIAL)
+        menu = QMenu(self.bands)
+        act = menu.addAction(tr("Set up material “{name}”…", name=name))
+        act.triggered.connect(lambda: self.materials_requested.emit(name))
+        menu.exec(self.bands.viewport().mapToGlobal(pos))
 
     def _header(self, title: str) -> QTreeWidgetItem:
         """A bold row spanning the whole width (a section)."""
@@ -539,6 +625,10 @@ class CutListPanel(QWidget):
             self.materials_requested.emit(item.data(0, MATERIAL))
 
     def _on_selection(self) -> None:
+        if self.tree.selectedItems():
+            self.bands.blockSignals(True)
+            self.bands.clearSelection()
+            self.bands.blockSignals(False)
         uids: list[str] = []
         for item in self.tree.selectedItems():
             uids.extend(item.data(0, UIDS) or [])

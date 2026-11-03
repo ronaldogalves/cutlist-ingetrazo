@@ -103,8 +103,11 @@ varios tableros unidos en un grupo, piezas sin material, acabados sin
 configurar, espesores fuera de lista. Nada desaparece en silencio;
 **Excluidas** lista lo que tú o un material dejaron fuera.
 
-**Cantos** al final: los metros de cada canto a comprar, cuántos bordes
-y los rollos, cuando se definen.
+**Cantos a comprar**, en una tabla propia bajo la lista: el ancho de
+cada canto, cuántos bordes, los metros a comprar (en negrita) y los
+rollos, cuando se definen. Haz clic en un canto para ver las piezas que
+lo llevan. Un canto con ancho *sin definir* no se revisa contra el
+espesor de las piezas.
 
 Haz clic en una línea para ver sus piezas resaltadas en el modelo.
 

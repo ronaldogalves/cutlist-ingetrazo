@@ -298,10 +298,46 @@ def test_edge_bands_in_the_panel_and_the_materials_window(qt_app, win,
         board(0.6, 0.4, 0.018, name="Side", paint={"W+": "Fita"}))
     store(win).save_materials([spec], remember=False)
     panel = refresh(win)
+    # Bands have a table of their own, below the parts (Ronaldo).
+    tree = panel.tree
+    titles = [tree.topLevelItem(i).text(0)
+              for i in range(tree.topLevelItemCount())]
+    assert not [t for t in titles if t.startswith("Edge bands")]
+    assert not panel.bands_box.isHidden()
+    (band,) = [panel.bands.topLevelItem(i)
+               for i in range(panel.bands.topLevelItemCount())]
+    assert [band.text(c) for c in range(5)] == [
+        "Fita", "0.022 m", "1", "0.7 m", "1 × 50.0 m"]
+
+
+def test_a_band_without_a_width_says_it_is_not_checked(qt_app, win,
+                                                       user_dir):
+    """A 25 mm board with a band whose width is unknown: nothing flags it,
+    so the bands table says the check is off (Ronaldo's test)."""
+    materials = plugin("model.materials")
+    scene = win.viewport.scene
+    scene.groups += [
+        board(0.6, 0.4, 0.025, name="Top", paint={"W+": "Fita"}),
+        board(0.6, 0.4, 0.025, at=(1, 0, 0), name="Base",
+              paint={"W+": "Fita 22"}),
+        board(0.6, 0.4, 0.018, at=(2, 0, 0), name="Side")]
+    store(win).save_materials([
+        materials.MaterialSpec("Fita", role=materials.Role.EDGE_BAND),
+        materials.MaterialSpec("Fita 22", role=materials.Role.EDGE_BAND,
+                               width=0.022)], remember=False)
+    panel = refresh(win)
+    rows = {panel.bands.topLevelItem(i).text(0): panel.bands.topLevelItem(i)
+            for i in range(panel.bands.topLevelItemCount())}
+    assert rows["Fita"].text(1) == "not set"
+    assert "not checked" in rows["Fita"].toolTip(1)
+    assert "0.020 m" in rows["Fita 22"].toolTip(1)
     tree = panel.tree
     tops = {tree.topLevelItem(i).text(0): tree.topLevelItem(i)
             for i in range(tree.topLevelItemCount())}
-    (title,) = [t for t in tops if t.startswith("Edge bands")]
-    band = tops[title].child(0)
-    assert band.text(0) == "Fita" and band.text(1) == "1"
-    assert "0.7 m" in band.text(7) and "1 roll(s) of 50.0 m" in band.text(7)
+    look = tops["Needs a look"]
+    assert [look.child(i).text(0) for i in range(look.childCount())] == [
+        "Base"]
+    # A band lights up the parts that carry it.
+    panel.bands.setCurrentItem(rows["Fita 22"])
+    base = next(g for g in scene.groups if g.name == "Base")
+    assert panel._controller.highlight == [base.uid]

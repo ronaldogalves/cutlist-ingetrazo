@@ -101,8 +101,11 @@ material, acabamentos não configurados, espessuras fora da lista. Nada
 some em silêncio; **Excluídas** lista o que você ou um material deixou de
 fora.
 
-**Fitas de borda** no fim: os metros de cada fita a comprar, quantas
-bordas e os rolos, quando definidos.
+**Fitas de borda a comprar**, numa tabela própria abaixo da lista: a
+largura de cada fita, quantas bordas, os metros a comprar (em negrito) e
+os rolos, quando definidos. Clique numa fita para ver as peças que a
+levam. Uma fita com largura *não definida* não é conferida com a
+espessura das peças.
 
 Clique numa linha para ver as peças destacadas no modelo.
 

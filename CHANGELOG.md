@@ -4,8 +4,9 @@
 
 **Edge bands** (D-017).
 
-- An **Edge bands** section in the Cut List panel: metres of each band to
-  buy, the number of banded edges, rolls when the band has a roll length.
+- An **Edge bands to buy** table below the cut list: each band's width,
+  banded edges, metres to buy and rolls; clicking a band highlights its
+  parts; a band with no width says its thickness check is off.
 - A band's **oversize per edge** (the overhang trimmed after gluing) and
   **waste %** are added to the total; both start at 0.
 - A band can have a **width** and a **room to finish it** (2 mm by
