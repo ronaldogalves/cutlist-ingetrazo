@@ -211,3 +211,29 @@ def test_two_way_highlight(qt_app, win, ready):
     assert w.canvas.selected == set()
     w.close()
     assert c.highlight == []
+
+
+def test_the_preview_follows_the_printing_options(qt_app, win, ready):
+    """Untick an option and the preview changes with it, not only the PDF
+    (Ronaldo)."""
+    w = opened(qt_app, model(win))
+
+    def styles():
+        return {s.style for _sheet, _n, shapes, _y in w.canvas.blocks
+                for s in shapes}
+    w.sequence.setChecked(True)
+    assert "sequence" in styles()
+    w.sequence.setChecked(False)
+    assert "sequence" not in styles()
+    w.marks.setChecked(True)
+    assert "mark" in styles()
+    w.marks.setChecked(False)
+    assert "mark" not in styles()
+    w.totals.setChecked(True)
+    assert w.canvas.totals is not None and w.canvas.totals_mm > 0
+    w.totals.setChecked(False)
+    assert w.canvas.totals is None
+    w.text.setCurrentIndex(w.text.findData("large"))
+    assert w.canvas.options.text == "large"
+    w.canvas.grab()                     # paints with every option
+    w.close()

@@ -4,6 +4,8 @@
 
 **Edge bands** (D-017).
 
+- The diagrams on screen follow the printing options: totals page,
+  cut positions, cuts in order, text size.
 - An **Edge bands to buy** table below the cut list: each band's width,
   banded edges, metres to buy and rolls; clicking a band highlights its
   parts; a band with no width says its thickness check is off.

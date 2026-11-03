@@ -164,7 +164,8 @@ Choose the paper (A4, Letter), the text size (**Large**, or **Compact**
 for fewer pages), whether identical sheets appear once (×n), a totals
 page, cut positions along the edge, the cuts in order under each sheet
 ("1 Rip 645 · 2 Crosscut 1982…": where to set the fence, from the edge
-of the piece being cut); then **PDF…** or **SVG…**. Every page
+of the piece being cut); then **PDF…** or **SVG…**. The diagrams on screen follow these
+options as you tick them. Every page
 says "Page n of N" with the model, board and date, so scattered pages can
 be put back in order at the shop.
 

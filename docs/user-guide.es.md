@@ -181,7 +181,8 @@ Elige el papel (A4, Carta), el tamaño del texto (**Grande**, o
 vez (×n), una página de totales, las posiciones de los cortes en el
 borde, los cortes en orden bajo cada tablero ("1 Longitudinal 645 · 2
 Transversal 1982…": dónde poner la guía, desde el borde del trozo que se
-corta); luego **PDF…** o **SVG…**. Cada página dice "Página n de N" con el
+corta); luego **PDF…** o **SVG…**. Los planos en pantalla siguen estas
+opciones al marcarlas. Cada página dice "Página n de N" con el
 modelo, el tablero y la fecha, para poder reordenar en el taller las hojas
 que se mezclen.
 

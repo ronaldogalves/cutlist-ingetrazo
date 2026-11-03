@@ -18,7 +18,15 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-from PySide6.QtCore import QObject, QPointF, QSize, Qt, QThread, Signal
+from PySide6.QtCore import (
+    QObject,
+    QPointF,
+    QRectF,
+    QSize,
+    Qt,
+    QThread,
+    Signal,
+)
 from PySide6.QtGui import QFont, QPainter
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -55,6 +63,8 @@ from ..export.diagrams import (
     saved_leftovers,
 )
 from ..export.plan import (
+    CHAR,
+    PAGES,
     TEXT,
     Options,
     build,
@@ -151,6 +161,12 @@ class SheetsCanvas(QWidget):
         self.setMouseTracking(True)
         self.board = None                   # export.plan.Board
         self.group_identical = True
+        #: The printing options, followed by the preview (Ronaldo): what
+        #: is ticked is what is drawn.
+        self.options = Options(text="compact")
+        #: The totals page as printed (export.plan.Page), or None.
+        self.totals = None
+        self.totals_mm = 0.0
         self.blocks: list = []              # (sheet, count, shapes, y)
         self.height_mm = 10.0
         self.highlight: set = set()
@@ -159,12 +175,23 @@ class SheetsCanvas(QWidget):
         self._hover_key = ""
         self.fmt = lambda m: f"{round(m * 1000)}"
 
-    def set_board(self, board, group_identical: bool) -> None:
+    def set_board(self, board, group_identical: bool, options=None,
+                  totals=None) -> None:
+        """``options``: the printing options (export.plan.Options) to
+        preview; ``totals``: the totals page to show first, or None."""
         self.board = board
         self.group_identical = group_identical
+        if options is not None:
+            self.options = options
+        self.totals = totals
         self.highlight = set()
         self._layout()
         self.update()
+
+    def _page_scale(self) -> float:
+        """The totals page drawn as wide as the sheets."""
+        pw = PAGES.get(self.options.page, PAGES["A4"])[0]
+        return (CANVAS_MM - 12.0) / pw
 
     def _layout(self) -> None:
         self.blocks = []
@@ -173,20 +200,32 @@ class SheetsCanvas(QWidget):
             self.height_mm = 10.0
             self.updateGeometry()
             return
-        t = TEXT["compact"]
+        o = self.options
+        t = TEXT.get(o.text, TEXT["compact"])
+        self.totals_mm = 0.0
+        if self.totals is not None:
+            # Cropped to its content: the footer stays off the preview.
+            bottom = max((s.y + s.h for s in self.totals.shapes
+                          if s.style != "footer"), default=0)
+            self.totals_mm = (bottom + o.margin) * self._page_scale()
+            y += self.totals_mm + 8.0
         sheets = groups(self.board.layout.sheets) if self.group_identical \
             else [(s, 1) for s in self.board.layout.sheets]
+        width = CANVAS_MM - 12.0
+        draw_w = width - (8 * t * CHAR if o.cut_marks else 0)
         for i, (sheet, count) in enumerate(sheets):
             y += t * 1.8                     # the heading
             shapes, used = sheet_shapes(
-                sheet, 6.0, y, CANVAS_MM - 12.0, 400.0, size=t,
-                fmt=self.fmt, grain=self.board.grain)
+                sheet, 6.0 + width - draw_w, y, draw_w, 400.0, size=t,
+                fmt=self.fmt, grain=self.board.grain,
+                cut_marks=o.cut_marks)
             shapes = [replace(s, ref=f"{i}:{s.ref}")
                       if s.ref.startswith(("cut:", "leftover:")) else s
                       for s in shapes]
-            seq, seq_h = sequence_shapes(sheet, 6.0, y + used + 2.0,
-                                         CANVAS_MM - 12.0, size=t,
-                                         fmt=self.fmt)
+            seq, seq_h = [], 0.0
+            if o.cut_sequence:
+                seq, seq_h = sequence_shapes(sheet, 6.0, y + used + 2.0,
+                                             width, size=t, fmt=self.fmt)
             self.blocks.append((sheet, count, shapes + seq, y - t * 1.8))
             y += used + seq_h + 8.0
         self.height_mm = y
@@ -206,8 +245,17 @@ class SheetsCanvas(QWidget):
         p = QPainter(self)
         p.fillRect(self.rect(), Qt.GlobalColor.white)
         k = self.k()
-        t = TEXT["compact"]
+        t = TEXT.get(self.options.text, TEXT["compact"])
         n = len(self.blocks)
+        if self.totals is not None:
+            # The totals page, framed like a sheet of paper.
+            ks = k * self._page_scale()
+            p.setPen(Qt.GlobalColor.lightGray)
+            p.drawRect(QRectF(6.0 * k, 4.0 * k, (CANVAS_MM - 12.0) * k,
+                              self.totals_mm * k))
+            draw_shapes(p, [s for s in self.totals.shapes
+                            if s.style != "footer"], ks, dx=6.0 * k / ks,
+                        dy=4.0 * k / ks)
         for i, (sheet, count, shapes, y) in enumerate(self.blocks):
             p.setPen(Qt.GlobalColor.black)
             font = QFont(self.font())
@@ -502,8 +550,6 @@ class DiagramWindow(QDialog):
             o.get("text", "large"))))
         self.group_identical = QCheckBox(tr("Identical sheets once (×n)"))
         self.group_identical.setChecked(o.get("group_identical", True))
-        self.group_identical.toggled.connect(lambda _v: self._show_board(
-            self.board_list.currentRow()))
         self.totals = QCheckBox(tr("A totals page first"))
         self.totals.setChecked(o.get("totals_page", True))
         self.marks = QCheckBox(tr("Cut positions along the edge"))
@@ -516,6 +562,11 @@ class DiagramWindow(QDialog):
         form.addRow("", self.totals)
         form.addRow("", self.marks)
         form.addRow("", self.sequence)
+        for box_ in (self.group_identical, self.totals, self.marks,
+                     self.sequence):
+            box_.toggled.connect(lambda _v: self._preview())
+        for combo in (self.page, self.text):
+            combo.currentIndexChanged.connect(lambda _i: self._preview())
         box.addWidget(group)
         pdf = QPushButton(tr("PDF…"))
         pdf.setObjectName("cutlist_diagram_pdf")
@@ -653,9 +704,24 @@ class DiagramWindow(QDialog):
     def _show_board(self, row: int) -> None:
         if not (0 <= row < len(self.boards)):
             return
-        self.canvas.set_board(self.boards[row],
-                              self.group_identical.isChecked())
+        self._preview()
         self._load_leftovers()
+
+    def _preview(self) -> None:
+        """Draw the board shown as the printing options say: the totals
+        page first when ticked, the cuts in order, the cut positions, the
+        text size (Ronaldo)."""
+        row = self.board_list.currentRow()
+        if not (0 <= row < len(self.boards)):
+            return
+        o = self.options()
+        totals = None
+        if o.totals_page:
+            pages = build(self.boards, model=self.session.model,
+                          date=self.session.date, options=o,
+                          fmt=self.canvas.fmt, bands=self.bands)
+            totals = pages[0] if pages else None
+        self.canvas.set_board(self.boards[row], o.group_identical, o, totals)
 
     def board_uids(self) -> dict[str, list[str]]:
         """Letter → part uids on the board shown (a saved plan's too)."""
