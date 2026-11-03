@@ -14,7 +14,8 @@ sizes, leftovers faded with theirs](docs/images/cutting-diagram.png)
 
 ## Status
 
-**0.1.0 — the cut list, supplier exports and cutting diagrams.** What
+**0.2.0 — the cut list, supplier exports, cutting diagrams, edge bands
+and labels.** What
 is in it (see [CHANGELOG.md](CHANGELOG.md)):
 
 - a **Cut List** tab that reads the selection or the whole model and
@@ -38,7 +39,12 @@ is in it (see [CHANGELOG.md](CHANGELOG.md)):
   cuts that free it and their fence distances; right-click it to switch
   its grain and lay out again. Printed as PDF or SVG: a page per sheet,
   part letters and sizes, identical sheets once, "Page n of N". Layouts
-  can be saved in the model;
+  can be saved in the model; the cuts in order under each sheet, with
+  where to set the fence;
+- **edge bands to buy**: metres per band with oversize, waste and rolls;
+  a band too narrow for its part is flagged;
+- **labels** for every piece on Pimaco or Avery sheets, with the part's
+  letter, size, banded edges, grain and the sheet it comes from;
 - English, Português (Brasil) and Español.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
@@ -74,7 +80,7 @@ diagrams: [English](docs/user-guide.md) ·
 
 ## Installing
 
-1. Download `cutlist-0.1.0.zip` from the
+1. Download `cutlist-0.2.0.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page.
 2. In IngeTrazo, **Extensions ▸ Open plugins folder**

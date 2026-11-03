@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-03
+
+Edge bands to buy, labels for every piece, and the cuts in order on
+paper. Tested with IngeTrazo 0.6.0 on Windows.
 
 **Edge bands** (D-017).
 
-- The diagrams on screen follow the printing options: totals page,
-  cut positions, cuts in order, text size.
 - An **Edge bands to buy** table below the cut list: each band's width,
   banded edges, metres to buy and rolls; clicking a band highlights its
   parts; a band with no width says its thickness check is off.
@@ -37,6 +38,8 @@
   every printed sequence to prove it can be cut in that order.
 - **Two-way highlight**: a part under the mouse on the diagram lights up
   in the model; parts selected in the model light up on the diagram.
+- The diagrams on screen follow the printing options: totals page,
+  cut positions, cuts in order, text size.
 
 ## 0.1.0 — 2026-10-21
 

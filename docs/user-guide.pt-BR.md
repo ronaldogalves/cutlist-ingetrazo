@@ -1,7 +1,7 @@
 # Cut List para IngeTrazo — guia de uso
 
 *Também em [English](user-guide.md) e [Español](user-guide.es.md).*
-Para a versão 0.1.0, IngeTrazo 0.5.9.
+Para a versão 0.2.0, IngeTrazo 0.6.0.
 
 O Cut List transforma um modelo de móvel na lista de peças a cortar,
 envia essa lista para o fornecedor que corta as suas chapas e desenha os
@@ -11,7 +11,7 @@ planos de corte para a sua própria serra.
 
 ## 1. Instalar
 
-1. Baixe `cutlist-0.1.0.zip` na página de
+1. Baixe `cutlist-0.2.0.zip` na página de
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    — ou instale o **Cut List** pelo gerenciador de extensões do IngeTrazo.
 2. À mão: no IngeTrazo, **Extensões ▸ Abrir pasta de plugins**,

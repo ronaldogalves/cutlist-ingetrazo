@@ -208,6 +208,9 @@ with three items below still open; they go in the next release.
 
 ## v0.2 — Support and first feedback
 
+*0.2.0 published 2026-11-03 at Ronaldo's call*, after his hand tests of
+edge bands, the cut sequence, labels and the two-way highlight.
+
 - [ ] Donation platform chosen (BRIEF §10.5); `.github/FUNDING.yml`.
 - [ ] "Support CutList" menu entry + About dialog section (links, optional
       PIX QR). No pop-ups, no network calls.
