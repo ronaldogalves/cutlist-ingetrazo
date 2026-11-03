@@ -29,3 +29,7 @@ desktop.ini
 
 # Private sample models (clients, personal) never leave this machine
 /samples/private/
+
+# Personal secrets: never in the repository
+github-recovery-codes.txt
+*recovery-codes*
