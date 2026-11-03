@@ -138,3 +138,21 @@ SVG). What we could take, best first:
 What we have that it does not: supplier exports and profiles, edge bands
 ("not included" in its guide), per-face coverings, shop leftovers used
 first, saved layouts that say what changed.
+
+## Ready materials with textures (Ronaldo, 2026-11-03)
+
+Ship a small library of common boards (MDF white/raw/wood finishes,
+plywood naval/pine, MDP) to use as they are or clone into new materials:
+texture, real tile size, and our setup (role, thicknesses, sheet sizes,
+grain) already filled in.
+
+- IngeTrazo's `core.materials.Material` has `texture = {"path", "sw",
+  "sh"}` (tile size in metres); the `.igz` embeds the image on save.
+  Adding materials to a document must be one undo step.
+- The release zip carries every file under `cutlist/`; the Extension
+  manager accepts up to 64 MB per download and 2000 files.
+- **Licences**: only textures we may redistribute in a GPL project —
+  CC0 libraries (ambientCG, Poly Haven) or photos taken for us (Ronaldo's
+  shop?) — with the source of each recorded in a `textures/SOURCES.md`.
+  Supplier catalogue photos (Duratex, Arauco…) are not ours to ship.
+- Keep them small (1–2k pixels, JPEG) so the download stays light.

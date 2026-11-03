@@ -172,7 +172,7 @@ Nas chapas:
 Escolha o papel (A4, Carta), o tamanho do texto (**Grande**, ou
 **Compacto** para menos páginas), se chapas iguais aparecem uma vez só
 (×n), uma página de totais, posições dos cortes na borda, os cortes em
-ordem sob cada chapa ("1 Longitudinal 645 · 2 Transversal 1982…": onde pôr
+ordem sob cada chapa ("1 Corte no comprimento 645 · 2 Corte na largura 1982…": onde pôr
 a guia, a partir da borda do pedaço que está sendo cortado); depois
 **PDF…** ou **SVG…**. Toda página diz "Página n de N" com o modelo, a
 chapa e a data, para que folhas espalhadas na oficina possam ser

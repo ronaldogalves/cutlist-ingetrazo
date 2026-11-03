@@ -227,6 +227,16 @@ with three items below still open; they go in the next release.
 
 ## Later (unordered candidates)
 
+- **Ready materials** (Ronaldo, 2026-11-03): the extension ships common
+  boards — MDF (white, raw, a few wood finishes), plywood (naval, pine),
+  MDP — with textures at their real scale and their setup already done
+  (role, thicknesses, sheet sizes, grain). Use them as they are, or clone
+  one into a new material. Feasible: IngeTrazo materials take a texture
+  image and a tile size, the `.igz` embeds it, and our zip may hold image
+  files (the catalog installs up to 64 MB). Needs textures we may
+  redistribute under GPL-compatible terms (CC0 sources, or our own
+  photos) — see IDEAS.
+
 1D diagrams for solid wood · edge banding · labels · cost estimate ·
 DXF export (ezdxf) · panel-supplier formats · XLSX · optional native
 packer backend · OpenCutList-style part drawings.
