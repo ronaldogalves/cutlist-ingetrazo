@@ -112,6 +112,8 @@ class CutListPanel(QWidget):
     export_requested = Signal()
     diagrams_requested = Signal()
     labels_requested = Signal()
+    #: Open the support window (D-005).
+    support_requested = Signal()
 
     #: Where the column widths are remembered (a per-user convenience).
     HEADER_KEY = "cutlist/panel_header_v2"     # v2: the letter column
@@ -273,7 +275,17 @@ class CutListPanel(QWidget):
         self.summary_label = QLabel()
         self.summary_label.setObjectName("cutlist_summary")
         self.summary_label.setWordWrap(True)
-        layout.addWidget(self.summary_label)
+        foot = QHBoxLayout()
+        foot.addWidget(self.summary_label, 1)
+        # A quiet link, never a pop-up (D-005).
+        self.support_link = QLabel(
+            '<a href="#support">' + tr("Support Cut List") + "</a>")
+        self.support_link.setObjectName("cutlist_support_link")
+        self.support_link.setToolTip(tr("Cut List is free: how to help."))
+        self.support_link.linkActivated.connect(
+            lambda _href: self.support_requested.emit())
+        foot.addWidget(self.support_link, 0, Qt.AlignmentFlag.AlignRight)
+        layout.addLayout(foot)
 
         self.placeholder = QLabel(tr("Press Refresh to read the model."))
         self.placeholder.setObjectName("cutlist_placeholder")

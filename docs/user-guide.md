@@ -189,7 +189,13 @@ would come out differently today. If the model changed since, the window
 says which parts changed size or are gone, and **Redo the layout for
 these parts** lays them out again.
 
-## 12. Good to know
+## 12. Support Cut List
+
+Cut List is free. **Extensions ▸ Cut List ▸ Support Cut List…** (or the
+link at the bottom of the panel) shows how to help: PIX (key `5cebc350-88a6-4bb2-b2e9-08e82b33f36a`)
+or GitHub Sponsors. Nothing in the extension changes either way.
+
+## 13. Good to know
 
 - Lengths in the dialogs are typed in millimetres; the list follows the
   model's units unless set in **Settings…**.

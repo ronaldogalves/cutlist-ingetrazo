@@ -206,7 +206,13 @@ distribución saliera distinta. Si el modelo cambió desde entonces, la
 ventana dice qué piezas cambiaron de medida o ya no están, y **Rehacer el
 plan para estas piezas** las distribuye de nuevo.
 
-## 12. Bueno saber
+## 12. Apoyar Cut List
+
+Cut List es gratuito. **Extensiones ▸ Cut List ▸ Apoyar Cut List…** (o
+el enlace al pie del panel) muestra cómo ayudar: PIX en Brasil (clave
+`5cebc350-88a6-4bb2-b2e9-08e82b33f36a`) o GitHub Sponsors. Nada cambia en la extensión en ningún caso.
+
+## 13. Bueno saber
 
 - Las medidas en las ventanas se escriben en milímetros; la lista sigue
   las unidades del modelo, salvo lo definido en **Ajustes…**.

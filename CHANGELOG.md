@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Support Cut List…** in the menu, and a quiet link at the bottom of
+  the panel: PIX (key and QR code) and GitHub Sponsors (D-005). Opened
+  only when you ask; no network access.
+
 ## 0.2.0 — 2026-11-03
 
 Edge bands to buy, labels for every piece, and the cuts in order on

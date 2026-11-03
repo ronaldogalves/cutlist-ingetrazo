@@ -34,6 +34,7 @@ def test_the_release_zip_installs(tmp_path):
     _extract_plugin_zip(first, stage, "cutlist")
     assert (stage / "__init__.py").is_file()
     assert (stage / "i18n" / "pt-BR.json").is_file()
+    assert (stage / "ui" / "pix.png").is_file()     # the support window's QR
     assert not list(stage.rglob("__pycache__"))
 
     # It imports the way IngeTrazo imports a plugin: by path, privately.

@@ -94,6 +94,19 @@ To work on the code, link the `cutlist/` folder of a checkout into the
 plugins folder instead; see the development setup in
 [CLAUDE.md](CLAUDE.md). `python tools/build_release.py` builds the zip.
 
+## Support
+
+Cut List is free and stays free. If it saves you time in the shop, you
+can help keep it going:
+
+- **PIX** (Brazil): key `5cebc350-88a6-4bb2-b2e9-08e82b33f36a`, or scan the code in
+  **Extensions ▸ Cut List ▸ Support Cut List…**;
+- **[GitHub Sponsors](https://github.com/sponsors/ronaldogalves)**, once
+  or monthly, from anywhere.
+
+Telling other woodworkers, sending a profile for your supplier and
+reporting problems help too.
+
 ## Relationship to OpenCutList
 
 [OpenCutList](https://github.com/lairdubois/lairdubois-opencutlist-sketchup-extension)

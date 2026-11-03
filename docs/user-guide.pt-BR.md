@@ -202,7 +202,13 @@ distribuição saísse diferente hoje. Se o modelo mudou desde então, a
 janela diz quais peças mudaram de medida ou sumiram, e **Refazer o plano
 para estas peças** as distribui de novo.
 
-## 12. Bom saber
+## 12. Apoiar o Cut List
+
+O Cut List é gratuito. **Extensões ▸ Cut List ▸ Apoiar o Cut List…** (ou
+o link no pé do painel) mostra como ajudar: PIX (chave `5cebc350-88a6-4bb2-b2e9-08e82b33f36a`) ou
+GitHub Sponsors. Nada muda na extensão de um jeito ou de outro.
+
+## 13. Bom saber
 
 - As medidas nas janelas são digitadas em milímetros; a lista segue as
   unidades do modelo, salvo o que for definido em **Ajustes…**.

@@ -213,8 +213,9 @@ edge bands, the cut sequence, labels and the two-way highlight —
 https://github.com/ronaldogalves/cutlist-ingetrazo/releases/tag/v0.2.0;
 catalog updated (ingelibre/ingetrazo-extensions#224, auto-merged).
 
-- [ ] Donation platform chosen (BRIEF §10.5); `.github/FUNDING.yml`.
-- [ ] "Support CutList" menu entry + About dialog section (links, optional
+- [x] Donation platform chosen (BRIEF §10.5): PIX and GitHub Sponsors
+      (D-005, 2026-11-03); `.github/FUNDING.yml`.
+- [x] "Support CutList" menu entry + About dialog section (links, optional
       PIX QR). No pop-ups, no network calls.
 - [x] Edge-band totals (D-017, 2026-10-26): metres per band to buy, with
       oversize, waste and rolls; band width checked against the part

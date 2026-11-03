@@ -65,6 +65,9 @@ def install(app) -> None:
             lambda _c=False: controller.open_diagrams())
         menu.addAction(tr("Labels…")).triggered.connect(
             lambda _c=False: controller.open_labels())
+        menu.addSeparator()
+        menu.addAction(tr("Support Cut List…")).triggered.connect(
+            lambda _c=False: controller.open_support())
     log.info("Cut List installed (key %r)", app.key)
 
 
@@ -180,6 +183,7 @@ class Controller:
         panel.export_requested.connect(self.open_export)
         panel.diagrams_requested.connect(self.open_diagrams)
         panel.labels_requested.connect(lambda: self.open_labels())
+        panel.support_requested.connect(self.open_support)
         app.on_document_changed(self.document_changed)
         app.add_overlay(self.draw)
 
@@ -301,6 +305,15 @@ class Controller:
             return False
         if self._guard(run) and then_refresh:
             self.refresh()
+
+    def open_support(self) -> None:
+        """How to donate, and what this extension is (D-005)."""
+        from .. import __version__
+        from ..ui.support import SupportDialog
+
+        def run():
+            SupportDialog(__version__, parent=self.app.window).exec()
+        self._guard(run)
 
     def open_part_settings(self, uids) -> None:
         self.open_part_settings_for([self.groups[u] for u in uids

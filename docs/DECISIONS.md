@@ -50,6 +50,13 @@ GPL modules) and wanted. No paid tier. Donations from v0.2: links opened
 on click from a menu entry and the About dialog, optional PIX QR; no
 pop-ups, nag screens or telemetry.
 
+*Update 2026-11-03 (Ronaldo):* PIX with a **random key** (no personal data
+in a public repository) and its QR code shipped in the zip
+(`cutlist/ui/pix.png`); GitHub Sponsors for everyone else, paid to a bank
+account through Stripe. A "Support Cut List…" menu entry and a link at
+the bottom of the panel open the window; `.github/FUNDING.yml` shows
+GitHub's Sponsor button.
+
 ## D-006 — Part detection rule
 
 *2026-10-07 · accepted · evidence: `docs/spikes/M0-part-detection.md`*
