@@ -90,8 +90,10 @@ def _fit(text: str, size: float, width: float) -> float:
 
 
 def label_shapes(label: Label, x: float, y: float, w: float, h: float,
-                 fmt=_mm) -> list[Shape]:
-    """One label, drawn into its sticker (x, y, w, h)."""
+                 fmt=_mm, fmt_full=None) -> list[Shape]:
+    """One label, drawn into its sticker (x, y, w, h). ``fmt`` writes a
+    size, ``fmt_full`` a thickness with its unit (the model's: issue #1)."""
+    fmt_full = fmt_full or (lambda m: f"{fmt(m)} mm")
     pad = min(2.0, h * 0.08)
     x0, y0, w0, h0 = x + pad, y + pad, w - 2 * pad, h - 2 * pad
     out: list[Shape] = []
@@ -110,7 +112,7 @@ def label_shapes(label: Label, x: float, y: float, w: float, h: float,
                                w=fmt(label.cut[1]))
     lines = [(label.name, "label_name", size * 1.15),
              (size_line, "label_size", size * 1.1),
-             (f"{label.material} · {fmt(label.thickness)} mm", "label_text",
+             (f"{label.material} · {fmt_full(label.thickness)}", "label_text",
               size)]
     if label.info:
         lines.append((label.info, "label_text", size * 0.9))
@@ -163,7 +165,7 @@ class LabelPages:
 
 
 def build(labels: list[Label], options: Options | None = None,
-          fmt=_mm) -> LabelPages:
+          fmt=_mm, fmt_full=None) -> LabelPages:
     """Pages of stickers; the first ``start - 1`` stickers left blank."""
     o = options or Options()
     s = o.sheet
@@ -180,7 +182,7 @@ def build(labels: list[Label], options: Options | None = None,
         if o.frames:
             page.shapes.append(Shape("rect", x, y, s.w, s.h,
                                      style="label_frame"))
-        page.shapes += label_shapes(label, x, y, s.w, s.h, fmt)
+        page.shapes += label_shapes(label, x, y, s.w, s.h, fmt, fmt_full)
         slot += 1
     for i, p in enumerate(out.pages, 1):
         p.number, p.total = i, len(out.pages)

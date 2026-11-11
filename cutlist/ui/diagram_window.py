@@ -121,6 +121,11 @@ class DiagramSession:
     #: (entries, title) → the labels window (D-018).
     open_labels: Callable = lambda entries, title=None: None
     suggested_folder: str = ""
+    #: How sizes are written (issue #1: the model's unit, not always mm):
+    #: in drawings and tables, with the unit, and lengths of band to buy.
+    fmt: Callable = lambda m: f"{round(m * 1000)}"
+    fmt_full: Callable = lambda m: f"{round(m * 1000)} mm"
+    fmt_run: Callable = lambda m: f"{m:.1f} m"
     #: Told where files were written, to open there next time.
     folder_used: Callable = lambda _folder: None
 
@@ -441,6 +446,7 @@ class DiagramWindow(QDialog):
         outer.addWidget(split, 1)
         split.addWidget(self._left())
         self.canvas = SheetsCanvas()
+        self.canvas.fmt = session.fmt
         self.canvas.part_menu.connect(self._part_menu)
         self.canvas.hovered.connect(self._hovered)
         # The model's selection, followed while the window is open: no
@@ -683,7 +689,7 @@ class DiagramWindow(QDialog):
         self.board_list.clear()
         for b in self.boards:
             lay = b.layout
-            text = f"{b.material} · {self.canvas.fmt(b.thickness)} mm — " + \
+            text = f"{b.material} · {self.session.fmt_full(b.thickness)} — " + \
                 tr("{n} sheet(s)", n=len(lay.sheets)) + \
                 f" · {lay.efficiency:.0%}"
             if lay.unplaced:
@@ -719,7 +725,9 @@ class DiagramWindow(QDialog):
         if o.totals_page:
             pages = build(self.boards, model=self.session.model,
                           date=self.session.date, options=o,
-                          fmt=self.canvas.fmt, bands=self.bands)
+                          fmt=self.canvas.fmt, bands=self.bands,
+                          fmt_full=self.session.fmt_full,
+                          fmt_run=self.session.fmt_run)
             totals = pages[0] if pages else None
         self.canvas.set_board(self.boards[row], o.group_identical, o, totals)
 
@@ -952,7 +960,9 @@ class DiagramWindow(QDialog):
     def _pages(self):
         return build(self.boards, model=self.session.model,
                      date=self.session.date, options=self.options(),
-                     fmt=self.canvas.fmt, bands=self.bands)
+                     fmt=self.canvas.fmt, bands=self.bands,
+                     fmt_full=self.session.fmt_full,
+                     fmt_run=self.session.fmt_run)
 
     def _remember_options(self) -> None:
         o = self.options()

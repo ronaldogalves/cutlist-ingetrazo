@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Inch models get inches** on the cutting diagrams, the printed plan and
+  the labels: they used to say millimetres whatever the model's unit
+  (#1). They follow the cut list: the model's unit, or the one set in
+  Settings. Long sizes such as `15 3/4" × 27 9/16"` stack under the
+  part's letter when they don't fit on one line.
+- The totals page's Sheets column is wider: "2× 2750 × 1840" no longer
+  loses its count.
+- Tested with IngeTrazo 0.6.1.
+
 ## 0.2.1 — 2026-11-03
 
 - **Support Cut List…** in the menu, and a quiet link at the bottom of

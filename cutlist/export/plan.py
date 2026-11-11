@@ -150,8 +150,18 @@ def _mm(metres: float) -> str:
     return f"{round(metres * 1000)}"
 
 
+def _metres_run(metres: float) -> str:
+    return f"{metres:.1f} m"
+
+
 def fits(text: str, size: float, w: float, h: float) -> bool:
     return len(text) * size * CHAR <= w - 1.0 and size <= h - 1.0
+
+
+def _fits_lines(lines, size: float, w: float, h: float) -> bool:
+    """Stacked lines, each ``size`` tall with a little leading."""
+    return all(len(t) * size * CHAR <= w - 1.0 for t in lines) and \
+        len(lines) * size * 1.25 <= h - 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -200,15 +210,25 @@ def sheet_shapes(sheet: Sheet, x: float, y: float, w: float, h: float, *,
     for p in sheet.placements:
         bx, by, bw, bh = box(p.x, p.y, p.dx, p.dy)
         out.append(Shape("rect", bx, by, bw, bh, style="part", ref=p.key))
-        full = f"{p.key}  {fmt(p.dx)} × {fmt(p.dy)}"
+        length, width = fmt(p.dx), fmt(p.dy)
         letter_size = min(size * 1.6, max(bh * 0.6, size * 0.6))
-        # The size when it fits, at the text size or a little smaller.
-        shown = next((z for z in (size, size * 0.75)
-                      if fits(full, z, bw, bh * 0.95)), None)
+        # The size when it fits, at the text size or a little smaller: on
+        # one line, else stacked under the letter — inch sizes (23 9/16")
+        # are long (issue #1).
+        stacks = ([f"{p.key}  {length} × {width}"],
+                  [p.key, f"{length} × {width}"],
+                  [p.key, length, f"× {width}"])
+        shown = next(((lines, z) for lines in stacks
+                      for z in (size, size * 0.75)
+                      if _fits_lines(lines, z, bw, bh * 0.95)), None)
         if shown:
-            out.append(Shape("text", bx, by, bw, bh, style="part_text",
-                             text=full, size=shown, align="center",
-                             ref=p.key))
+            lines, z = shown
+            row = z * 1.25
+            ty = by + (bh - row * len(lines)) / 2
+            for i, text in enumerate(lines):
+                out.append(Shape("text", bx, ty + i * row, bw, row,
+                                 style="part_text", text=text, size=z,
+                                 align="center", ref=p.key))
         else:
             out.append(Shape("text", bx, by, bw, bh, style="part_letter",
                              text=p.key, size=min(letter_size, bw * 0.8),
@@ -286,8 +306,14 @@ def groups(sheets) -> list[tuple[Sheet, int]]:
 
 def build(boards: list[Board], *, model: str, date: str,
           options: Options | None = None, fmt=_mm,
-          bands=()) -> list[Page]:
-    """``bands``: :class:`model.bands.BandTotal` for the totals page."""
+          bands=(), fmt_full=None, fmt_run=_metres_run) -> list[Page]:
+    """``bands``: :class:`model.bands.BandTotal` for the totals page.
+
+    ``fmt`` writes a size in the drawings and tables (bare millimetres, or
+    the model's own unit: ``23 1/2"`` in an inch model — issue #1);
+    ``fmt_full`` with its unit (a thickness); ``fmt_run`` a length of band
+    to buy."""
+    fmt_full = fmt_full or (lambda m: f"{fmt(m)} mm")
     o = options or Options()
     pw, ph = PAGES.get(o.page, PAGES["A4"])
     t = TEXT.get(o.text, TEXT["large"])
@@ -308,12 +334,12 @@ def build(boards: list[Board], *, model: str, date: str,
 
     if o.totals_page:
         page, y = new_page(tr("{model} — cutting plan", model=model))
-        y = _totals(page, boards, m, y, width, t, fmt)
+        y = _totals(page, boards, m, y, width, t, fmt, fmt_full)
         if bands:
-            _bands(page, bands, m, y + t * 1.5, width, t)
+            _bands(page, bands, m, y + t * 1.5, width, t, fmt_run)
 
     for board in boards:
-        name = f"{board.material} · {fmt(board.thickness)} mm"
+        name = f"{board.material} · {fmt_full(board.thickness)}"
         grouped = groups(board.layout.sheets) if o.group_identical else \
             [(s, 1) for s in board.layout.sheets]
         sheet_no = 0
@@ -410,11 +436,11 @@ def _table(page, sheet, count, board, y, m, width, ph, t, fmt,
     return y
 
 
-def _bands(page, bands, m, y, width, t) -> float:
-    """Edge bands to buy (D-017): metres per band, rolls when set."""
+def _bands(page, bands, m, y, width, t, fmt_run=_metres_run) -> float:
+    """Edge bands to buy (D-017): the length per band, rolls when set."""
     row = t * 1.8
     cols = [(tr("Edge band"), 0.46, "left"), (tr("Edges"), 0.14, "right"),
-            (tr("Metres"), 0.2, "right"), (tr("Rolls"), 0.2, "right")]
+            (tr("To buy"), 0.2, "right"), (tr("Rolls"), 0.2, "right")]
     x = m
     for title, share, align in cols:
         page.shapes.append(Shape("text", x + 1, y, width * share - 2, row,
@@ -424,8 +450,8 @@ def _bands(page, bands, m, y, width, t) -> float:
     page.shapes.append(Shape("line", m, y + row, width, 0, style="grid"))
     y += row
     for b in bands:
-        rolls = f"{b.rolls} × {b.roll:g} m" if b.roll else ""
-        cells = [b.name, str(b.edges), f"{b.total:.1f}", rolls]
+        rolls = f"{b.rolls} × {fmt_run(b.roll)}" if b.roll else ""
+        cells = [b.name, str(b.edges), fmt_run(b.total), rolls]
         x = m
         for text, (_t, share, align) in zip(cells, cols, strict=True):
             page.shapes.append(Shape("text", x + 1, y, width * share - 2,
@@ -437,11 +463,12 @@ def _bands(page, bands, m, y, width, t) -> float:
     return y
 
 
-def _totals(page, boards, m, y, width, t, fmt) -> float:
+def _totals(page, boards, m, y, width, t, fmt, fmt_full) -> float:
     row = t * 1.8
-    cols = [(tr("Board"), 0.42, "left"), (tr("Sheets"), 0.14, "right"),
-            (tr("Parts"), 0.12, "right"), (tr("Used"), 0.14, "right"),
-            (tr("Cuts"), 0.18, "right")]
+    # Sheets is wide: "2× 96" × 48"" (the count was cut off before).
+    cols = [(tr("Board"), 0.34, "left"), (tr("Sheets"), 0.32, "right"),
+            (tr("Parts"), 0.1, "right"), (tr("Used"), 0.12, "right"),
+            (tr("Cuts"), 0.12, "right")]
     x = m
     for title, share, align in cols:
         page.shapes.append(Shape("text", x + 1, y, width * share - 2, row,
@@ -453,9 +480,9 @@ def _totals(page, boards, m, y, width, t, fmt) -> float:
     for b in boards:
         lay = b.layout
         sizes = Counter((s.stock.length, s.stock.width) for s in lay.sheets)
-        sheets = ", ".join(f"{n}× {fmt(a)}×{fmt(c)}"
+        sheets = ", ".join(f"{n}× {fmt(a)} × {fmt(c)}"
                            for (a, c), n in sizes.items()) or "0"
-        cells = [f"{b.material} · {fmt(b.thickness)} mm", sheets,
+        cells = [f"{b.material} · {fmt_full(b.thickness)}", sheets,
                  str(sum(len(s.placements) for s in lay.sheets)),
                  f"{lay.efficiency:.0%}", str(lay.cut_count)]
         x = m

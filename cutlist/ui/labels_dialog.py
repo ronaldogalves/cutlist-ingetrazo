@@ -66,11 +66,15 @@ class LabelsDialog(QDialog):
 
     def __init__(self, labels, *, title: str, options: dict,
                  save_options, folder: str = "", stem: str = "labels",
-                 folder_used=None, parent=None) -> None:
+                 folder_used=None, fmt=None, fmt_full=None,
+                 parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("cutlist_labels_dialog")
         self.setWindowTitle(tr("Cut List — Labels"))
         self.labels = list(labels)
+        #: How sizes are written: the model's unit (None: millimetres).
+        self._fmt = {k: v for k, v in (("fmt", fmt), ("fmt_full", fmt_full))
+                     if v is not None}
         self._save_options = save_options
         self._folder, self._stem = folder, stem
         self._folder_used = folder_used or (lambda _f: None)
@@ -175,7 +179,7 @@ class LabelsDialog(QDialog):
         sheet = self.label_sheet()
         self.custom.setVisible(self.sheet.currentData() == CUSTOM)
         self.start.setMaximum(sheet.per_page)
-        pages = build(self.labels, self.options())
+        pages = build(self.labels, self.options(), **self._fmt)
         self.preview.show_page(pages.pages[0] if pages.pages else None,
                                pages.size)
 
@@ -201,7 +205,7 @@ class LabelsDialog(QDialog):
             if not path:
                 return None
         self._remember()
-        pages = build(self.labels, self.options())
+        pages = build(self.labels, self.options(), **self._fmt)
         write_pdf(path, pages.pages, pages.size)
         import os
         self._folder_used(os.path.dirname(path))

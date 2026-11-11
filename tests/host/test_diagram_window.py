@@ -237,3 +237,32 @@ def test_the_preview_follows_the_printing_options(qt_app, win, ready):
     assert w.canvas.options.text == "large"
     w.canvas.grab()                     # paints with every option
     w.close()
+
+
+def test_an_inch_model_gets_inches_everywhere(qt_app, win, ready):
+    """Issue #1: in a fractional-inch model the diagrams, the printed plan
+    and the labels said millimetres; they follow the model's unit now."""
+    win.viewport.scene.units = {"length": "in-frac", "precision": 3}
+    c = model(win)
+    w = opened(qt_app, c)
+    texts = [s.text for _sheet, _n, shapes, _y in w.canvas.blocks
+             for s in shapes if s.text]
+    sizes = [t for t in texts if "×" in t]
+    assert sizes and all('"' in t for t in sizes), sizes
+    assert all('"' in w.board_list.item(i).text()
+               for i in range(w.board_list.count()))
+    words = [s.text for page in w._pages() for s in page.shapes if s.text]
+    assert not [t for t in words if t.endswith(" mm") or " mm " in t]
+    assert any('3/4"' in t or '19/32"' in t or '"' in t for t in words)
+    units = c._unit_formats()
+    labels = plugin("export.labels")
+    one = labels.Label(letter="A", name="Door", length=0.6096, width=0.3048,
+                       material="MDF", thickness=0.01905,
+                       cut=None, info="", index=1, count=1,
+                       sheet=None)
+    shapes = labels.label_shapes(one, 0, 0, 64, 34, units["fmt"],
+                                 units["fmt_full"])
+    text = " ".join(s.text for s in shapes if s.text)
+    assert '24"' in text and '12"' in text and '3/4"' in text, text
+    assert " mm" not in text
+    w.close()

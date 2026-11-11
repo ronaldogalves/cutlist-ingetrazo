@@ -96,4 +96,4 @@ def test_the_band_list_beside_the_export_and_on_the_plan():
                                                                0.4)})],
                  model="Job", date="d", bands=band_totals(cl.lines(), lib))
     words = [s.text for s in pages[0].shapes if s.kind == "text"]
-    assert "Fita" in words and "1.4" in words and "1 × 50 m" in words
+    assert "Fita" in words and "1.4 m" in words and "1 × 50.0 m" in words

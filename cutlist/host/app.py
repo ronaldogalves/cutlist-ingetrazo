@@ -532,7 +532,14 @@ class Controller:
             names=names, folder_used=self.folder_used,
             selected=self.selected_uids,
             open_labels=self.open_labels,
-            suggested_folder=self.export_folder())
+            suggested_folder=self.export_folder(),
+            **self._unit_formats())
+
+    def _unit_formats(self) -> dict:
+        """Sizes as the cut list writes them: the model's unit, or the one
+        set in Settings (issue #1: inch models got millimetres)."""
+        cell, full, _unit = length_formats(self.store.settings())
+        return {"fmt": cell, "fmt_full": full, "fmt_run": fmt_run_length}
 
     def selected_uids(self) -> set:
         """The parts selected in the model: the boards inside a selected
@@ -675,6 +682,7 @@ class Controller:
         def run():
             labels = self.make_labels(entries) if entries is not None \
                 else self.cut_list_labels()
+            units = self._unit_formats()
             path = self.model_path()
             from ..export.rows import safe_stem
             LabelsDialog(labels, title=title or tr("From the cut list"),
@@ -684,6 +692,7 @@ class Controller:
                          stem=safe_stem(f"{path.stem if path else 'cut list'}"
                                         f" {tr('labels')}"),
                          folder_used=self.folder_used,
+                         fmt=units["fmt"], fmt_full=units["fmt_full"],
                          parent=self.app.window).exec()
             return True
         self._guard(run)
