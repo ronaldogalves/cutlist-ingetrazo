@@ -14,7 +14,7 @@ sizes, leftovers faded with theirs](docs/images/cutting-diagram.png)
 
 ## Status
 
-**0.2.1 — the cut list, supplier exports, cutting diagrams, edge bands
+**0.2.2 — the cut list, supplier exports, cutting diagrams, edge bands
 and labels.** What
 is in it (see [CHANGELOG.md](CHANGELOG.md)):
 
@@ -80,7 +80,7 @@ diagrams: [English](docs/user-guide.md) ·
 
 ## Installing
 
-1. Download `cutlist-0.2.1.zip` from the
+1. Download `cutlist-0.2.2.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page.
 2. In IngeTrazo, **Extensions ▸ Open plugins folder**

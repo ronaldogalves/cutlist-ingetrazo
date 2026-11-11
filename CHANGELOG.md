@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 — 2026-11-11
 
 - **Inch models get inches** on the cutting diagrams, the printed plan and
   the labels: they used to say millimetres whatever the model's unit
