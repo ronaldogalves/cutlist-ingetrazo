@@ -60,7 +60,7 @@ cutlist/
 without IngeTrazo**. That keeps tests fast and limits the blast radius when
 IngeTrazo's API changes to `host/`.
 
-## IngeTrazo facts we rely on (verified at IngeTrazo 0.6.0, tag v0.6.0, commit e61132a — 2026-11-03)
+## IngeTrazo facts we rely on (verified at IngeTrazo 0.6.1, tag v0.6.1, commit ffc7187 — 2026-11-11)
 
 - Plugin entry: a package (`cutlist/__init__.py`) in the user plugins
   folder — `%APPDATA%\ingetrazo\plugins\` on Windows,
@@ -113,6 +113,10 @@ IngeTrazo's API changes to `host/`.
   0.5 mm), `cut_list` (merge by size to 1 mm and material),
   `cut_list_text`. The Parts tray (`views/tray.py`) has "Copy cut list".
   Deciding what counts as a part across a whole model is ours (D-006).
+- Paint of default faces: since 0.6.1 IngeTrazo draws an unpainted
+  part in its **nearest painted container's** paint at any depth
+  (`core.group.iter_painted_placements`) — the rule `host/extract.py`
+  already reads by.
 - Iterating instances: `core.group.iter_placements(group)` yields
   `(group, world_matrix_or_None)` depth first; component instances share a
   prototype mesh (`group.xform` is set on instances).
@@ -152,7 +156,7 @@ OneDrive.
 
 ```powershell
 # IngeTrazo source at the tested tag (update: delete the folder, re-clone)
-git clone --depth 1 --branch v0.6.0 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
 # Environment outside OneDrive (3.12 is what IngeTrazo bundles; 3.13 is fine for tests)
 py -m venv $HOME\.venvs\cutlist
 & $HOME\.venvs\cutlist\Scripts\python.exe -m pip install -r ingetrazo\requirements.txt ruff
@@ -172,7 +176,7 @@ redirected (verified).
 ### Linux
 
 ```bash
-git clone --depth 1 --branch v0.6.0 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
 python3 -m venv ~/.venvs/cutlist && . ~/.venvs/cutlist/bin/activate
 pip install -r ingetrazo/requirements.txt ruff
 ln -sfn "$PWD/cutlist" ~/.local/share/ingetrazo/plugins/cutlist
