@@ -214,8 +214,11 @@ el enlace al pie del panel) muestra cómo ayudar: PIX en Brasil (clave
 
 ## 13. Bueno saber
 
-- Las medidas en las ventanas se escriben en milímetros; la lista sigue
-  las unidades del modelo, salvo lo definido en **Ajustes…**.
+- La lista, los planos y las etiquetas siguen las unidades del modelo,
+  salvo lo definido en **Ajustes…**. Las medidas en las ventanas se
+  escriben en milímetros, o en pulgadas en un modelo en pulgadas (`3/4`,
+  `1 1/2`, `23 9/16"`, `8'`); una unidad escrita a mano siempre vale
+  (`18mm`, `3/4"`).
 - La madera maciza se lista pero aún no se distribuye; los planos son
   para sierra, no para nesting de CNC.
 - Los archivos `.skp` llegan a IngeTrazo sin su jerarquía de grupos, y

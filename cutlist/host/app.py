@@ -20,6 +20,7 @@ from ..i18n import tr
 from ..model.grouping import build
 from ..model.parts import RawPart, read_part
 from ..model.settings import Settings
+from ..model.text import set_unit_source
 from .extract import extract
 from .store import Store
 
@@ -49,6 +50,8 @@ def install(app) -> None:
     app.add_context_menu(controller.viewport_menu)
     # Keep the controller alive as long as the panel.
     panel._controller = controller
+    # Sizes typed in dialogs: inches in an imperial model (issue #1).
+    set_unit_source(lambda: input_unit(controller.store.settings()))
 
     menu = app.add_menu(tr(PANEL_TITLE))
     if menu is not None:
@@ -78,6 +81,13 @@ def fmt_sheet_area(square_metres: float) -> str:
     if model_unit() in _IMPERIAL:
         return f"{square_metres / 0.09290304:.2f} ft²"
     return f"{square_metres:.2f} m²"
+
+
+def input_unit(settings: Settings) -> str:
+    """``"in"`` when the cut list shows an imperial unit (Settings, or
+    else the model's), else ``"mm"``: the unit sizes are typed in."""
+    from core.units import model_unit
+    return "in" if (settings.unit or model_unit()) in _IMPERIAL else "mm"
 
 
 def fmt_run_length(metres: float) -> str:

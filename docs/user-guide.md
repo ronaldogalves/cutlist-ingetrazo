@@ -197,8 +197,10 @@ or GitHub Sponsors. Nothing in the extension changes either way.
 
 ## 13. Good to know
 
-- Lengths in the dialogs are typed in millimetres; the list follows the
-  model's units unless set in **Settings…**.
+- The list, the diagrams and the labels follow the model's units unless
+  set in **Settings…**. Lengths in the windows are typed in millimetres,
+  or in inches in an imperial model (`3/4`, `1 1/2`, `23 9/16"`, `8'`);
+  a unit typed by hand always wins (`18mm`, `3/4"`).
 - Solid wood is listed but not laid out yet; layouts are for a saw, not
   CNC nesting.
 - `.skp` files arrive in IngeTrazo without their group hierarchy, and

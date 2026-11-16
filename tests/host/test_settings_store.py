@@ -346,3 +346,33 @@ def test_a_band_without_a_width_says_it_is_not_checked(qt_app, win,
     panel.bands.setCurrentItem(rows["Fita 22"])
     base = next(g for g in scene.groups if g.name == "Base")
     assert panel._controller.highlight == [base.uid]
+
+
+def test_an_inch_model_types_inches(qt_app, win, user_dir):
+    """Issue #1, the follow-up: in an imperial model the boxes where sizes
+    are typed take inches (3/4, 1 1/2…) and say so."""
+    win.viewport.scene.units = {"length": "in-frac", "precision": 3}
+    text = plugin("model.text")
+    assert text.input_unit() == "in"
+    dialogs = plugin("ui.dialogs")
+    materials = plugin("model.materials")
+    dlg = dialogs.MaterialsDialog({"Band"}, materials.Library(),
+                                  focus="Band")
+    dlg.role.setCurrentIndex(dlg.role.findData(materials.Role.EDGE_BAND))
+    dlg.band_width.setText("7/8")
+    dlg.band_width.textEdited.emit("7/8")
+    (spec,) = dlg.result_specs()
+    assert spec.width == pytest.approx(0.022225)
+    from PySide6.QtWidgets import QLabel
+    assert any(w.text() == "Width (in)" for w in dlg.findChildren(QLabel))
+    dlg.deleteLater()
+
+    settings = plugin("model.settings")
+    s = dialogs.SettingsDialog(settings.Settings())
+    assert s.kerf.suffix() == " in"
+    s.kerf.setValue(0.125)
+    assert s.result().kerf == pytest.approx(0.003175)
+    s.deleteLater()
+
+    win.viewport.scene.units = {"length": "mm", "precision": 0}
+    assert text.input_unit() == "mm"

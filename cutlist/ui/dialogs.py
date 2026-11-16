@@ -4,7 +4,8 @@
 
 Each one edits plain model objects (:class:`MaterialSpec`,
 :class:`PartOverride`, :class:`Settings`) and hands them back; the host
-decides where they are stored. Lengths are typed in millimetres.
+decides where they are stored. Lengths are typed in millimetres, or in
+inches in an imperial model (:func:`..model.text.input_unit`).
 """
 from __future__ import annotations
 
@@ -49,13 +50,16 @@ from ..model.materials import (
 from ..model.parts import PartOverride
 from ..model.settings import UNITS, Settings
 from ..model.text import (
+    INCH,
     MM,
     fmt_length,
     fmt_lengths,
     fmt_number,
+    input_unit,
     parse_length,
     parse_lengths,
     parse_number,
+    with_unit,
 )
 
 
@@ -77,6 +81,27 @@ def unit_label(unit: str | None) -> str:
             "in-frac": tr("Inches (fractions)"),
             "ft-in": tr("Feet and inches (decimal)"),
             "ft-in-frac": tr("Feet and inches (fractions)")}[unit]
+
+
+def _length_spin(value: float, top_mm: float, decimals_mm: int,
+                 step_mm: float = 1.0) -> tuple[QDoubleSpinBox, float]:
+    """A spin box for a length in the dialogs' unit, and the metres per
+    unit to read it back: millimetres, or inches with finer steps."""
+    spin = QDoubleSpinBox()
+    if input_unit() == "in":
+        unit = INCH
+        spin.setRange(0.0, top_mm * MM / INCH)
+        spin.setDecimals(4)
+        spin.setSingleStep(1 / 32)
+        spin.setSuffix(" in")
+    else:
+        unit = MM
+        spin.setRange(0.0, top_mm)
+        spin.setDecimals(decimals_mm)
+        spin.setSingleStep(step_mm)
+        spin.setSuffix(" mm")
+    spin.setValue(value / unit)
+    return spin, unit
 
 
 def _or(value, default):
@@ -111,8 +136,8 @@ class SheetsEditor(QWidget):
         self.table = QTableWidget(0, 3)
         self.table.setObjectName("cutlist_sheets")
         self.table.setHorizontalHeaderLabels([
-            tr("Length (mm)"), tr("Width (mm)"),
-            tr("Only for thicknesses (mm)")])
+            with_unit(tr("Length")), with_unit(tr("Width")),
+            with_unit(tr("Only for thicknesses"))])
         self.table.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.Stretch)
         self.table.verticalHeader().hide()
@@ -294,15 +319,15 @@ class MaterialsDialog(QDialog):
             "role": (tr("What it is"), self.role),
             "kind": (tr("Kind"), self.kind),
             "grain": ("", self.grain),
-            "thicknesses": (tr("Thicknesses (mm)"), self.thicknesses),
+            "thicknesses": (with_unit(tr("Thicknesses")), self.thicknesses),
             "stocks": (tr("Sheets it comes in"), self.stocks),
-            "kerf": (tr("Saw kerf (mm)"), self.kerf),
-            "trim": (tr("Trim per sheet edge (mm)"), self.trim),
-            "extra": (tr("Cut oversize (mm)"), self.extra),
-            "thickness": (tr("Its thickness (mm)"), self.thickness),
-            "oversize": (tr("Oversize (mm)"), self.oversize),
-            "band_width": (tr("Width (mm)"), self.band_width),
-            "margin": (tr("Room to finish it (mm)"), self.margin),
+            "kerf": (with_unit(tr("Saw kerf")), self.kerf),
+            "trim": (with_unit(tr("Trim per sheet edge")), self.trim),
+            "extra": (with_unit(tr("Cut oversize")), self.extra),
+            "thickness": (with_unit(tr("Its thickness")), self.thickness),
+            "oversize": (with_unit(tr("Oversize")), self.oversize),
+            "band_width": (with_unit(tr("Width")), self.band_width),
+            "margin": (with_unit(tr("Room to finish it")), self.margin),
             "waste": (tr("Waste (%)"), self.waste),
             "roll": (tr("Roll length (m)"), self.roll),
             "applied_over": (tr("Goes on board"), self.applied_over),
@@ -558,7 +583,7 @@ class SheetSizesDialog(QDialog):
         self.table = QTableWidget(len(names), 3)
         self.table.setObjectName("cutlist_sheet_sizes")
         self.table.setHorizontalHeaderLabels(
-            [tr("Board"), tr("Length (mm)"), tr("Width (mm)")])
+            [tr("Board"), with_unit(tr("Length")), with_unit(tr("Width"))])
         self.table.verticalHeader().hide()
         self.table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch)
@@ -668,9 +693,9 @@ class PartDialog(QDialog):
             extra_box.addWidget(QLabel(label))
             extra_box.addWidget(edit)
         extra.setToolTip(tr("Cut bigger than finished, to be brought to "
-                            "size later (mm, total). Empty: the board's "
+                            "size later (total). Empty: the board's "
                             "oversize. The model keeps the finished size."))
-        form.addRow(tr("Cut oversize (mm)"), extra)
+        form.addRow(with_unit(tr("Cut oversize")), extra)
         self.note = QLineEdit(override.note)
         form.addRow(tr("Note"), self.note)
         self.field_edits: dict[str, QLineEdit] = {}
@@ -764,12 +789,8 @@ class SettingsDialog(QDialog):
         self.precision.setValue(-1 if settings.precision is None
                                 else settings.precision)
         rform.addRow(tr("Decimals"), self.precision)
-        self.tolerance = QDoubleSpinBox()
-        self.tolerance.setRange(0.0, 10.0)
-        self.tolerance.setDecimals(2)
-        self.tolerance.setSingleStep(0.5)
-        self.tolerance.setSuffix(" mm")
-        self.tolerance.setValue(settings.tolerance / MM)
+        self.tolerance, self._unit = _length_spin(settings.tolerance, 10.0,
+                                                  2, 0.5)
         self.tolerance.setToolTip(tr(
             "Every size is rounded to this step before parts are compared "
             "and shown: at 1 mm, a 17.98 mm board reads 18 mm and merges "
@@ -789,17 +810,9 @@ class SettingsDialog(QDialog):
 
         sheets = QGroupBox(tr("Sheets (defaults for boards)"))
         bform = QFormLayout(sheets)
-        self.kerf = QDoubleSpinBox()
-        self.kerf.setRange(0.0, 20.0)
-        self.kerf.setDecimals(1)
-        self.kerf.setSuffix(" mm")
-        self.kerf.setValue(settings.kerf / MM)
+        self.kerf, _u = _length_spin(settings.kerf, 20.0, 1)
         bform.addRow(tr("Saw kerf"), self.kerf)
-        self.trim = QDoubleSpinBox()
-        self.trim.setRange(0.0, 100.0)
-        self.trim.setDecimals(1)
-        self.trim.setSuffix(" mm")
-        self.trim.setValue(settings.trim / MM)
+        self.trim, _u = _length_spin(settings.trim, 100.0, 1)
         bform.addRow(tr("Trim per sheet edge"), self.trim)
         layout.addWidget(sheets)
 
@@ -887,7 +900,7 @@ class SettingsDialog(QDialog):
             self._settings,
             unit=self.unit.currentData(),
             precision=None if precision < 0 else precision,
-            tolerance=self.tolerance.value() * MM,
+            tolerance=self.tolerance.value() * self._unit,
             merge_by_size=self.merge.isChecked(),
             units_in_cells=self.units_in_cells.isChecked(),
             use_selection=self.use_selection.isChecked(),
@@ -895,5 +908,5 @@ class SettingsDialog(QDialog):
             excluded_tags=excluded,
             scope_asked=self._settings.scope_asked
             or self.dont_ask.isChecked(),
-            kerf=self.kerf.value() * MM,
-            trim=self.trim.value() * MM)
+            kerf=self.kerf.value() * self._unit,
+            trim=self.trim.value() * self._unit)

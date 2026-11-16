@@ -73,7 +73,12 @@ from ..export.plan import (
     sheet_shapes,
 )
 from ..i18n import tr
-from ..model.text import fmt_length, parse_length, parse_number
+from ..model.text import (
+    fmt_length,
+    parse_length,
+    parse_number,
+    with_unit,
+)
 from ..packing.base import Stock
 from ..packing.guillotine import GuillotinePacker
 from .plan_painter import draw_shapes, shape_at, write_pdf
@@ -508,8 +513,8 @@ class DiagramWindow(QDialog):
             combo.setCurrentIndex(max(0, combo.findData(value)))
         form.addRow(tr("First cuts"), self.first_cut)
         form.addRow(tr("Stages"), self.stages)
-        form.addRow(tr("Kerf (mm)"), self.kerf)
-        form.addRow(tr("Trim (mm)"), self.trim)
+        form.addRow(with_unit(tr("Kerf")), self.kerf)
+        form.addRow(with_unit(tr("Trim")), self.trim)
         form.addRow(tr("Trim on"), self.trim_edges)
         apply = QPushButton(tr("Redo the layout"))
         apply.setObjectName("cutlist_diagram_apply")
@@ -522,7 +527,7 @@ class DiagramWindow(QDialog):
         self.leftover_table = QTableWidget(0, 3)
         self.leftover_table.setObjectName("cutlist_diagram_leftovers")
         self.leftover_table.setHorizontalHeaderLabels(
-            [tr("Length (mm)"), tr("Width (mm)"), tr("Qty")])
+            [with_unit(tr("Length")), with_unit(tr("Width")), tr("Qty")])
         self.leftover_table.verticalHeader().hide()
         self.leftover_table.setToolTip(tr("Pieces you already have: used "
                                           "before full sheets, never "

@@ -210,8 +210,11 @@ GitHub Sponsors. Nada muda na extensão de um jeito ou de outro.
 
 ## 13. Bom saber
 
-- As medidas nas janelas são digitadas em milímetros; a lista segue as
-  unidades do modelo, salvo o que for definido em **Ajustes…**.
+- A lista, os planos e as etiquetas seguem as unidades do modelo, salvo
+  o que for definido em **Ajustes…**. As medidas nas janelas são
+  digitadas em milímetros, ou em polegadas num modelo em polegadas
+  (`3/4`, `1 1/2`, `23 9/16"`, `8'`); uma unidade digitada à mão sempre
+  vale (`18mm`, `3/4"`).
 - Madeira maciça é listada mas ainda não distribuída; os planos são para
   serra, não para nesting de CNC.
 - Arquivos `.skp` chegam ao IngeTrazo sem a hierarquia de grupos, e

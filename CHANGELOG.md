@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Sizes are typed in inches in an imperial model** (the follow-up to
+  #1): kerf, trim, oversize, thicknesses, band width, sheet and leftover
+  sizes, the Settings spinners. They take what a woodworker writes —
+  `3/4`, `1 1/2`, `1-1/2`, `23 9/16"`, `8'`, `4' 1/2"` — and show
+  fractions back. Each box says its unit, "(mm)" or "(in)". A unit typed
+  by hand always wins, in any model: `18mm`, `3/4"`.
+- Tested with IngeTrazo 0.6.2.1.
+
 ## 0.2.2 — 2026-11-11
 
 - **Inch models get inches** on the cutting diagrams, the printed plan and

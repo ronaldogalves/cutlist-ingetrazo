@@ -254,6 +254,15 @@ def test_an_inch_model_gets_inches_everywhere(qt_app, win, ready):
     words = [s.text for page in w._pages() for s in page.shapes if s.text]
     assert not [t for t in words if t.endswith(" mm") or " mm " in t]
     assert any('3/4"' in t or '19/32"' in t or '"' in t for t in words)
+    # The saw's boxes take inches too: a 3 mm kerf reads 0.1181 in, and
+    # 1/8 typed is 3.175 mm.
+    assert w.kerf.text() == "0.1181"
+    from PySide6.QtWidgets import QLabel
+    assert any(q.text() == "Kerf (in)" for q in w.findChildren(QLabel))
+    w.kerf.setText("1/8")
+    w._apply_saw()
+    w.wait()
+    assert c.store.settings().kerf == pytest.approx(0.003175)
     units = c._unit_formats()
     labels = plugin("export.labels")
     one = labels.Label(letter="A", name="Door", length=0.6096, width=0.3048,
