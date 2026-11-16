@@ -60,7 +60,7 @@ cutlist/
 without IngeTrazo**. That keeps tests fast and limits the blast radius when
 IngeTrazo's API changes to `host/`.
 
-## IngeTrazo facts we rely on (verified at IngeTrazo 0.6.1, tag v0.6.1, commit ffc7187 — 2026-11-11)
+## IngeTrazo facts we rely on (verified at IngeTrazo 0.6.2.1, tag v0.6.2.1, commit 8dbed76 — 2026-11-16)
 
 - Plugin entry: a package (`cutlist/__init__.py`) in the user plugins
   folder — `%APPDATA%\ingetrazo\plugins\` on Windows,
@@ -98,7 +98,9 @@ IngeTrazo's API changes to `host/`.
   Since 0.5.9 several right-click entries from one extension are gathered
   in a submenu named after it, and `add_panel(..., start_hidden=True)`
   exists; 0.6.0 adds `on_document_closed(fn)` and
-  `restore_toolbar_layout()`. Also available, not yet planned: `add_outliner_kind` (our type
+  `restore_toolbar_layout()`; 0.6.2 adds `add_panel(..., icon=)` (tray
+  tabs show only an icon now: without one, the title's initial) and
+  `add_sheet_annotations(fn)`. Also available, not yet planned: `add_outliner_kind` (our type
   in the Browser), `add_pickable`, `add_file_opener`,
   `enter_workspace` (shows our own document in the viewport instead of
   the model — a possible home for cutting diagrams).
@@ -156,7 +158,7 @@ OneDrive.
 
 ```powershell
 # IngeTrazo source at the tested tag (update: delete the folder, re-clone)
-git clone --depth 1 --branch v0.6.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.2.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
 # Environment outside OneDrive (3.12 is what IngeTrazo bundles; 3.13 is fine for tests)
 py -m venv $HOME\.venvs\cutlist
 & $HOME\.venvs\cutlist\Scripts\python.exe -m pip install -r ingetrazo\requirements.txt ruff
@@ -176,7 +178,7 @@ redirected (verified).
 ### Linux
 
 ```bash
-git clone --depth 1 --branch v0.6.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
+git clone --depth 1 --branch v0.6.2.1 https://github.com/ingelibre/ingetrazo.git ingetrazo
 python3 -m venv ~/.venvs/cutlist && . ~/.venvs/cutlist/bin/activate
 pip install -r ingetrazo/requirements.txt ruff
 ln -sfn "$PWD/cutlist" ~/.local/share/ingetrazo/plugins/cutlist
