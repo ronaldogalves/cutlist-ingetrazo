@@ -53,7 +53,7 @@ cutlist/
                    the Windows 0.6.0 installer does); PDF via Qt's
                    QPdfWriter in ui/.
   ui/              Qt widgets: tray panel, diagram window, dialogs.
-  i18n/            en.json (empty identity), pt-BR.json, es.json
+  i18n/            pt-BR.json, es.json, de.json (English uses source text)
 ```
 
 `model/` and `packing/` must stay importable and testable **without Qt and
@@ -196,7 +196,7 @@ are useful real-world inputs.
 - Follow IngeTrazo's code style: `from __future__ import annotations`,
   docstrings that explain *why* in plain words, small modules.
 - All user-facing strings go through our `tr()`; English is the source.
-  Add pt-BR and es entries in the same change.
+  Add pt-BR, es and de entries in the same change.
 - Every model change the user makes is **one undo step**.
 - A failure in our extension must never break IngeTrazo: catch at UI
   boundaries, log to the `cutlist` logger, show a status message.

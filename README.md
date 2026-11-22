@@ -6,8 +6,8 @@ list** (every part with its size, material and quantity) and **cutting
 diagrams** (how the parts fit on the stock sheets you will buy, with kerf
 and trim accounted for), with CSV, SVG and PDF exports.
 
-Free software under the GPL-3.0-or-later. English, Português (Brasil) and
-Español from the start.
+Free software under the GPL-3.0-or-later. Available in English,
+Português (Brasil), Español and Deutsch, following IngeTrazo's language.
 
 ![A cutting diagram: one 2750 × 1840 sheet, parts lettered with their
 sizes, leftovers faded with theirs](docs/images/cutting-diagram.png)
@@ -45,7 +45,7 @@ is in it (see [CHANGELOG.md](CHANGELOG.md)):
   a band too narrow for its part is flagged;
 - **labels** for every piece on Pimaco or Avery sheets, with the part's
   letter, size, banded edges, grain and the sheet it comes from;
-- English, Português (Brasil) and Español.
+- English, Português (Brasil), Español and Deutsch.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
 

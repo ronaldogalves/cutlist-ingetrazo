@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- German interface, including cutting plans, labels and export dialogs,
+  following IngeTrazo's language setting.
+
 ## 0.2.2 — 2026-11-11
 
 - **Inch models get inches** on the cutting diagrams, the printed plan and

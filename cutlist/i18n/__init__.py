@@ -21,7 +21,7 @@ log = logging.getLogger("cutlist")
 _DIR = Path(__file__).parent
 
 #: Languages we ship a catalog for (English needs none).
-LANGUAGES = ("pt-BR", "es")
+LANGUAGES = ("pt-BR", "es", "de")
 
 _language_source: Callable[[], str] = lambda: "en"  # noqa: E731
 _catalogs: dict[str, dict[str, str]] = {}
