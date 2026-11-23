@@ -129,3 +129,14 @@ def test_a_new_document_has_no_parts(win):
     panel = panel_of(win)
     panel.refresh_button.click()
     assert "0 parts" in panel.scope_label.text()
+
+
+def test_the_panel_lets_the_side_tray_narrow(win):
+    """Issue #3: eight buttons in one row kept the whole side tray about
+    1000 px wide, for every tab in it. They wrap now."""
+    panel = panel_of(win)
+    assert panel.minimumSizeHint().width() < 320
+    bar = panel.button_bar
+    narrow = bar.layout().heightForWidth(260)
+    wide = bar.layout().heightForWidth(1400)
+    assert narrow > wide                            # more rows when narrow

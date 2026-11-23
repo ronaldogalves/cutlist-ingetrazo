@@ -2,13 +2,17 @@
 
 ## Unreleased
 
+- **The side tray can narrow again** (#3): the Cut List panel's eight
+  buttons sat in one row and kept the whole side tray, every tab of it,
+  about 1000 px wide. They wrap onto more rows now; the panel needs
+  about 220 px.
 - **Sizes are typed in inches in an imperial model** (the follow-up to
   #1): kerf, trim, oversize, thicknesses, band width, sheet and leftover
   sizes, the Settings spinners. They take what a woodworker writes —
   `3/4`, `1 1/2`, `1-1/2`, `23 9/16"`, `8'`, `4' 1/2"` — and show
   fractions back. Each box says its unit, "(mm)" or "(in)". A unit typed
   by hand always wins, in any model: `18mm`, `3/4"`.
-- Tested with IngeTrazo 0.6.2.1.
+- Tested with IngeTrazo 0.6.3.2.
 
 ## 0.2.2 — 2026-11-11
 

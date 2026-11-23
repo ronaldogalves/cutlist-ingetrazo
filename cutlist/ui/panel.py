@@ -32,6 +32,7 @@ from ..model.grouping import CutList, CutListLine
 from ..model.materials import Library
 from ..model.parts import EDGES, Excluded, Flag, Part
 from ..packing.jobs import letters
+from .flow import FlowLayout
 
 UIDS = Qt.ItemDataRole.UserRole
 #: On rows that stand for a material (sections, "no role yet").
@@ -140,7 +141,11 @@ class CutListPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
 
-        bar = QHBoxLayout()
+        # The buttons wrap onto more rows as the tray narrows: in one row
+        # they kept the whole side tray about 1000 px wide (issue #3).
+        self.button_bar = QWidget()
+        self.button_bar.setObjectName("cutlist_buttons")
+        bar = FlowLayout(self.button_bar)
         self.refresh_button = QPushButton(tr("Refresh"))
         self.refresh_button.setObjectName("cutlist_refresh")
         self.refresh_button.setToolTip(tr("Read the model again."))
@@ -166,7 +171,6 @@ class CutListPanel(QWidget):
             "different lines."))
         self.merge_button.toggled.connect(self.merge_changed)
         bar.addWidget(self.merge_button)
-        bar.addStretch(1)
         self.materials_button = QPushButton(tr("Materials…"))
         self.materials_button.setObjectName("cutlist_materials")
         self.materials_button.setToolTip(tr("Say what each material is: "
@@ -198,7 +202,7 @@ class CutListPanel(QWidget):
                                          "label sheets for your printer."))
         self.labels_button.clicked.connect(self.labels_requested)
         bar.addWidget(self.labels_button)
-        layout.addLayout(bar)
+        layout.addWidget(self.button_bar)
 
         self.scope_label = QLabel()
         self.scope_label.setObjectName("cutlist_scope")
@@ -290,6 +294,7 @@ class CutListPanel(QWidget):
         self.placeholder = QLabel(tr("Press Refresh to read the model."))
         self.placeholder.setObjectName("cutlist_placeholder")
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.placeholder.setWordWrap(True)
         layout.addWidget(self.placeholder)
 
     # ---- column widths: the user's, remembered ---------------------------
