@@ -215,6 +215,8 @@ catalog updated (ingelibre/ingetrazo-extensions#224, auto-merged).
 *0.2.1 published 2026-11-03*: the Support window (PIX, GitHub Sponsors).
 *0.2.2 published 2026-11-11*: inch models get inches on diagrams, plan
 and labels (issue #1, the first user report); tested with IngeTrazo 0.6.1.
+*0.2.3 published 2026-11-23*: the side tray can narrow again (issue #3);
+sizes typed in inches in an imperial model; tested with IngeTrazo 0.6.3.2.
 
 - [x] Donation platform chosen (BRIEF §10.5): PIX and GitHub Sponsors
       (D-005, 2026-11-03); `.github/FUNDING.yml`.

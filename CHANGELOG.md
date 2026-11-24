@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.3 — 2026-11-23
 
 - **The side tray can narrow again** (#3): the Cut List panel's eight
   buttons sat in one row and kept the whole side tray, every tab of it,
