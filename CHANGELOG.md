@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **The parts table follows the grain** (#4): a part whose grain is set
+  along its width in Part settings lists that side under Length, its
+  edges and oversize turned with it, marked "grain ↔". The table now
+  reads like the cutting diagrams and the grain-first supplier
+  exports, which already follow it.
+
 ## 0.2.3 — 2026-11-23
 
 - **The side tray can narrow again** (#3): the Cut List panel's eight

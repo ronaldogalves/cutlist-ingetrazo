@@ -110,6 +110,9 @@ Right-click a line (or parts in the model) ▸ **Part settings…**: grain
 along the length or the width, may rotate on the sheet, leave out of the
 cut list, flip face 1, a note, the part's own **cut oversize** and its
 custom field values. Every change is one undo step.
+With the grain along the width, the table lists that side under
+Length (and its edges with it), marked "grain ↔": the grain side always
+comes first, as on the diagrams and the grain-first supplier exports.
 
 **Custom fields** (client, room…) are defined in **Settings…**: a value
 for the model, rules by tag, or a value per part.

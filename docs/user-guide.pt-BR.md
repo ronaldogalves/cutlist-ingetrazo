@@ -116,6 +116,9 @@ da peça…**: veio no comprimento ou na largura, se pode girar na chapa,
 deixar fora da lista, inverter a face 1, uma nota, a **sobremedida de
 corte** da própria peça e os valores dos seus campos personalizados. Cada
 mudança é um passo de desfazer.
+Com o veio na largura, a tabela mostra esse lado em Comprimento (e as
+fitas junto), marcado "veio ↔": o lado do veio vem sempre primeiro, como
+nas exportações para fornecedores e nos planos de corte.
 
 **Campos personalizados** (cliente, ambiente…) são definidos em
 **Ajustes…**: um valor para o modelo, regras por etiqueta ou um valor por

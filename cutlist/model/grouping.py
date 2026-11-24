@@ -49,6 +49,15 @@ class CutListLine:
     #: Oversize: the saw cuts this much more than the finished size.
     extra_length: float = 0.0
     extra_width: float = 0.0
+    #: The part's own grain setting (``None``: its material's). Part of the
+    #: merge key, so every part on the line shares it.
+    grain: str | None = None
+
+    @property
+    def grain_across(self) -> bool:
+        """The grain was set along the width: the table shows that side
+        as the length, the way the grain-first exports do."""
+        return self.grain == "width"
 
     @property
     def cut_length(self) -> float:
@@ -134,7 +143,8 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
             line = lines[key] = CutListLine(p.core, key[2], key[3], t,
                                             p.face1, p.face2, p.edges,
                                             extra_length=p.extra_length,
-                                            extra_width=p.extra_width)
+                                            extra_width=p.extra_width,
+                                            grain=p.grain)
             section.lines.append(line)
         line.names.append(p.name)
         line.uids.append(p.uid)

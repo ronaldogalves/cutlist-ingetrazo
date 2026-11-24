@@ -579,7 +579,20 @@ class CutListPanel(QWidget):
         fl = self._fmt_len
         names = line.display_names()
         shown = ", ".join(names[:3]) + (" …" if len(names) > 3 else "")
-        banded = [edge_label(e) for e, b in zip(EDGES, line.edges, strict=True)
+        # Grain set along the width: the grain side goes under Length, as
+        # the grain-first exports and the diagrams take it — the user sees
+        # the order was taken. Its edges and oversize turn with it.
+        across = line.grain_across
+        if across:
+            length, width = line.width, line.length
+            extra_l, extra_w = line.extra_width, line.extra_length
+            l1, l2, w1, w2 = line.edges
+            edges = (w1, w2, l1, l2)
+        else:
+            length, width = line.length, line.width
+            extra_l, extra_w = line.extra_length, line.extra_width
+            edges = line.edges
+        banded = [edge_label(e) for e, b in zip(EDGES, edges, strict=True)
                   if b]
         faces = [f"F{i}: {m}" for i, m in ((1, line.face1), (2, line.face2))
                  if m]
@@ -587,19 +600,25 @@ class CutListPanel(QWidget):
         marks = ["⚠ " + ", ".join(flag_label(f) for f in loud)] if loud else []
         if Flag.UNASSIGNED in line.flags:
             marks.append("?")
-        if line.extra_length or line.extra_width:
-            marks.append(tr("cut {l} / {w}", l=_signed(fl, line.extra_length),
-                            w=_signed(fl, line.extra_width)))
+        if extra_l or extra_w:
+            marks.append(tr("cut {l} / {w}", l=_signed(fl, extra_l),
+                            w=_signed(fl, extra_w)))
+        if across:
+            marks.append(tr("grain ↔"))
         item = QTreeWidgetItem([
-            shown, str(line.qty), fl(line.length), fl(line.width),
+            shown, str(line.qty), fl(length), fl(width),
             fl(line.thickness), " ".join(banded), " · ".join(faces),
             " ".join(marks), letter])
         item.setTextAlignment(8, Qt.AlignmentFlag.AlignCenter)
         item.setToolTip(0, "\n".join(names))
+        if across:
+            tip = tr("The grain runs along this side (set in Part "
+                     "settings), so it is listed as the length.")
+            item.setToolTip(2, tip)
         if banded:
             item.setToolTip(5, "\n".join(
                 f"{edge_label(e)}: {b}"
-                for e, b in zip(EDGES, line.edges, strict=True) if b))
+                for e, b in zip(EDGES, edges, strict=True) if b))
         if line.flags:
             item.setToolTip(7, "\n".join(flag_text(f)
                                           for f in sorted(line.flags)))
@@ -626,7 +645,9 @@ class CutListPanel(QWidget):
 
     def _part_item(self, p: Part, label: str, why: str) -> QTreeWidgetItem:
         fl = self._fmt_len
-        item = QTreeWidgetItem([p.name, "1", fl(p.length), fl(p.width),
+        length, width = (p.width, p.length) if p.grain == "width" else \
+            (p.length, p.width)
+        item = QTreeWidgetItem([p.name, "1", fl(length), fl(width),
                                 fl(p.thickness), "", "", label])
         item.setToolTip(7, why)
         item.setData(0, UIDS, [p.uid])

@@ -118,6 +118,9 @@ pieza…**: veta a lo largo o a lo ancho, si puede girar en el tablero,
 dejarla fuera de la lista, invertir la cara 1, una nota, la **sobremedida
 de corte** propia y los valores de sus campos personalizados. Cada cambio
 es un paso de deshacer.
+Con la veta a lo ancho, la tabla muestra ese lado en Largo (y sus
+cantos con él), marcado "veta ↔": el lado de la veta va siempre primero,
+como en las exportaciones a proveedores y los planos de corte.
 
 Los **campos personalizados** (cliente, ambiente…) se definen en
 **Ajustes…**: un valor para el modelo, reglas por etiqueta o un valor por
