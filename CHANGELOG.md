@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.4 — 2026-11-25
 
 - **The parts table follows the grain** (#4): a part whose grain is set
   along its width in Part settings lists that side under Length, its
