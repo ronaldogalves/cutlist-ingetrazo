@@ -122,6 +122,15 @@ IngeTrazo's API changes to `host/`.
   part in its **nearest painted container's** paint at any depth
   (`core.group.iter_painted_placements`) — the rule `host/extract.py`
   already reads by.
+- Texture direction (the wood's grain on screen): a planar projection
+  per face, the .skp way (`core.texture.face_uv_axes`). A face painted
+  itself may carry its own map (`attrs["texture"]["uvw"]`, set by
+  right-click ▸ Texture ▸ Position) and keeps its look through any
+  transform or Change Axes. A face showing its container's paint has
+  none: a component projects it from its **local** coordinates, so
+  right-click ▸ **Change Axes** turns the wood (confirmed by hand,
+  2026-11-25); a classic group is in world coordinates, so its wood
+  follows the world.
 - Iterating instances: `core.group.iter_placements(group)` yields
   `(group, world_matrix_or_None)` depth first; component instances share a
   prototype mesh (`group.xform` is set on instances).
