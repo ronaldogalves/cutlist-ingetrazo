@@ -57,6 +57,10 @@ class Measured:
     oblique_area: float = 0.0
     #: Separate pieces of geometry (several boards merged into one group?).
     solids: int = 1
+    #: Where the part's box is along ``axes``: its lowest and highest
+    #: coordinate on each (metres), so two parts can be compared in place.
+    low: np.ndarray | None = field(default=None, repr=False)
+    high: np.ndarray | None = field(default=None, repr=False)
 
     @property
     def size(self) -> tuple[float, float, float]:
@@ -71,6 +75,25 @@ class Measured:
         full = self.length * self.width
         return all(sum(self.sides.get(s, {}).values()) >= _RECT_SHARE * full
                    for s in ("T+", "T-"))
+
+    @property
+    def is_flat_rectangle(self) -> bool:
+        """A plain sheet of laminate (D-019): a 2D surface has one face, so
+        one whole main face is enough."""
+        if self.oblique_area > 1e-9 or self.length <= 0 or self.width <= 0:
+            return False
+        full = self.length * self.width
+        return max(sum(self.sides.get(s, {}).values())
+                   for s in ("T+", "T-")) >= _RECT_SHARE * full
+
+    def corners(self) -> np.ndarray:
+        """The eight corners of the part's box, world positions."""
+        if self.low is None or self.high is None:
+            return np.empty((0, 3))
+        pick = np.array([[i, j, k] for i in (0, 1) for j in (0, 1)
+                         for k in (0, 1)])
+        local = np.where(pick, self.high, self.low)
+        return local @ self.axes
 
 
 def _newell(loop: np.ndarray) -> np.ndarray:
@@ -143,6 +166,7 @@ def measure(faces: list[FaceIn]) -> Measured:
     order = np.argsort(-extent, kind="stable")          # L, W, T
     axes = np.array([_canonical(frame[i]) for i in order])
     length, width, thickness = (float(extent[i]) for i in order)
+    own = points @ axes.T
 
     sides: dict = {}
     oblique = 0.0
@@ -171,4 +195,5 @@ def measure(faces: list[FaceIn]) -> Measured:
                         np.concatenate([np.asarray(f.loop, dtype=np.float64)]
                                        + [np.asarray(h, dtype=np.float64)
                                           for h in f.holes if len(h)])
-                        for f in faces if len(f.loop) >= 3]))
+                        for f in faces if len(f.loop) >= 3]),
+                    own.min(axis=0), own.max(axis=0))

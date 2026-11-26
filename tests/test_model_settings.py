@@ -67,3 +67,54 @@ def test_material_spec_coerces_plain_strings():
     # Regression: Qt combo boxes return "ignore", not Role.IGNORE.
     spec = MaterialSpec("Vidro", role="ignore", kind="solid")
     assert spec.role is Role.IGNORE
+
+
+@pytest.fixture
+def inches():
+    from cutlist.model import text
+    text.set_unit_source(lambda: "in")
+    yield
+    text.set_unit_source(None)
+
+
+def test_lengths_typed_in_an_inch_model(inches):
+    """Issue #1: an imperial user types inches, as a woodworker writes
+    them; a unit typed by hand still wins."""
+    from cutlist.model.text import fmt_length, parse_length
+    inch = 0.0254
+    for typed, want in (("3/4", 0.75), ("1 1/2", 1.5), ("1-1/2", 1.5),
+                        ('23 9/16"', 23.5625), ("0.118", 0.118),
+                        ("96", 96.0), ("3,5", 3.5), ("8'", 96.0),
+                        ("4' 1/2\"", 48.5), ("2 in", 2.0)):
+        assert parse_length(typed) == pytest.approx(want * inch), typed
+    assert parse_length("18mm") == pytest.approx(0.018)
+    assert parse_length("1/0") is None and parse_length("3/") is None
+    assert parse_lengths("3/4; 1/2") == pytest.approx((0.01905, 0.0127))
+    # Written back as typed: fractions on a 1/64 step, else decimals.
+    assert fmt_length(0.01905) == "3/4"
+    assert fmt_length(0.5984875) == "23 9/16"
+    assert fmt_length(2.4384) == "96"
+    assert fmt_length(0.003) == "0.1181"            # a 3 mm kerf
+    assert fmt_lengths((0.01905, 0.0127)) == "3/4; 1/2"
+
+
+def test_a_unit_typed_by_hand_in_a_metric_model():
+    from cutlist.model.text import input_unit, parse_length
+    assert input_unit() == "mm"
+    assert parse_length("18") == pytest.approx(0.018)
+    assert parse_length('3/4"') == pytest.approx(0.01905)
+    assert parse_length("1.8 cm") == pytest.approx(0.018)
+    assert parse_length("8'") == pytest.approx(2.4384)
+    assert parse_lengths("15; 18 / 6") == pytest.approx((0.015, 0.018, 0.006))
+
+
+def test_a_failing_unit_source_reads_as_millimetres():
+    from cutlist.model import text
+
+    def broken():
+        raise RuntimeError("host went away")
+    text.set_unit_source(broken)
+    try:
+        assert text.input_unit() == "mm"
+    finally:
+        text.set_unit_source(None)

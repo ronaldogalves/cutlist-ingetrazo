@@ -1,7 +1,7 @@
 # Cut List for IngeTrazo — user guide
 
 *Also in [Português (Brasil)](user-guide.pt-BR.md) and
-[Español](user-guide.es.md).* For version 0.2.2, IngeTrazo 0.6.1.
+[Español](user-guide.es.md).* For version 0.2.5, IngeTrazo 0.6.3.2.
 
 Cut List turns a furniture model into the list of parts to cut, sends it
 to the supplier who cuts your boards, and draws the cutting diagrams for
@@ -11,7 +11,7 @@ your own saw.
 
 ## 1. Install
 
-1. Download `cutlist-0.2.2.zip` from the
+1. Download `cutlist-0.2.5.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page — or install **Cut List** from IngeTrazo's Extension manager.
 2. By hand: in IngeTrazo, **Extensions ▸ Open plugins folder**, unzip
@@ -31,6 +31,15 @@ List**.
   woodworkers paint it: the material on the large faces is the board,
   a different material on one face is a laminate or veneer, a material on
   a narrow edge is an edge band.
+- **Laminate over several boards.** When boards are stacked and glued,
+  then laminated or banded as one, draw the laminate or the band as an
+  object of its own over the stack — a group with a single face (a 2D
+  surface) or a solid up to 2 mm thick — and paint it with the covering
+  or band material. It is listed as one piece: laminate in a section of
+  its own (laid out on its sheets when they are set up), a band in the
+  bands to buy. The boards underneath keep their size. Paint the boards'
+  faces *or* draw a piece over them, not both: both at once is flagged
+  *laminate twice*.
 - **Tags** can keep things out of the list (walls, appliances): use the
   **Tags** button in the panel.
 
@@ -110,6 +119,9 @@ Right-click a line (or parts in the model) ▸ **Part settings…**: grain
 along the length or the width, may rotate on the sheet, leave out of the
 cut list, flip face 1, a note, the part's own **cut oversize** and its
 custom field values. Every change is one undo step.
+With the grain along the width, the table lists that side under
+Length (and its edges with it), marked "grain ↔": the grain side always
+comes first, as on the diagrams and the grain-first supplier exports.
 
 **Custom fields** (client, room…) are defined in **Settings…**: a value
 for the model, rules by tag, or a value per part.
@@ -197,8 +209,10 @@ or GitHub Sponsors. Nothing in the extension changes either way.
 
 ## 13. Good to know
 
-- Lengths in the dialogs are typed in millimetres; the list follows the
-  model's units unless set in **Settings…**.
+- The list, the diagrams and the labels follow the model's units unless
+  set in **Settings…**. Lengths in the windows are typed in millimetres,
+  or in inches in an imperial model (`3/4`, `1 1/2`, `23 9/16"`, `8'`);
+  a unit typed by hand always wins (`18mm`, `3/4"`).
 - Solid wood is listed but not laid out yet; layouts are for a saw, not
   CNC nesting.
 - `.skp` files arrive in IngeTrazo without their group hierarchy, and

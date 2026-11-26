@@ -129,3 +129,35 @@ def test_a_new_document_has_no_parts(win):
     panel = panel_of(win)
     panel.refresh_button.click()
     assert "0 parts" in panel.scope_label.text()
+
+
+def test_the_panel_lets_the_side_tray_narrow(win):
+    """Issue #3: eight buttons in one row kept the whole side tray about
+    1000 px wide, for every tab in it. They wrap now."""
+    panel = panel_of(win)
+    assert panel.minimumSizeHint().width() < 320
+    bar = panel.button_bar
+    narrow = bar.layout().heightForWidth(260)
+    wide = bar.layout().heightForWidth(1400)
+    assert narrow > wide                            # more rows when narrow
+
+
+def test_grain_along_the_width_puts_that_side_under_length(win):
+    """Part settings ▸ grain along width: the table lists the grain side
+    as the length, as the grain-first exports do, edges and oversize
+    turned with it — the user sees the setting was taken (#4)."""
+    from cutlist.model.grouping import CutListLine
+    panel = panel_of(win)
+    line = CutListLine("MDF", 0.5, 0.4, 0.018, None, None,
+                       ("Fita", None, None, None), names=["Side"],
+                       uids=["u1"], extra_length=0.01, grain="width")
+    item = panel._line_item(line)
+    fl = panel._fmt_len
+    assert item.text(2) == fl(0.4) and item.text(3) == fl(0.5)
+    assert item.text(5) == "W1"           # the long edge, now the width's
+    assert f"cut +{fl(0)} / +{fl(0.01)}" in item.text(7)
+    assert "grain" in item.text(7)
+    assert item.toolTip(2)
+    line.grain = None
+    item = panel._line_item(line)
+    assert item.text(2) == fl(0.5) and item.text(5) == "L1"

@@ -80,3 +80,13 @@ def test_same_size_different_names_merge_unless_kept_apart():
     apart = sorted((ln.display_names()[0], ln.qty)
                    for ln in build(parts, by_name=True).lines())
     assert apart == [("Door left", 2), ("Door right", 1)]
+
+
+def test_grain_set_along_the_width_is_its_own_line_and_says_so():
+    from dataclasses import replace
+    a = part("a", 0.5, 0.4, 0.018)
+    b = replace(part("b", 0.5, 0.4, 0.018), grain="width")
+    lines = sorted(build([a, b]).lines(), key=lambda ln: ln.uids)
+    assert [ln.grain_across for ln in lines] == [False, True]
+    # The sizes stay longest first: only the table turns them.
+    assert lines[1].length > lines[1].width

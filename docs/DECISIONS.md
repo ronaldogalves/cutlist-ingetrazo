@@ -487,3 +487,49 @@ the model and its gaps fixed:
    the diagrams.
 4. **From the cut list** (in its order) **or from the diagrams** (sorted
    by sheet, in the order the pieces come off the saw).
+
+## D-019 — Laminate and edge band modelled as pieces of their own
+
+*2026-11-26 · accepted · Ronaldo · amends D-006 §7 and D-007 §4, D-017 §2*
+
+Painting a board's face or edge (D-007) cannot say "one piece of
+laminate across several boards". Boards are often stacked and glued,
+then laminated or banded **as one**: three 18 mm boards make a 54 mm
+front with one 54 mm laminate strip, not three 18 mm ones. For this,
+and so the client sees the finished thing, designers draw the laminate
+or band as an object of its own over the stack.
+
+1. **The paint says it is laminate.** A part that is **at most 2 mm
+   thick** (a 2D surface included) and whose main faces are painted
+   with a **Covering** or **Edge band** material is a **piece** of that
+   covering or band, not a board and not an excluded surface. Painting
+   it so is a clear intent; nothing is guessed from the geometry
+   alone. Thin, not only flat: designers give the laminate a little
+   thickness, or lift it slightly off the board, so the two planes do
+   not fight on screen. 2 mm covers HPL (0.6–1.3 mm) and the thickest
+   PVC band; no real board is that thin (HDF backs start at 3 mm). Any
+   other thin part stays as before (a surface below 0.5 mm is excluded).
+2. **A covering piece** is listed as a section of its own (the covering
+   and its thickness), with its length × width from its outline; its
+   thickness is the covering's own when set, else as modelled. Its
+   oversize is the covering's, on each side. It is laid out like a
+   board when the covering has sheet sizes — the covering diagrams
+   D-007 left for later come from this.
+3. **A band piece** adds one edge of its length to that band's total
+   (D-017 §1, oversize and waste included). Its band width is checked
+   against the piece's width (the stack it covers) plus the finishing
+   margin. It is listed beside the bands, not in a board section.
+4. **The boards under a piece are not changed.** They keep their size
+   as modelled; nothing is deducted for the laminate on top.
+5. **Both ways work, not both at once.** Paint the board's face or
+   edge, *or* draw a piece over it. A piece lying on a board face or
+   edge that is itself painted with a covering or band (within 3 mm of
+   it, overlapping it) would be bought twice: **both** are flagged
+   ("laminate twice"), neither is dropped.
+6. **As boards**: one group or component per piece (its name, number
+   and highlight); not rectangular → bounding box and a flag; grain
+   from the covering or the part's own setting; tags, Exclude and the
+   Ignore role leave pieces out as they do boards.
+
+Benchmark note: OpenCutList reads veneer and edge banding from the
+board's faces only.

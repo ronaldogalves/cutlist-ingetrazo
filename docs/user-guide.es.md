@@ -1,7 +1,7 @@
 # Cut List para IngeTrazo — guía de uso
 
 *También en [English](user-guide.md) y [Português (Brasil)](user-guide.pt-BR.md).*
-Para la versión 0.2.2, IngeTrazo 0.6.1.
+Para la versión 0.2.5, IngeTrazo 0.6.3.2.
 
 Cut List convierte un modelo de mueble en la lista de piezas a cortar,
 la envía al proveedor que corta tus tableros y dibuja los planos de corte
@@ -11,7 +11,7 @@ para tu propia sierra.
 
 ## 1. Instalar
 
-1. Descarga `cutlist-0.2.2.zip` de la página de
+1. Descarga `cutlist-0.2.5.zip` de la página de
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    — o instala **Cut List** desde el gestor de extensiones de IngeTrazo.
 2. A mano: en IngeTrazo, **Extensiones ▸ Abrir carpeta de complementos**,
@@ -34,6 +34,16 @@ Cut List aparece como una pestaña en el panel lateral y en **Extensiones
   pinta el carpintero: el material de las caras grandes es el tablero, un
   material distinto en una cara es un laminado o una chapa de madera, un
   material en un borde angosto es un canto.
+- **Laminado sobre varios tableros.** Cuando los tableros se apilan y se
+  pegan, y luego se laminan o se enchapan como uno solo, dibuja el
+  laminado o el canto como un objeto propio sobre la pila — un grupo con
+  una sola cara (una superficie 2D) o un sólido de hasta 2 mm — y píntalo
+  con el material del revestimiento o del canto. Se lista como una pieza:
+  el laminado en una sección propia (distribuido en sus hojas, cuando
+  están definidas), el canto en los cantos a comprar. Los tableros de
+  abajo mantienen su tamaño. Pinta las caras de los tableros *o* dibuja
+  una pieza sobre ellos, no ambas cosas: las dos juntas se marcan como
+  *laminado dos veces*.
 - **Etiquetas** pueden dejar cosas fuera de la lista (paredes,
   electrodomésticos): usa el botón **Etiquetas** del panel.
 
@@ -118,6 +128,9 @@ pieza…**: veta a lo largo o a lo ancho, si puede girar en el tablero,
 dejarla fuera de la lista, invertir la cara 1, una nota, la **sobremedida
 de corte** propia y los valores de sus campos personalizados. Cada cambio
 es un paso de deshacer.
+Con la veta a lo ancho, la tabla muestra ese lado en Largo (y sus
+cantos con él), marcado "veta ↔": el lado de la veta va siempre primero,
+como en las exportaciones a proveedores y los planos de corte.
 
 Los **campos personalizados** (cliente, ambiente…) se definen en
 **Ajustes…**: un valor para el modelo, reglas por etiqueta o un valor por
@@ -214,8 +227,11 @@ el enlace al pie del panel) muestra cómo ayudar: PIX en Brasil (clave
 
 ## 13. Bueno saber
 
-- Las medidas en las ventanas se escriben en milímetros; la lista sigue
-  las unidades del modelo, salvo lo definido en **Ajustes…**.
+- La lista, los planos y las etiquetas siguen las unidades del modelo,
+  salvo lo definido en **Ajustes…**. Las medidas en las ventanas se
+  escriben en milímetros, o en pulgadas en un modelo en pulgadas (`3/4`,
+  `1 1/2`, `23 9/16"`, `8'`); una unidad escrita a mano siempre vale
+  (`18mm`, `3/4"`).
 - La madera maciza se lista pero aún no se distribuye; los planos son
   para sierra, no para nesting de CNC.
 - Los archivos `.skp` llegan a IngeTrazo sin su jerarquía de grupos, y

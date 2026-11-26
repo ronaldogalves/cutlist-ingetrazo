@@ -79,7 +79,7 @@ def prepare(parts: list[Part], library: Library, settings: Settings, *,
                by_name=by_name)
     by_uid = {p.uid: p for p in parts}
     names = letters(cl)
-    out = Prepared(bands=band_totals(cl.lines(), library))
+    out = Prepared(bands=band_totals(cl.lines(), library, cl.band_pieces))
     for section in cl.sections:
         spec = library.get(section.material)
         if section.material is None:

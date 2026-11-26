@@ -215,6 +215,12 @@ catalog updated (ingelibre/ingetrazo-extensions#224, auto-merged).
 *0.2.1 published 2026-11-03*: the Support window (PIX, GitHub Sponsors).
 *0.2.2 published 2026-11-11*: inch models get inches on diagrams, plan
 and labels (issue #1, the first user report); tested with IngeTrazo 0.6.1.
+*0.2.3 published 2026-11-23*: the side tray can narrow again (issue #3);
+sizes typed in inches in an imperial model; tested with IngeTrazo 0.6.3.2.
+*0.2.4 published 2026-11-25*: the parts table follows the grain set in
+Part settings (issue #4).
+*0.2.5 published 2026-11-26*: laminate and edge band drawn as pieces of
+their own over stacked boards (D-019); the Cut List logo on the tray tab.
 
 - [x] Donation platform chosen (BRIEF §10.5): PIX and GitHub Sponsors
       (D-005, 2026-11-03); `.github/FUNDING.yml`.
@@ -231,6 +237,11 @@ and labels (issue #1, the first user report); tested with IngeTrazo 0.6.1.
       from the cut list or by sheet from the diagrams.
 - [x] Two-way highlight: a part hovered on a diagram lights up in the
       model, and a part picked in the model lights up on the diagram.
+- [x] Laminate and edge band drawn as pieces of their own (D-019,
+      Ronaldo, 2026-11-26): boards stacked and laminated or banded as one.
+      A part up to 2 mm thick painted with a covering is listed (and laid
+      out) as a covering piece; with a band, it adds to the band totals;
+      painted *and* drawn on the same face is flagged.
 - [ ] Fixes and the top requests from v0.1 users.
 - [ ] Pick the next feature from the candidates list in BRIEF §4.
 

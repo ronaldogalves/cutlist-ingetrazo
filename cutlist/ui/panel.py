@@ -30,8 +30,9 @@ from ..i18n import tr
 from ..model.bands import band_totals
 from ..model.grouping import CutList, CutListLine
 from ..model.materials import Library
-from ..model.parts import EDGES, Excluded, Flag, Part
+from ..model.parts import EDGES, Excluded, Flag, Kind, Part
 from ..packing.jobs import letters
+from .flow import FlowLayout
 
 UIDS = Qt.ItemDataRole.UserRole
 #: On rows that stand for a material (sections, "no role yet").
@@ -60,6 +61,10 @@ def flag_text(flag: Flag) -> str:
         Flag.NARROW_BAND: tr("An edge band is narrower than the part plus "
                              "the room needed to finish it (Materials "
                              "window: the band's width and margin)."),
+        Flag.DOUBLE_COVER: tr("Laminate or band both painted on this "
+                              "board and drawn as a piece over it: it "
+                              "would be bought twice. Keep one of the "
+                              "two."),
     }[flag]
 
 
@@ -72,6 +77,7 @@ def flag_label(flag: Flag) -> str:
         Flag.UNASSIGNED: tr("finish not set up"),
         Flag.ODD_THICKNESS: tr("odd thickness"),
         Flag.NARROW_BAND: tr("band too narrow"),
+        Flag.DOUBLE_COVER: tr("laminate twice"),
     }[flag]
 
 
@@ -140,7 +146,11 @@ class CutListPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
 
-        bar = QHBoxLayout()
+        # The buttons wrap onto more rows as the tray narrows: in one row
+        # they kept the whole side tray about 1000 px wide (issue #3).
+        self.button_bar = QWidget()
+        self.button_bar.setObjectName("cutlist_buttons")
+        bar = FlowLayout(self.button_bar)
         self.refresh_button = QPushButton(tr("Refresh"))
         self.refresh_button.setObjectName("cutlist_refresh")
         self.refresh_button.setToolTip(tr("Read the model again."))
@@ -166,7 +176,6 @@ class CutListPanel(QWidget):
             "different lines."))
         self.merge_button.toggled.connect(self.merge_changed)
         bar.addWidget(self.merge_button)
-        bar.addStretch(1)
         self.materials_button = QPushButton(tr("Materials…"))
         self.materials_button.setObjectName("cutlist_materials")
         self.materials_button.setToolTip(tr("Say what each material is: "
@@ -198,7 +207,7 @@ class CutListPanel(QWidget):
                                          "label sheets for your printer."))
         self.labels_button.clicked.connect(self.labels_requested)
         bar.addWidget(self.labels_button)
-        layout.addLayout(bar)
+        layout.addWidget(self.button_bar)
 
         self.scope_label = QLabel()
         self.scope_label.setObjectName("cutlist_scope")
@@ -290,6 +299,7 @@ class CutListPanel(QWidget):
         self.placeholder = QLabel(tr("Press Refresh to read the model."))
         self.placeholder.setObjectName("cutlist_placeholder")
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.placeholder.setWordWrap(True)
         layout.addWidget(self.placeholder)
 
     # ---- column widths: the user's, remembered ---------------------------
@@ -417,11 +427,17 @@ class CutListPanel(QWidget):
         self.tree.clear()
         names = letters(cl)
         for section in cl.sections:
-            title = tr("{material} · {thickness} — {n} parts · {area}",
-                       material=section.material or tr("(no material)"),
-                       thickness=self._fmt_full(section.thickness),
-                       n=section.qty,
-                       area=fa(section.area))
+            if section.kind is Kind.COVERING:
+                title = tr("Covering {material} · {thickness} — {n} pieces "
+                           "· {area}", material=section.material,
+                           thickness=self._fmt_full(section.thickness),
+                           n=section.qty, area=fa(section.area))
+            else:
+                title = tr("{material} · {thickness} — {n} parts · {area}",
+                           material=section.material or tr("(no material)"),
+                           thickness=self._fmt_full(section.thickness),
+                           n=section.qty,
+                           area=fa(section.area))
             top = self._header(title)
             top.setData(0, UIDS, [u for ln in section.lines for u in ln.uids])
             top.setData(0, MATERIAL, section.material)
@@ -457,11 +473,32 @@ class CutListPanel(QWidget):
 
         self._show_bands(cl)
 
+        if cl.band_pieces:
+            # Bands drawn on their own (D-019 §3): listed, so they can be
+            # found and highlighted; their length is in the bands table.
+            top = self._header(tr("Edge band pieces — {n}",
+                                  n=len(cl.band_pieces)))
+            top.setData(0, UIDS, [p.uid for p in cl.band_pieces])
+            for p in cl.band_pieces:
+                loud = sorted(p.flags & _LOUD)
+                label = p.core or ""
+                if loud:
+                    label += " · ⚠ " + ", ".join(flag_label(f) for f in loud)
+                top.addChild(self._part_item(
+                    p, label, "\n".join([p.core or ""]
+                                         + [flag_text(f) for f in loud])))
+            top.setExpanded(True)
+
         if cl.excluded:
             top = self._header(tr("Excluded — {n} parts", n=len(cl.excluded)))
             for p in cl.excluded:
                 why = excluded_text(p.excluded)
-                top.addChild(self._part_item(p, why, why))
+                tip = why
+                if p.excluded is Excluded.SURFACE:
+                    tip += "\n" + tr("Laminate or edge band drawn as a "
+                                      "surface? Paint it with that "
+                                      "material to list it as a piece.")
+                top.addChild(self._part_item(p, why, tip))
 
         self._fit_columns_once()
         total = sum(s.area for s in cl.sections)
@@ -481,7 +518,7 @@ class CutListPanel(QWidget):
     def _show_bands(self, cl: CutList) -> None:
         """The bands table: one row per band, the length to buy in bold."""
         self.bands.clear()
-        totals = band_totals(cl.lines(), self._library)
+        totals = band_totals(cl.lines(), self._library, cl.band_pieces)
         self.bands_box.setVisible(bool(totals))
         if not totals:
             return
@@ -489,7 +526,8 @@ class CutListPanel(QWidget):
         right = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         for b in totals:
             uids = [u for line in cl.lines() if b.name in line.edges
-                    for u in line.uids]
+                    for u in line.uids] + [p.uid for p in cl.band_pieces
+                                           if p.core == b.name]
             rolls = (tr("{n} × {length}", n=b.rolls, length=run(b.roll))
                      if b.roll > 0 else "")
             item = QTreeWidgetItem([
@@ -574,7 +612,20 @@ class CutListPanel(QWidget):
         fl = self._fmt_len
         names = line.display_names()
         shown = ", ".join(names[:3]) + (" …" if len(names) > 3 else "")
-        banded = [edge_label(e) for e, b in zip(EDGES, line.edges, strict=True)
+        # Grain set along the width: the grain side goes under Length, as
+        # the grain-first exports and the diagrams take it — the user sees
+        # the order was taken. Its edges and oversize turn with it.
+        across = line.grain_across
+        if across:
+            length, width = line.width, line.length
+            extra_l, extra_w = line.extra_width, line.extra_length
+            l1, l2, w1, w2 = line.edges
+            edges = (w1, w2, l1, l2)
+        else:
+            length, width = line.length, line.width
+            extra_l, extra_w = line.extra_length, line.extra_width
+            edges = line.edges
+        banded = [edge_label(e) for e, b in zip(EDGES, edges, strict=True)
                   if b]
         faces = [f"F{i}: {m}" for i, m in ((1, line.face1), (2, line.face2))
                  if m]
@@ -582,19 +633,25 @@ class CutListPanel(QWidget):
         marks = ["⚠ " + ", ".join(flag_label(f) for f in loud)] if loud else []
         if Flag.UNASSIGNED in line.flags:
             marks.append("?")
-        if line.extra_length or line.extra_width:
-            marks.append(tr("cut {l} / {w}", l=_signed(fl, line.extra_length),
-                            w=_signed(fl, line.extra_width)))
+        if extra_l or extra_w:
+            marks.append(tr("cut {l} / {w}", l=_signed(fl, extra_l),
+                            w=_signed(fl, extra_w)))
+        if across:
+            marks.append(tr("grain ↔"))
         item = QTreeWidgetItem([
-            shown, str(line.qty), fl(line.length), fl(line.width),
+            shown, str(line.qty), fl(length), fl(width),
             fl(line.thickness), " ".join(banded), " · ".join(faces),
             " ".join(marks), letter])
         item.setTextAlignment(8, Qt.AlignmentFlag.AlignCenter)
         item.setToolTip(0, "\n".join(names))
+        if across:
+            tip = tr("The grain runs along this side (set in Part "
+                     "settings), so it is listed as the length.")
+            item.setToolTip(2, tip)
         if banded:
             item.setToolTip(5, "\n".join(
                 f"{edge_label(e)}: {b}"
-                for e, b in zip(EDGES, line.edges, strict=True) if b))
+                for e, b in zip(EDGES, edges, strict=True) if b))
         if line.flags:
             item.setToolTip(7, "\n".join(flag_text(f)
                                           for f in sorted(line.flags)))
@@ -621,7 +678,9 @@ class CutListPanel(QWidget):
 
     def _part_item(self, p: Part, label: str, why: str) -> QTreeWidgetItem:
         fl = self._fmt_len
-        item = QTreeWidgetItem([p.name, "1", fl(p.length), fl(p.width),
+        length, width = (p.width, p.length) if p.grain == "width" else \
+            (p.length, p.width)
+        item = QTreeWidgetItem([p.name, "1", fl(length), fl(width),
                                 fl(p.thickness), "", "", label])
         item.setToolTip(7, why)
         item.setData(0, UIDS, [p.uid])

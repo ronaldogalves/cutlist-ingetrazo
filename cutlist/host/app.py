@@ -18,8 +18,10 @@ import numpy as np
 from .. import i18n
 from ..i18n import tr
 from ..model.grouping import build
+from ..model.overlap import mark_double_covers
 from ..model.parts import RawPart, read_part
 from ..model.settings import Settings
+from ..model.text import set_unit_source
 from .extract import extract
 from .store import Store
 
@@ -35,6 +37,18 @@ _HIGHLIGHT = (0, 150, 255)
 _IMPERIAL = ("in", "ft", "ft-in", "in-frac", "ft-in-frac")
 
 
+def _tab_icon():
+    """Our logo for the tray tab, in IngeTrazo's icon ink and accent colour
+    (asked for at each paint, so it follows a change of theme)."""
+    from ..ui.icon import logo_icon
+    try:
+        from views.theme import accent_color, icon_ink
+    except ImportError:             # a later IngeTrazo moved them
+        log.warning("IngeTrazo's icon colours not found; using defaults")
+        return logo_icon()
+    return logo_icon(icon_ink, accent_color)
+
+
 def install(app) -> None:
     """Called once from :func:`cutlist.setup` with IngeTrazo's
     ``ExtensionApp``."""
@@ -43,12 +57,14 @@ def install(app) -> None:
 
     from ..ui.panel import CutListPanel
     panel = CutListPanel()
-    dock = app.add_panel(tr(PANEL_TITLE), panel)
+    dock = app.add_panel(tr(PANEL_TITLE), panel, icon=_tab_icon())
     controller = Controller(app, panel)
     dock.visibilityChanged.connect(controller.panel_shown)
     app.add_context_menu(controller.viewport_menu)
     # Keep the controller alive as long as the panel.
     panel._controller = controller
+    # Sizes typed in dialogs: inches in an imperial model (issue #1).
+    set_unit_source(lambda: input_unit(controller.store.settings()))
 
     menu = app.add_menu(tr(PANEL_TITLE))
     if menu is not None:
@@ -78,6 +94,13 @@ def fmt_sheet_area(square_metres: float) -> str:
     if model_unit() in _IMPERIAL:
         return f"{square_metres / 0.09290304:.2f} ft²"
     return f"{square_metres:.2f} m²"
+
+
+def input_unit(settings: Settings) -> str:
+    """``"in"`` when the cut list shows an imperial unit (Settings, or
+    else the model's), else ``"mm"``: the unit sizes are typed in."""
+    from core.units import model_unit
+    return "in" if (settings.unit or model_unit()) in _IMPERIAL else "mm"
 
 
 def fmt_run_length(metres: float) -> str:
@@ -205,8 +228,9 @@ class Controller:
             overrides = self.store.overrides(ex.groups.values())
             numbers = self.store.numbers(
                 [r.uid for r in ex.parts if r.auto_named])
-            parts = [read_part(r, library, overrides.get(r.uid))
-                     for r in renamed(ex.parts, numbers)]
+            parts = mark_double_covers(
+                [read_part(r, library, overrides.get(r.uid))
+                 for r in renamed(ex.parts, numbers)])
             cut_list = build(parts, settings.tolerance,
                              by_name=not settings.merge_by_size)
             self.panel.set_formatters(*length_formats(settings),
@@ -483,8 +507,9 @@ class Controller:
                                       if r.auto_named])
         self.groups = {**self.groups, **ex.groups}
         self.outlines = {**self.outlines, **ex.outlines}
-        return {p.uid: p for p in (read_part(r, library, overrides.get(r.uid))
-                                   for r in renamed(ex.parts, numbers))}
+        return {p.uid: p for p in mark_double_covers(
+            [read_part(r, library, overrides.get(r.uid))
+             for r in renamed(ex.parts, numbers)])}
 
     def diagram_session(self):
         from datetime import date

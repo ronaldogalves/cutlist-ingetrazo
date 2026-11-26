@@ -1,7 +1,7 @@
 # Cut List para IngeTrazo — guia de uso
 
 *Também em [English](user-guide.md) e [Español](user-guide.es.md).*
-Para a versão 0.2.2, IngeTrazo 0.6.1.
+Para a versão 0.2.5, IngeTrazo 0.6.3.2.
 
 O Cut List transforma um modelo de móvel na lista de peças a cortar,
 envia essa lista para o fornecedor que corta as suas chapas e desenha os
@@ -11,7 +11,7 @@ planos de corte para a sua própria serra.
 
 ## 1. Instalar
 
-1. Baixe `cutlist-0.2.2.zip` na página de
+1. Baixe `cutlist-0.2.5.zip` na página de
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    — ou instale o **Cut List** pelo gerenciador de extensões do IngeTrazo.
 2. À mão: no IngeTrazo, **Extensões ▸ Abrir pasta de plugins**,
@@ -33,6 +33,15 @@ List**.
   marceneiro pinta: o material das faces grandes é a chapa, um material
   diferente numa face é laminado ou lâmina, um material numa borda
   estreita é fita de borda.
+- **Laminado sobre várias chapas.** Quando as chapas são empilhadas e
+  coladas, e depois laminadas ou encabeçadas como uma só, desenhe o
+  laminado ou a fita como um objeto próprio sobre a pilha — um grupo com
+  uma única face (uma superfície 2D) ou um sólido de até 2 mm — e pinte-o
+  com o material do revestimento ou da fita. Ele é listado como uma peça:
+  o laminado numa seção própria (distribuído nas chapas dele, quando
+  definidas), a fita nas fitas a comprar. As chapas de baixo mantêm o
+  tamanho. Pinte as faces das chapas *ou* desenhe uma peça sobre elas,
+  não os dois: os dois juntos são marcados como *laminado em dobro*.
 - **Etiquetas** podem deixar coisas fora da lista (paredes,
   eletrodomésticos): use o botão **Etiquetas** no painel.
 
@@ -116,6 +125,9 @@ da peça…**: veio no comprimento ou na largura, se pode girar na chapa,
 deixar fora da lista, inverter a face 1, uma nota, a **sobremedida de
 corte** da própria peça e os valores dos seus campos personalizados. Cada
 mudança é um passo de desfazer.
+Com o veio na largura, a tabela mostra esse lado em Comprimento (e as
+fitas junto), marcado "veio ↔": o lado do veio vem sempre primeiro, como
+nas exportações para fornecedores e nos planos de corte.
 
 **Campos personalizados** (cliente, ambiente…) são definidos em
 **Ajustes…**: um valor para o modelo, regras por etiqueta ou um valor por
@@ -210,8 +222,11 @@ GitHub Sponsors. Nada muda na extensão de um jeito ou de outro.
 
 ## 13. Bom saber
 
-- As medidas nas janelas são digitadas em milímetros; a lista segue as
-  unidades do modelo, salvo o que for definido em **Ajustes…**.
+- A lista, os planos e as etiquetas seguem as unidades do modelo, salvo
+  o que for definido em **Ajustes…**. As medidas nas janelas são
+  digitadas em milímetros, ou em polegadas num modelo em polegadas
+  (`3/4`, `1 1/2`, `23 9/16"`, `8'`); uma unidade digitada à mão sempre
+  vale (`18mm`, `3/4"`).
 - Madeira maciça é listada mas ainda não distribuída; os planos são para
   serra, não para nesting de CNC.
 - Arquivos `.skp` chegam ao IngeTrazo sem a hierarquia de grupos, e

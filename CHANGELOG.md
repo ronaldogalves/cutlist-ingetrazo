@@ -5,6 +5,43 @@
 - German interface, including cutting plans, labels and export dialogs,
   following IngeTrazo's language setting.
 
+## 0.2.5 — 2026-11-26
+
+- **Laminate and edge band drawn as pieces of their own** (D-019): when
+  boards are stacked and glued, then laminated or banded as one, draw
+  the laminate or band over the stack as a 2D surface (or a solid up to
+  2 mm thick) and paint it with that material. Laminate is listed in a
+  section of its own, at the thickness set on the material, and laid
+  out on its sheets; a band adds its length to the bands to buy. The
+  boards underneath keep their size. Painted on the boards *and* drawn
+  over them is flagged *laminate twice*.
+- A laminate's thickness is shown as set on its material: 0.8 mm no
+  longer reads as 1 mm.
+- **The Cut List logo on the tray tab**, in the theme's colours.
+- Tested with IngeTrazo 0.6.3.2.
+
+## 0.2.4 — 2026-11-25
+
+- **The parts table follows the grain** (#4): a part whose grain is set
+  along its width in Part settings lists that side under Length, its
+  edges and oversize turned with it, marked "grain ↔". The table now
+  reads like the cutting diagrams and the grain-first supplier
+  exports, which already follow it.
+
+## 0.2.3 — 2026-11-23
+
+- **The side tray can narrow again** (#3): the Cut List panel's eight
+  buttons sat in one row and kept the whole side tray, every tab of it,
+  about 1000 px wide. They wrap onto more rows now; the panel needs
+  about 220 px.
+- **Sizes are typed in inches in an imperial model** (the follow-up to
+  #1): kerf, trim, oversize, thicknesses, band width, sheet and leftover
+  sizes, the Settings spinners. They take what a woodworker writes —
+  `3/4`, `1 1/2`, `1-1/2`, `23 9/16"`, `8'`, `4' 1/2"` — and show
+  fractions back. Each box says its unit, "(mm)" or "(in)". A unit typed
+  by hand always wins, in any model: `18mm`, `3/4"`.
+- Tested with IngeTrazo 0.6.3.2.
+
 ## 0.2.2 — 2026-11-11
 
 - **Inch models get inches** on the cutting diagrams, the printed plan and

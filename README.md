@@ -14,7 +14,7 @@ sizes, leftovers faded with theirs](docs/images/cutting-diagram.png)
 
 ## Status
 
-**0.2.2 — the cut list, supplier exports, cutting diagrams, edge bands
+**0.2.5 — the cut list, supplier exports, cutting diagrams, edge bands
 and labels.** What
 is in it (see [CHANGELOG.md](CHANGELOG.md)):
 
@@ -24,7 +24,8 @@ is in it (see [CHANGELOG.md](CHANGELOG.md)):
   merged into one group, materials not set up) instead of guessing;
 - **materials with roles** (board, laminate/veneer, edge band,
   appearance only, ignore), read face by face and edge by edge from the
-  way the model is painted;
+  way the model is painted — or drawn as pieces of their own, a 2D
+  surface of laminate or band over boards stacked and glued as one;
 - **part settings** (grain, may rotate, exclude, note, face 1, custom
   fields such as client or room), each change one undo step;
 - **exports** through named profiles you build once per supplier or
@@ -69,7 +70,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/BRIEF.md](docs/BRIEF.md).
   group. They land under *Needs a look* (no material): exclude them
   there, or paint them with a material set to *Ignore*.
 
-Tested with **IngeTrazo 0.6.2.1**.
+Tested with **IngeTrazo 0.6.3.2**.
 
 ## User guide
 
@@ -80,7 +81,7 @@ diagrams: [English](docs/user-guide.md) ·
 
 ## Installing
 
-1. Download `cutlist-0.2.2.zip` from the
+1. Download `cutlist-0.2.5.zip` from the
    [Releases](https://github.com/ronaldogalves/cutlist-ingetrazo/releases)
    page.
 2. In IngeTrazo, **Extensions ▸ Open plugins folder**
