@@ -181,6 +181,10 @@ class Part:
     extra_length: float = 0.0
     extra_width: float = 0.0
     kind: Kind = Kind.BOARD
+    #: The thickness was typed on the material, not measured: it is shown
+    #: and grouped as typed, never rounded to the size tolerance (0.6 and
+    #: 0.8 mm laminate are different products).
+    exact_thickness: bool = False
     measured: Measured | None = field(default=None, compare=False, repr=False)
 
     @property
@@ -311,6 +315,7 @@ def _read_piece(raw: RawPart, m: Measured, name: str, lib: Library,
     return Part(
         uid=raw.uid, name=tidy(raw.name), length=m.length, width=m.width,
         thickness=spec.thickness if spec.thickness > 0 else m.thickness,
+        exact_thickness=spec.thickness > 0,
         core=name, face1=None, face2=None, edges=(None,) * 4,
         face1_side="T+", tag=raw.tag, is_component=raw.is_component,
         auto_named=raw.auto_named, flags=frozenset(flags),

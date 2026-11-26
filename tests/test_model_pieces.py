@@ -80,6 +80,25 @@ def test_covering_thickness_falls_back_to_the_model():
     assert p.thickness == pytest.approx(0.001)
 
 
+def test_a_typed_laminate_thickness_is_not_rounded():
+    # The 1 mm size tolerance would read 0.6 and 0.8 mm as 1 mm and merge
+    # two different products; a modelled thickness is still rounded.
+    lib = library(Thin=MaterialSpec("Thin", role=Role.COVERING,
+                                    thickness=0.0006),
+                  Bare=MaterialSpec("Bare", role=Role.COVERING))
+    parts = [read("a", plane((0, 0, 0), (1, 0, 0), (0, 0.5, 0), "Formica"),
+                  lib),
+             read("b", plane((0, 0, 0), (1, 0, 0), (0, 0.5, 0), "Thin"), lib),
+             read("c", box(1.0, 0.5, 0.0012, default="Bare"), lib)]
+    cl = build(parts, 0.001)
+    got = {s.material: s.thickness for s in cl.sections}
+    assert got["Formica"] == pytest.approx(0.0008)
+    assert got["Thin"] == pytest.approx(0.0006)
+    assert got["Bare"] == pytest.approx(0.001)
+    assert {ln.thickness for ln in cl.lines()} == {
+        got["Formica"], got["Thin"], got["Bare"]}
+
+
 def test_covering_pieces_get_a_section_after_the_boards():
     lib = library(Formica=MaterialSpec("Formica", role=Role.COVERING,
                                        thickness=0.0008, oversize=0.005))

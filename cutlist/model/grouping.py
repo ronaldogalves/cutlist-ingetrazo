@@ -138,7 +138,10 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
         if p.kind is Kind.BAND:
             out.band_pieces.append(p)
             continue
-        t = quantize(p.thickness, tolerance)
+        # A thickness typed on the material is kept as typed (to a
+        # hundredth of a millimetre); a measured one absorbs modelling slop.
+        t = (round(p.thickness, 5) if p.exact_thickness
+             else quantize(p.thickness, tolerance))
         section = sections.get((p.core, t))
         if section is None:
             section = sections[(p.core, t)] = Section(p.core, t,
