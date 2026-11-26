@@ -256,6 +256,10 @@ their own over stacked boards (D-019); the Cut List logo on the tray tab.
   files (the catalog installs up to 64 MB). Needs textures we may
   redistribute under GPL-compatible terms (CC0 sources, or our own
   photos) — see IDEAS.
+- **Real part shapes on the cutting diagrams** (issue #2, 2026-11-17):
+  a part that is not rectangular is laid out by its bounding box today
+  (and flagged); draw its real outline inside that box, so the diagram
+  shows what is cut. Nesting shapes into each other is CNC work, later.
 
 1D diagrams for solid wood · edge banding · labels · cost estimate ·
 DXF export (ezdxf) · panel-supplier formats · XLSX · optional native
