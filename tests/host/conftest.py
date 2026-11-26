@@ -23,6 +23,15 @@ def user_dir(tmp_path, monkeypatch):
     return folder
 
 
+@pytest.fixture(autouse=True)
+def _own_app_data(tmp_path, monkeypatch):
+    """IngeTrazo keeps its auto-save slots under APPDATA: a drawing left
+    unsaved in the developer's own IngeTrazo made every test window offer
+    to recover it (a modal, then a crash on close, 2026-11-26). Each test
+    gets a folder of its own."""
+    monkeypatch.setenv("APPDATA", str(tmp_path / "appdata"))
+
+
 @pytest.fixture
 def first_run_done(user_dir):
     """The scope window was answered: tests that only Refresh skip it."""
