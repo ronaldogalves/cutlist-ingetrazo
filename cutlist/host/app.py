@@ -37,6 +37,18 @@ _HIGHLIGHT = (0, 150, 255)
 _IMPERIAL = ("in", "ft", "ft-in", "in-frac", "ft-in-frac")
 
 
+def _tab_icon():
+    """Our logo for the tray tab, in IngeTrazo's icon ink and accent colour
+    (asked for at each paint, so it follows a change of theme)."""
+    from ..ui.icon import logo_icon
+    try:
+        from views.theme import accent_color, icon_ink
+    except ImportError:             # a later IngeTrazo moved them
+        log.warning("IngeTrazo's icon colours not found; using defaults")
+        return logo_icon()
+    return logo_icon(icon_ink, accent_color)
+
+
 def install(app) -> None:
     """Called once from :func:`cutlist.setup` with IngeTrazo's
     ``ExtensionApp``."""
@@ -45,7 +57,7 @@ def install(app) -> None:
 
     from ..ui.panel import CutListPanel
     panel = CutListPanel()
-    dock = app.add_panel(tr(PANEL_TITLE), panel)
+    dock = app.add_panel(tr(PANEL_TITLE), panel, icon=_tab_icon())
     controller = Controller(app, panel)
     dock.visibilityChanged.connect(controller.panel_shown)
     app.add_context_menu(controller.viewport_menu)
