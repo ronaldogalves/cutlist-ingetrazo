@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.5 — 2026-11-26
+
+- **Laminate and edge band drawn as pieces of their own** (D-019): when
+  boards are stacked and glued, then laminated or banded as one, draw
+  the laminate or band over the stack as a 2D surface (or a solid up to
+  2 mm thick) and paint it with that material. Laminate is listed in a
+  section of its own, at the thickness set on the material, and laid
+  out on its sheets; a band adds its length to the bands to buy. The
+  boards underneath keep their size. Painted on the boards *and* drawn
+  over them is flagged *laminate twice*.
+- A laminate's thickness is shown as set on its material: 0.8 mm no
+  longer reads as 1 mm.
+- **The Cut List logo on the tray tab**, in the theme's colours.
+- Tested with IngeTrazo 0.6.3.2.
+
 ## 0.2.4 — 2026-11-25
 
 - **The parts table follows the grain** (#4): a part whose grain is set

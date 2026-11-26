@@ -219,6 +219,8 @@ and labels (issue #1, the first user report); tested with IngeTrazo 0.6.1.
 sizes typed in inches in an imperial model; tested with IngeTrazo 0.6.3.2.
 *0.2.4 published 2026-11-25*: the parts table follows the grain set in
 Part settings (issue #4).
+*0.2.5 published 2026-11-26*: laminate and edge band drawn as pieces of
+their own over stacked boards (D-019); the Cut List logo on the tray tab.
 
 - [x] Donation platform chosen (BRIEF §10.5): PIX and GitHub Sponsors
       (D-005, 2026-11-03); `.github/FUNDING.yml`.
