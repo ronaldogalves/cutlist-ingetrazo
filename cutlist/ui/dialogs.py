@@ -453,13 +453,18 @@ class MaterialsDialog(QDialog):
             Role.BOARD: tr("Parts whose faces show this material are cut "
                            "from it. Kerf and trim left empty use the "
                            "defaults in Settings."),
-            Role.COVERING: tr("Laminate or veneer glued on a face. Oversize "
-                              "is added on each side; it gets its own "
-                              "cutting diagrams later."),
-            Role.EDGE_BAND: tr("Banding on an edge. Oversize is added to "
-                               "each banded edge, waste to the total. With "
-                               "a width, parts too thick for it are "
-                               "flagged."),
+            Role.COVERING: tr("Laminate or veneer glued on a face: paint "
+                              "it on the board's face, or draw it as a "
+                              "piece of its own (up to 2 mm thick) over "
+                              "boards laminated as one. Oversize is added "
+                              "on each side; pieces are laid out on its "
+                              "sheets."),
+            Role.EDGE_BAND: tr("Banding on an edge: paint it on the "
+                               "edge, or draw it as a piece of its own (up "
+                               "to 2 mm thick) over boards banded as one. "
+                               "Oversize is added to each banded edge, "
+                               "waste to the total. With a width, parts "
+                               "too thick for it are flagged."),
             Role.APPEARANCE: tr("A texture that only shows something, like "
                                 "a plywood edge. Ignored by the cut list."),
             Role.IGNORE: tr("Parts made of it stay out of the cut list "

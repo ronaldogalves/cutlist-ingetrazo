@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .parts import Excluded, Flag, Part
+from .parts import Excluded, Flag, Kind, Part
 
 DEFAULT_TOLERANCE = 0.001       # 1 mm
 
@@ -87,6 +87,8 @@ class Section:
     material: str | None
     thickness: float
     lines: list[CutListLine] = field(default_factory=list)
+    #: A board, or a covering drawn as pieces of its own (D-019 §2).
+    kind: Kind = Kind.BOARD
 
     @property
     def qty(self) -> int:
@@ -105,6 +107,9 @@ class CutList:
     flagged: list[Part] = field(default_factory=list)
     #: Material name → how many parts show it without a role.
     unassigned: dict[str, int] = field(default_factory=dict)
+    #: Edge band drawn as pieces of its own (D-019 §3): they count in the
+    #: band totals, not in a board section.
+    band_pieces: list[Part] = field(default_factory=list)
 
     @property
     def qty(self) -> int:
@@ -130,10 +135,14 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
             out.unassigned[name] = out.unassigned.get(name, 0) + 1
         if p.flags:
             out.flagged.append(p)
+        if p.kind is Kind.BAND:
+            out.band_pieces.append(p)
+            continue
         t = quantize(p.thickness, tolerance)
         section = sections.get((p.core, t))
         if section is None:
-            section = sections[(p.core, t)] = Section(p.core, t)
+            section = sections[(p.core, t)] = Section(p.core, t,
+                                                      kind=p.kind)
         key = (p.core, t, quantize(p.length, tolerance),
                quantize(p.width, tolerance), p.face1, p.face2, p.edges,
                p.grain, p.can_rotate, p.extra_length, p.extra_width,
@@ -158,12 +167,14 @@ def build(parts: list[Part], tolerance: float = DEFAULT_TOLERANCE,
                                            _natural(ln.display_names()[0])))
     out.sections = sorted(
         sections.values(),
-        key=lambda s: (s.material is None, _natural(s.material or ""),
-                       s.thickness))
+        key=lambda s: (s.kind is not Kind.BOARD, s.material is None,
+                       _natural(s.material or ""), s.thickness))
     out.excluded.sort(key=lambda p: (p.excluded, _natural(p.name)))
     out.flagged.sort(key=lambda p: _natural(p.name))
+    out.band_pieces.sort(key=lambda p: (_natural(p.core or ""),
+                                        _natural(p.name)))
     return out
 
 
-__all__ = ["CutList", "CutListLine", "DEFAULT_TOLERANCE", "Excluded",
+__all__ = ["CutList", "CutListLine", "DEFAULT_TOLERANCE", "Excluded", "Kind",
            "Section", "build", "quantize"]

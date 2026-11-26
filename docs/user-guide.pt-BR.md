@@ -33,6 +33,15 @@ List**.
   marceneiro pinta: o material das faces grandes é a chapa, um material
   diferente numa face é laminado ou lâmina, um material numa borda
   estreita é fita de borda.
+- **Laminado sobre várias chapas.** Quando as chapas são empilhadas e
+  coladas, e depois laminadas ou encabeçadas como uma só, desenhe o
+  laminado ou a fita como um objeto próprio sobre a pilha — um grupo com
+  uma única face (uma superfície 2D) ou um sólido de até 2 mm — e pinte-o
+  com o material do revestimento ou da fita. Ele é listado como uma peça:
+  o laminado numa seção própria (distribuído nas chapas dele, quando
+  definidas), a fita nas fitas a comprar. As chapas de baixo mantêm o
+  tamanho. Pinte as faces das chapas *ou* desenhe uma peça sobre elas,
+  não os dois: os dois juntos são marcados como *laminado em dobro*.
 - **Etiquetas** podem deixar coisas fora da lista (paredes,
   eletrodomésticos): use o botão **Etiquetas** no painel.
 

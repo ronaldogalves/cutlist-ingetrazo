@@ -34,6 +34,16 @@ Cut List aparece como una pestaña en el panel lateral y en **Extensiones
   pinta el carpintero: el material de las caras grandes es el tablero, un
   material distinto en una cara es un laminado o una chapa de madera, un
   material en un borde angosto es un canto.
+- **Laminado sobre varios tableros.** Cuando los tableros se apilan y se
+  pegan, y luego se laminan o se enchapan como uno solo, dibuja el
+  laminado o el canto como un objeto propio sobre la pila — un grupo con
+  una sola cara (una superficie 2D) o un sólido de hasta 2 mm — y píntalo
+  con el material del revestimiento o del canto. Se lista como una pieza:
+  el laminado en una sección propia (distribuido en sus hojas, cuando
+  están definidas), el canto en los cantos a comprar. Los tableros de
+  abajo mantienen su tamaño. Pinta las caras de los tableros *o* dibuja
+  una pieza sobre ellos, no ambas cosas: las dos juntas se marcan como
+  *laminado dos veces*.
 - **Etiquetas** pueden dejar cosas fuera de la lista (paredes,
   electrodomésticos): usa el botón **Etiquetas** del panel.
 

@@ -18,6 +18,7 @@ import numpy as np
 from .. import i18n
 from ..i18n import tr
 from ..model.grouping import build
+from ..model.overlap import mark_double_covers
 from ..model.parts import RawPart, read_part
 from ..model.settings import Settings
 from ..model.text import set_unit_source
@@ -215,8 +216,9 @@ class Controller:
             overrides = self.store.overrides(ex.groups.values())
             numbers = self.store.numbers(
                 [r.uid for r in ex.parts if r.auto_named])
-            parts = [read_part(r, library, overrides.get(r.uid))
-                     for r in renamed(ex.parts, numbers)]
+            parts = mark_double_covers(
+                [read_part(r, library, overrides.get(r.uid))
+                 for r in renamed(ex.parts, numbers)])
             cut_list = build(parts, settings.tolerance,
                              by_name=not settings.merge_by_size)
             self.panel.set_formatters(*length_formats(settings),
@@ -493,8 +495,9 @@ class Controller:
                                       if r.auto_named])
         self.groups = {**self.groups, **ex.groups}
         self.outlines = {**self.outlines, **ex.outlines}
-        return {p.uid: p for p in (read_part(r, library, overrides.get(r.uid))
-                                   for r in renamed(ex.parts, numbers))}
+        return {p.uid: p for p in mark_double_covers(
+            [read_part(r, library, overrides.get(r.uid))
+             for r in renamed(ex.parts, numbers)])}
 
     def diagram_session(self):
         from datetime import date

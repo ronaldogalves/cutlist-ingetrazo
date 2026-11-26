@@ -29,3 +29,16 @@ def board(lx, ly, lz, at=(0, 0, 0), paint=None, default="MDF Branco",
     g = Group(mesh, name)
     g.layer = layer
     return g
+
+
+def surface(corners, material, name=None):
+    """One flat painted face as an IngeTrazo group: laminate or a band
+    drawn as a 2D object (D-019)."""
+    from core.group import Group
+    from core.mesh import Mesh
+    from PySide6.QtGui import QVector3D as V
+    mesh = Mesh()
+    mesh.add_face([V(*c) for c in corners])
+    for f in mesh.faces:
+        f.attrs = {"mat": material, "color": (0.9, 0.9, 0.9)}
+    return Group(mesh, name)

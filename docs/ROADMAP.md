@@ -235,6 +235,11 @@ Part settings (issue #4).
       from the cut list or by sheet from the diagrams.
 - [x] Two-way highlight: a part hovered on a diagram lights up in the
       model, and a part picked in the model lights up on the diagram.
+- [x] Laminate and edge band drawn as pieces of their own (D-019,
+      Ronaldo, 2026-11-26): boards stacked and laminated or banded as one.
+      A part up to 2 mm thick painted with a covering is listed (and laid
+      out) as a covering piece; with a band, it adds to the band totals;
+      painted *and* drawn on the same face is flagged.
 - [ ] Fixes and the top requests from v0.1 users.
 - [ ] Pick the next feature from the candidates list in BRIEF §4.
 

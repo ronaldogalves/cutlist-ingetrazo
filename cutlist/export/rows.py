@@ -272,9 +272,14 @@ def make_rows(cut_list: CutList, parts: dict[str, Part], library: Library,
                            for c in visible])
         out.files.append(f)
 
-    if profile.band_list and profile.format != "clipboard" and pieces:
+    # Band pieces drawn on their own (D-019 §3) belong to no board: the
+    # material and board choices above are about boards.
+    band_pieces = cut_list.band_pieces
+    if profile.band_list and profile.format != "clipboard" and (
+            pieces or band_pieces):
         lines = list({id(p.line): p.line for p in pieces}.values())
-        band_file = _band_file(lines, library, profile, context, used_names)
+        band_file = _band_file(lines, library, profile, context, used_names,
+                               band_pieces)
         if band_file is not None:
             out.files.append(band_file)
 
@@ -282,10 +287,11 @@ def make_rows(cut_list: CutList, parts: dict[str, Part], library: Library,
     return out
 
 
-def _band_file(lines, library, profile: Profile, context, used):
+def _band_file(lines, library, profile: Profile, context, used,
+               band_pieces=()):
     """The edge bands to buy (D-017): one row per band, metres to two
     decimals with the profile's decimal separator."""
-    totals = band_totals(lines, library)
+    totals = band_totals(lines, library, band_pieces)
     if not totals:
         return None
     sep = profile.numbers.decimal_sep

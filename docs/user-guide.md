@@ -31,6 +31,15 @@ List**.
   woodworkers paint it: the material on the large faces is the board,
   a different material on one face is a laminate or veneer, a material on
   a narrow edge is an edge band.
+- **Laminate over several boards.** When boards are stacked and glued,
+  then laminated or banded as one, draw the laminate or the band as an
+  object of its own over the stack — a group with a single face (a 2D
+  surface) or a solid up to 2 mm thick — and paint it with the covering
+  or band material. It is listed as one piece: laminate in a section of
+  its own (laid out on its sheets when they are set up), a band in the
+  bands to buy. The boards underneath keep their size. Paint the boards'
+  faces *or* draw a piece over them, not both: both at once is flagged
+  *laminate twice*.
 - **Tags** can keep things out of the list (walls, appliances): use the
   **Tags** button in the panel.
 

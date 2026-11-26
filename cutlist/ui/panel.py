@@ -30,7 +30,7 @@ from ..i18n import tr
 from ..model.bands import band_totals
 from ..model.grouping import CutList, CutListLine
 from ..model.materials import Library
-from ..model.parts import EDGES, Excluded, Flag, Part
+from ..model.parts import EDGES, Excluded, Flag, Kind, Part
 from ..packing.jobs import letters
 from .flow import FlowLayout
 
@@ -61,6 +61,10 @@ def flag_text(flag: Flag) -> str:
         Flag.NARROW_BAND: tr("An edge band is narrower than the part plus "
                              "the room needed to finish it (Materials "
                              "window: the band's width and margin)."),
+        Flag.DOUBLE_COVER: tr("Laminate or band both painted on this "
+                              "board and drawn as a piece over it: it "
+                              "would be bought twice. Keep one of the "
+                              "two."),
     }[flag]
 
 
@@ -73,6 +77,7 @@ def flag_label(flag: Flag) -> str:
         Flag.UNASSIGNED: tr("finish not set up"),
         Flag.ODD_THICKNESS: tr("odd thickness"),
         Flag.NARROW_BAND: tr("band too narrow"),
+        Flag.DOUBLE_COVER: tr("laminate twice"),
     }[flag]
 
 
@@ -422,11 +427,17 @@ class CutListPanel(QWidget):
         self.tree.clear()
         names = letters(cl)
         for section in cl.sections:
-            title = tr("{material} · {thickness} — {n} parts · {area}",
-                       material=section.material or tr("(no material)"),
-                       thickness=self._fmt_full(section.thickness),
-                       n=section.qty,
-                       area=fa(section.area))
+            if section.kind is Kind.COVERING:
+                title = tr("Covering {material} · {thickness} — {n} pieces "
+                           "· {area}", material=section.material,
+                           thickness=self._fmt_full(section.thickness),
+                           n=section.qty, area=fa(section.area))
+            else:
+                title = tr("{material} · {thickness} — {n} parts · {area}",
+                           material=section.material or tr("(no material)"),
+                           thickness=self._fmt_full(section.thickness),
+                           n=section.qty,
+                           area=fa(section.area))
             top = self._header(title)
             top.setData(0, UIDS, [u for ln in section.lines for u in ln.uids])
             top.setData(0, MATERIAL, section.material)
@@ -462,11 +473,32 @@ class CutListPanel(QWidget):
 
         self._show_bands(cl)
 
+        if cl.band_pieces:
+            # Bands drawn on their own (D-019 §3): listed, so they can be
+            # found and highlighted; their length is in the bands table.
+            top = self._header(tr("Edge band pieces — {n}",
+                                  n=len(cl.band_pieces)))
+            top.setData(0, UIDS, [p.uid for p in cl.band_pieces])
+            for p in cl.band_pieces:
+                loud = sorted(p.flags & _LOUD)
+                label = p.core or ""
+                if loud:
+                    label += " · ⚠ " + ", ".join(flag_label(f) for f in loud)
+                top.addChild(self._part_item(
+                    p, label, "\n".join([p.core or ""]
+                                         + [flag_text(f) for f in loud])))
+            top.setExpanded(True)
+
         if cl.excluded:
             top = self._header(tr("Excluded — {n} parts", n=len(cl.excluded)))
             for p in cl.excluded:
                 why = excluded_text(p.excluded)
-                top.addChild(self._part_item(p, why, why))
+                tip = why
+                if p.excluded is Excluded.SURFACE:
+                    tip += "\n" + tr("Laminate or edge band drawn as a "
+                                      "surface? Paint it with that "
+                                      "material to list it as a piece.")
+                top.addChild(self._part_item(p, why, tip))
 
         self._fit_columns_once()
         total = sum(s.area for s in cl.sections)
@@ -486,7 +518,7 @@ class CutListPanel(QWidget):
     def _show_bands(self, cl: CutList) -> None:
         """The bands table: one row per band, the length to buy in bold."""
         self.bands.clear()
-        totals = band_totals(cl.lines(), self._library)
+        totals = band_totals(cl.lines(), self._library, cl.band_pieces)
         self.bands_box.setVisible(bool(totals))
         if not totals:
             return
@@ -494,7 +526,8 @@ class CutListPanel(QWidget):
         right = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         for b in totals:
             uids = [u for line in cl.lines() if b.name in line.edges
-                    for u in line.uids]
+                    for u in line.uids] + [p.uid for p in cl.band_pieces
+                                           if p.core == b.name]
             rolls = (tr("{n} × {length}", n=b.rolls, length=run(b.roll))
                      if b.roll > 0 else "")
             item = QTreeWidgetItem([

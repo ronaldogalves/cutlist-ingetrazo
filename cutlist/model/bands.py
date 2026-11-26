@@ -2,7 +2,8 @@
 # Copyright (C) 2026 Ronaldo Alves and CutList contributors.
 """How much edge band to buy (D-017).
 
-Per band material: every banded edge of the listed parts — the long edges
+Per band material: every band piece drawn on its own (D-019), and every
+banded edge of the listed parts — the long edges
 count the part's length, the short ones its width, finished size — times
 the quantity; plus the band's oversize on each edge (the overhang trimmed
 after gluing) and its waste %. Total metres is the number that matters;
@@ -31,9 +32,15 @@ class BandTotal:
         return self.total - self.net
 
 
-def band_totals(lines, library: Library) -> list[BandTotal]:
-    """``lines``: cut-list lines (``CutListLine``). Bands in name order."""
+def band_totals(lines, library: Library, pieces=()) -> list[BandTotal]:
+    """``lines``: cut-list lines (``CutListLine``); ``pieces``: band
+    pieces drawn on their own (D-019 §3), one edge of their length each.
+    Bands in name order."""
     acc: dict[str, list] = {}
+    for piece in pieces:
+        a = acc.setdefault(piece.core, [0, 0.0])
+        a[0] += 1
+        a[1] += piece.length
     for line in lines:
         for i, band in enumerate(line.edges):
             if not band:

@@ -21,6 +21,11 @@ from .text import tidy
 #: limit as IngeTrazo's ``core.parts.SURFACE_BELOW``.
 SURFACE_BELOW = 0.0005
 
+#: At most this thick (metres), a part painted with a covering or band is
+#: a piece of that covering or band, not a board (D-019 §1): HPL is
+#: 0.6–1.3 mm, the thickest PVC band 2 mm, the thinnest board 3 mm.
+PIECE_UP_TO = 0.002
+
 #: The four edges, named looking at face 1 (D-007 §2). See ``_EDGE_SIDES``.
 EDGES = ("length1", "length2", "width1", "width2")
 
@@ -41,6 +46,15 @@ class Flag(StrEnum):
     UNASSIGNED = "unassigned_material"      # a finish whose role is not set
     ODD_THICKNESS = "odd_thickness"         # not one of the board's thicknesses
     NARROW_BAND = "narrow_band"             # a band too narrow for the part
+    DOUBLE_COVER = "double_cover"           # laminate both painted and drawn
+
+
+class Kind(StrEnum):
+    """What a part is cut from (D-019)."""
+
+    BOARD = "board"                 # a board, with its coverings and bands
+    COVERING = "covering"           # a piece of laminate or veneer
+    BAND = "band"                   # a piece of edge band
 
 
 class Excluded(StrEnum):
@@ -166,6 +180,7 @@ class Part:
     #: ``length + extra_length`` × ``width + extra_width`` (D-013 §4).
     extra_length: float = 0.0
     extra_width: float = 0.0
+    kind: Kind = Kind.BOARD
     measured: Measured | None = field(default=None, compare=False, repr=False)
 
     @property
@@ -175,6 +190,19 @@ class Part:
     @property
     def banded_edges(self) -> tuple[bool, ...]:
         return tuple(e is not None for e in self.edges)
+
+    def covered_sides(self) -> dict[str, str]:
+        """``side → material`` for each face or edge with a covering or a
+        band painted on it, sides in the part's own frame (``"T+"``…)."""
+        out = {}
+        face2_side = "T-" if self.face1_side == "T+" else "T+"
+        for side, name in ((self.face1_side, self.face1),
+                           (face2_side, self.face2),
+                           *zip(_EDGE_SIDES[self.face1_side], self.edges,
+                                strict=True)):
+            if name:
+                out[side] = name
+        return out
 
 
 def _dominant(bucket: dict, accept=lambda m: True):
@@ -254,10 +282,54 @@ def _deduction(edges, lib: Library) -> tuple[float, float]:
     return thick(w1) + thick(w2), thick(l1) + thick(l2)
 
 
+def _piece_material(m: Measured, lib: Library) -> str | None:
+    """The covering or band a thin part is a piece of (D-019 §1): its main
+    faces are painted with it. ``None``: not a piece."""
+    if m.thickness > PIECE_UP_TO + THICKNESS_SLACK:
+        return None
+    main = _merge(m.sides.get("T+", {}), m.sides.get("T-", {}))
+    name = _dominant(main) or _dominant(_merge(*m.sides.values()))
+    if lib.role(name) in (Role.COVERING, Role.EDGE_BAND):
+        return name
+    return None
+
+
+def _read_piece(raw: RawPart, m: Measured, name: str, lib: Library,
+                over: PartOverride) -> Part:
+    """A piece of laminate or band drawn on its own (D-019 §2–3)."""
+    spec = lib.get(name)
+    kind = Kind.COVERING if spec.role is Role.COVERING else Kind.BAND
+    flags: set[Flag] = set()
+    if not m.is_flat_rectangle:
+        flags.add(Flag.NOT_RECTANGULAR)
+    if m.solids > 1:
+        flags.add(Flag.SEVERAL_SOLIDS)
+    if kind is Kind.BAND and spec.width > 0 and \
+            spec.width + 1e-6 < m.width + spec.margin:
+        flags.add(Flag.NARROW_BAND)
+    extra = 2 * spec.oversize if kind is Kind.COVERING else 0.0
+    return Part(
+        uid=raw.uid, name=tidy(raw.name), length=m.length, width=m.width,
+        thickness=spec.thickness if spec.thickness > 0 else m.thickness,
+        core=name, face1=None, face2=None, edges=(None,) * 4,
+        face1_side="T+", tag=raw.tag, is_component=raw.is_component,
+        auto_named=raw.auto_named, flags=frozenset(flags),
+        excluded=Excluded.BY_USER if over.exclude else None,
+        note=tidy(over.note), grain=over.grain, can_rotate=over.can_rotate,
+        extra_length=over.extra_length if over.extra_length is not None
+        else extra,
+        extra_width=over.extra_width if over.extra_width is not None
+        else extra,
+        kind=kind, measured=m)
+
+
 def read_part(raw: RawPart, lib: Library,
               override: PartOverride | None = None) -> Part:
     over = override or PartOverride()
     m = measure(list(raw.faces))
+    piece = _piece_material(m, lib)
+    if piece is not None:
+        return _read_piece(raw, m, piece, lib, over)
     core = _find_core(m, lib)
     unassigned: set[str] = set()
 
